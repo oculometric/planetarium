@@ -44,5 +44,12 @@
         "stdexcept": "cpp",
         "streambuf": "cpp",
         "typeinfo": "cpp"
-    }
+    },
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "/home/oculometric/planetarium/bin",
+            "binaryPath": "/home/oculometric/planetarium/bin/planetarium",
+            "binaryArgs": []
+        }
+    ]
 }

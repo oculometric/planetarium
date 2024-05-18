@@ -12,6 +12,8 @@ private:
 
     GLFWwindow* window;
     VkInstance instance;
+    VkSurfaceKHR surface;
+    VkPhysicalDevice device = VK_NULL_HANDLE;
 
 public:
     PTApplication(unsigned int _width, unsigned int _height);
@@ -23,4 +25,6 @@ private:
     void mainLoop();
     void deinitVulkan();
     void deinitWindow();
+
+    bool isSuitableDevice(VkPhysicalDevice d, VkPhysicalDeviceProperties& device_properties);
 };

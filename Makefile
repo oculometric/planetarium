@@ -8,7 +8,7 @@ CC_INCLUDE		:=
 
 LD				:= g++
 LD_FLAGS		:= 
-LD_INCLUDE		:= -lglfw -lvulkan -ldl -lX11 -lXxf86vm -lXrandr -lXi
+LD_INCLUDE		:= -lpthread -lglfw -lvulkan -ldl -lX11 -lXxf86vm -lXrandr -lXi
 
 CC_FILES_IN		:= $(wildcard $(SRC_DIR)/*.cpp)
 CC_FILES_OUT	:= $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(CC_FILES_IN))
