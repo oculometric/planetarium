@@ -4,11 +4,9 @@
 #include <vector>
 #include <cstring>
 #include <iostream>
-#include <map>
+#include <set>
 
 #include <vulkan/vk_enum_string_helper.h>
-
-using namespace std;
 
 PTApplication::PTApplication(unsigned int _width, unsigned int _height)
 {
@@ -77,6 +75,7 @@ void PTApplication::initVulkan()
         cout << "   debug validation layer found (" << target_debug_layer << ")" << endl;
     #endif
 
+    // instance creation
     VkInstanceCreateInfo create_info{ };
     create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     create_info.pApplicationInfo = &app_info;
@@ -108,6 +107,12 @@ void PTApplication::initVulkan()
     
     // TODO: setup debug messenger
 
+    // create surface (target to render to)
+    cout << "   creating window surface..." << endl;
+    if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS)
+        throw runtime_error("unable to create window surface");
+    cout << "   done." << endl;
+
     // scan physical devices
     cout << "   selecting physical device..." << endl;
     uint32_t device_count = 0;
@@ -123,6 +128,7 @@ void PTApplication::initVulkan()
     cout << "       found " << device_count << " devices" << endl;
     for (VkPhysicalDevice found_device : devices)
     {
+        queue_families.clear();
         int score = evaluatePhysicalDevice(found_device, queue_families);
         device_scores.insert(make_pair(score, make_pair(found_device, queue_families)));
     }
@@ -142,12 +148,23 @@ void PTApplication::initVulkan()
     cout << "   done." << endl;
 
     // create queue indices
-    VkDeviceQueueCreateInfo graphics_queue_create_info{ };
-    graphics_queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-    graphics_queue_create_info.queueFamilyIndex = queue_families.graphics_index;
-    graphics_queue_create_info.queueCount = 1;
+    vector<VkDeviceQueueCreateInfo> queue_create_infos(queue_families.size());
+    set<uint32_t> queue_indices;
+    queue_create_infos.clear();
     float graphics_queue_priority = 1.0f;
-    graphics_queue_create_info.pQueuePriorities = &graphics_queue_priority;
+    for (pair<PTQueueFamily, uint32_t> queue_family : queue_families)
+    {
+        if (queue_indices.find(queue_family.second) != queue_indices.cend())
+            continue;
+        VkDeviceQueueCreateInfo queue_create_info{ };
+        queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queue_create_info.queueFamilyIndex = queue_family.second;
+        queue_create_info.queueCount = 1;
+        queue_create_info.pQueuePriorities = &graphics_queue_priority;
+
+        queue_create_infos.push_back(queue_create_info);
+        queue_indices.insert(queue_family.second);
+    }
 
     // TODO: specify physical device features
     VkPhysicalDeviceFeatures features{ };
@@ -156,8 +173,8 @@ void PTApplication::initVulkan()
     cout << "   creating logical device..." << endl;
     VkDeviceCreateInfo device_create_info{ };
     device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    device_create_info.pQueueCreateInfos = &graphics_queue_create_info;
-    device_create_info.queueCreateInfoCount = 1;
+    device_create_info.pQueueCreateInfos = queue_create_infos.data();
+    device_create_info.queueCreateInfoCount = queue_create_infos.size();
 
     device_create_info.pEnabledFeatures = &features;
 
@@ -175,14 +192,13 @@ void PTApplication::initVulkan()
 
     // grab queue handles
     cout << "   grabbing queue handles:" << endl;
-    vkGetDeviceQueue(device, queue_families.graphics_index, 0, &queue_graphics);
-    cout << "       graphics queue index: " << queue_families.graphics_index << endl;
-
-    // create surface (target to render to)
-    cout << "   creating window surface..." << endl;
-    if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS)
-        throw runtime_error("unable to create window surface");
-    cout << "   done." << endl;
+    VkQueue queue;
+    for (pair<PTQueueFamily, uint32_t> queue_family : queue_families)
+    {
+        vkGetDeviceQueue(device, queue_family.second, 0, &queue);
+        queues.insert(make_pair(queue_family.first, queue));
+        cout << "       " << queue_family.second << endl;
+    }
 
     cout << "done." << endl;
 }
@@ -241,11 +257,14 @@ int PTApplication::evaluatePhysicalDevice(VkPhysicalDevice d, PTQueueFamilies& f
     for (const auto& queue_family : queue_families)
     {
         if (queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT)
-            families.graphics_index = index;
+            families.insert(make_pair(PTQueueFamily::GRAPHICS, index));
+        VkBool32 present_support;
+        vkGetPhysicalDeviceSurfaceSupportKHR(d, index, surface, &present_support);
+        if (present_support)
+            families.insert(make_pair(PTQueueFamily::PRESENT, index));
         index++;
     }
 
-    // TODO: check for presence of other families
     if (!areQueuesPresent(families)) return 0;
 
     return score;
@@ -253,7 +272,9 @@ int PTApplication::evaluatePhysicalDevice(VkPhysicalDevice d, PTQueueFamilies& f
 
 bool areQueuesPresent(PTQueueFamilies& families)
 {
-    if (families.graphics_index == -1)
+    if (families.find(PTQueueFamily::GRAPHICS) == families.cend())
+        return false;
+    if (families.find(PTQueueFamily::PRESENT) == families.cend())
         return false;
 
     return true;

@@ -3,11 +3,17 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.h>
+#include <map>
 
-struct PTQueueFamilies
+using namespace std;
+
+enum PTQueueFamily
 {
-    uint32_t graphics_index = -1;
+    GRAPHICS,
+    PRESENT
 };
+
+typedef map<PTQueueFamily, uint32_t> PTQueueFamilies;
 
 bool areQueuesPresent(PTQueueFamilies& families);
 
@@ -22,7 +28,7 @@ private:
     VkSurfaceKHR surface;
     VkPhysicalDevice physical_device = VK_NULL_HANDLE;
     VkDevice device;
-    VkQueue queue_graphics;
+    map<PTQueueFamily, VkQueue> queues;
 
 public:
     PTApplication(unsigned int _width, unsigned int _height);
