@@ -4,6 +4,13 @@
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.h>
 
+struct PTQueueFamilies
+{
+    uint32_t graphics_index = -1;
+};
+
+bool areQueuesPresent(PTQueueFamilies& families);
+
 class PTApplication
 {
 private:
@@ -13,7 +20,9 @@ private:
     GLFWwindow* window;
     VkInstance instance;
     VkSurfaceKHR surface;
-    VkPhysicalDevice device = VK_NULL_HANDLE;
+    VkPhysicalDevice physical_device = VK_NULL_HANDLE;
+    VkDevice device;
+    VkQueue queue_graphics;
 
 public:
     PTApplication(unsigned int _width, unsigned int _height);
@@ -26,5 +35,5 @@ private:
     void deinitVulkan();
     void deinitWindow();
 
-    bool isSuitableDevice(VkPhysicalDevice d, VkPhysicalDeviceProperties& device_properties);
+    int evaluatePhysicalDevice(VkPhysicalDevice d, PTQueueFamilies& families);
 };

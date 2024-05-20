@@ -3,11 +3,11 @@ BIN_DIR			:= bin
 OBJ_DIR			:= bin/obj
 
 CC				:= g++
-CC_FLAGS		:= -std=c++17 -O2
+CC_FLAGS		:= -std=c++17 -g -O0 #-O2
 CC_INCLUDE		:= 
 
 LD				:= g++
-LD_FLAGS		:= 
+LD_FLAGS		:= -g
 LD_INCLUDE		:= -lpthread -lglfw -lvulkan -ldl -lX11 -lXxf86vm -lXrandr -lXi
 
 CC_FILES_IN		:= $(wildcard $(SRC_DIR)/*.cpp)
