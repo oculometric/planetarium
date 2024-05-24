@@ -4,6 +4,7 @@
 #include <GLFW/glfw3.h>
 #include <vulkan/vulkan.h>
 #include <map>
+#include <vector>
 
 using namespace std;
 
@@ -14,6 +15,20 @@ enum PTQueueFamily
 };
 
 typedef map<PTQueueFamily, uint32_t> PTQueueFamilies;
+
+struct PTSwapChainDetails
+{
+    VkSurfaceCapabilitiesKHR capabilities;
+    vector<VkSurfaceFormatKHR> formats;
+    vector<VkPresentModeKHR> present_modes;
+};
+
+struct PTPhysicalDeviceDetails
+{
+    VkPhysicalDevice device;
+    PTQueueFamilies queue_families;
+    PTSwapChainDetails swap_chain;
+};
 
 bool areQueuesPresent(PTQueueFamilies& families);
 
@@ -29,6 +44,11 @@ private:
     VkPhysicalDevice physical_device = VK_NULL_HANDLE;
     VkDevice device;
     map<PTQueueFamily, VkQueue> queues;
+    
+    static constexpr char* required_device_extensions[1] =
+    {
+        VK_KHR_SWAPCHAIN_EXTENSION_NAME
+    };
 
 public:
     PTApplication(unsigned int _width, unsigned int _height);
@@ -41,5 +61,5 @@ private:
     void deinitVulkan();
     void deinitWindow();
 
-    int evaluatePhysicalDevice(VkPhysicalDevice d, PTQueueFamilies& families);
+    int evaluatePhysicalDevice(VkPhysicalDevice d, PTQueueFamilies& families, PTSwapChainDetails& swap_chain);
 };

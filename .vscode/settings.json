@@ -46,5 +46,6 @@
         "typeinfo": "cpp",
         "cstring": "cpp",
         "set": "cpp"
-    }
+    },
+    "C_Cpp.default.compilerPath": "/usr/bin/g++"
 }
