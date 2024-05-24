@@ -41,8 +41,15 @@ private:
     GLFWwindow* window;
     VkInstance instance;
     VkSurfaceKHR surface;
+
     VkPhysicalDevice physical_device = VK_NULL_HANDLE;
     VkDevice device;
+
+    VkSwapchainKHR swap_chain;
+    vector<VkImage> swap_chain_images;
+    VkFormat swap_chain_image_format;
+    VkExtent2D swap_chain_extent;
+
     map<PTQueueFamily, VkQueue> queues;
     
     static constexpr char* required_device_extensions[1] =

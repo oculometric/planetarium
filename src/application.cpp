@@ -5,6 +5,7 @@
 #include <cstring>
 #include <iostream>
 #include <set>
+#include <algorithm>
 
 #include <vulkan/vk_enum_string_helper.h>
 
@@ -121,15 +122,15 @@ void PTApplication::initVulkan()
         throw runtime_error("unable to find physical device");
     vector<VkPhysicalDevice> physical_devices(device_count);
     PTQueueFamilies queue_families;
-    PTSwapChainDetails swap_chain;
+    PTSwapChainDetails swap_chain_info;
     multimap<int, PTPhysicalDeviceDetails> device_scores;
     vkEnumeratePhysicalDevices(instance, &device_count, physical_devices.data());
     cout << "       found " << device_count << " devices" << endl;
     for (VkPhysicalDevice found_device : physical_devices)
     {
         queue_families.clear();
-        int score = evaluatePhysicalDevice(found_device, queue_families, swap_chain);
-        device_scores.insert(make_pair(score, PTPhysicalDeviceDetails{ found_device, queue_families, swap_chain }));
+        int score = evaluatePhysicalDevice(found_device, queue_families, swap_chain_info);
+        device_scores.insert(make_pair(score, PTPhysicalDeviceDetails{ found_device, queue_families, swap_chain_info }));
     }
 
     // select physical device
@@ -137,7 +138,7 @@ void PTApplication::initVulkan()
     {
         physical_device = device_scores.rbegin()->second.device;
         queue_families = device_scores.rbegin()->second.queue_families;
-        swap_chain = device_scores.rbegin()->second.swap_chain;
+        swap_chain_info = device_scores.rbegin()->second.swap_chain;
     }
     else
         throw runtime_error("no valid physical device found");
@@ -204,6 +205,88 @@ void PTApplication::initVulkan()
         cout << "       " << queue_family.second << endl;
     }
 
+    // create swap chain
+    cout << "   creating swap chain..." << endl;
+    VkSurfaceFormatKHR selected_surface_format = swap_chain_info.formats[0];
+    for (const auto& format : swap_chain_info.formats)
+    {
+        if (format.format == VK_FORMAT_B8G8R8A8_SRGB && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
+        {
+            selected_surface_format = format;
+            break;
+        }
+    }
+    cout << "       surface format: " << string_VkFormat(selected_surface_format.format) << endl;
+    cout << "       colour space: " << string_VkColorSpaceKHR(selected_surface_format.colorSpace) << endl;
+
+    VkPresentModeKHR selected_surface_present_mode = VK_PRESENT_MODE_FIFO_KHR;
+    cout << "       present mode: " << string_VkPresentModeKHR(selected_surface_present_mode) << endl;
+
+    VkExtent2D selected_extent;
+    if (swap_chain_info.capabilities.currentExtent.width != UINT32_MAX)
+        selected_extent = swap_chain_info.capabilities.currentExtent;
+    else
+    {
+        int width;
+        int height;
+        glfwGetFramebufferSize(window, &width, &height);
+
+        selected_extent.width = (uint32_t)width;
+        selected_extent.height = (uint32_t)height;
+
+        selected_extent.width = clamp(selected_extent.width, swap_chain_info.capabilities.minImageExtent.width, swap_chain_info.capabilities.maxImageExtent.width);
+        selected_extent.height = clamp(selected_extent.height, swap_chain_info.capabilities.minImageExtent.height, swap_chain_info.capabilities.maxImageExtent.height);
+    }
+
+    cout << "       extent: " << selected_extent.width << "," << selected_extent.height << endl;
+
+    uint32_t selected_image_count = swap_chain_info.capabilities.minImageCount + 1;
+    if (swap_chain_info.capabilities.maxImageCount > 0 && selected_image_count > swap_chain_info.capabilities.maxImageCount)
+        selected_image_count = swap_chain_info.capabilities.maxImageCount;
+    
+    cout << "       image count: " << selected_image_count << endl;
+
+    VkSwapchainCreateInfoKHR swap_chain_create_info{ };
+    swap_chain_create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    swap_chain_create_info.surface = surface;
+    swap_chain_create_info.minImageCount = selected_image_count;
+    swap_chain_create_info.imageFormat = selected_surface_format.format;
+    swap_chain_create_info.imageColorSpace = selected_surface_format.colorSpace;
+    swap_chain_create_info.imageExtent = selected_extent;
+    swap_chain_create_info.imageArrayLayers = 1;
+    swap_chain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+    if (queue_families[PTQueueFamily::PRESENT] != queue_families[PTQueueFamily::GRAPHICS])
+    {
+        vector<uint32_t> queue_family_indices(queue_families.size());
+        for (pair<PTQueueFamily, uint32_t> family : queue_families)
+            queue_family_indices.push_back(family.second);
+        swap_chain_create_info.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
+        swap_chain_create_info.queueFamilyIndexCount = queue_family_indices.size();
+        swap_chain_create_info.pQueueFamilyIndices = queue_family_indices.data();
+    }
+    else
+        swap_chain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    swap_chain_create_info.preTransform = swap_chain_info.capabilities.currentTransform;
+    swap_chain_create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+    swap_chain_create_info.presentMode = selected_surface_present_mode;
+    swap_chain_create_info.clipped = VK_TRUE;
+    swap_chain_create_info.oldSwapchain = VK_NULL_HANDLE;
+
+    if (vkCreateSwapchainKHR(device, &swap_chain_create_info, nullptr, &swap_chain) != VK_SUCCESS)
+        throw runtime_error("unable to create swap chain");
+    cout << "   done." << endl;
+
+    cout << "   retrieving images..." << endl;
+    vkGetSwapchainImagesKHR(device, swap_chain, &selected_image_count, nullptr);
+    swap_chain_images.resize(selected_image_count);
+    vkGetSwapchainImagesKHR(device, swap_chain, &selected_image_count, swap_chain_images.data());
+
+    swap_chain_image_format = selected_surface_format.format;
+    swap_chain_extent = selected_extent;
+    cout << "   done." << endl;
+
     cout << "done." << endl;
 }
 
@@ -215,6 +298,8 @@ void PTApplication::mainLoop()
 
 void PTApplication::deinitVulkan()
 {
+    vkDestroySwapchainKHR(device, swap_chain, nullptr);
+
     vkDestroyDevice(device, nullptr);
 
     vkDestroySurfaceKHR(instance, surface, nullptr);
