@@ -278,6 +278,7 @@ void PTApplication::initVulkan()
         throw runtime_error("unable to create swap chain");
     cout << "   done." << endl;
 
+    // retrieve images from the swap chain
     cout << "   retrieving images..." << endl;
     vkGetSwapchainImagesKHR(device, swap_chain, &selected_image_count, nullptr);
     swap_chain_images.resize(selected_image_count);
@@ -286,6 +287,30 @@ void PTApplication::initVulkan()
     swap_chain_image_format = selected_surface_format.format;
     swap_chain_extent = selected_extent;
     cout << "   done." << endl;
+
+    // construct image views
+    cout << "   constructing image views..." << endl;
+    swap_chain_image_views.resize(swap_chain_images.size());
+    for (size_t i = 0; i < swap_chain_images.size(); i++)
+    {
+        VkImageViewCreateInfo image_view_create_info{ };
+        image_view_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        image_view_create_info.image = swap_chain_images[i];
+        image_view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        image_view_create_info.format = swap_chain_image_format;
+        image_view_create_info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+        image_view_create_info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+        image_view_create_info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+        image_view_create_info.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+        image_view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        image_view_create_info.subresourceRange.baseMipLevel = 0;
+        image_view_create_info.subresourceRange.levelCount = 1;
+        image_view_create_info.subresourceRange.baseArrayLayer = 0;
+        image_view_create_info.subresourceRange.layerCount = 1;
+
+        if (vkCreateImageView(device, &image_view_create_info, nullptr, &swap_chain_image_views[i]) != VK_SUCCESS)
+            throw runtime_error("unable to create image view");
+    }
 
     cout << "done." << endl;
 }
@@ -298,6 +323,9 @@ void PTApplication::mainLoop()
 
 void PTApplication::deinitVulkan()
 {
+    for (auto image_view : swap_chain_image_views)
+        vkDestroyImageView(device, image_view, nullptr);
+
     vkDestroySwapchainKHR(device, swap_chain, nullptr);
 
     vkDestroyDevice(device, nullptr);

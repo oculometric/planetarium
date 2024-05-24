@@ -46,9 +46,10 @@ private:
     VkDevice device;
 
     VkSwapchainKHR swap_chain;
-    vector<VkImage> swap_chain_images;
     VkFormat swap_chain_image_format;
     VkExtent2D swap_chain_extent;
+    vector<VkImage> swap_chain_images;
+    vector<VkImageView> swap_chain_image_views;
 
     map<PTQueueFamily, VkQueue> queues;
     
