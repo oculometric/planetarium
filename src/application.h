@@ -69,5 +69,14 @@ private:
     void deinitVulkan();
     void deinitWindow();
 
+    void initVulkanInstance(vector<const char*>& layers);
+    void initSurface();
+    void initPhysicalDevice(PTQueueFamilies& queue_families, PTSwapChainDetails& swap_chain_info);
+    void constructQueues(const PTQueueFamilies& queue_families, vector<VkDeviceQueueCreateInfo>& queue_create_infos);
+    void initLogicalDevice(const vector<VkDeviceQueueCreateInfo>& queue_create_infos, const vector<const char*>& layers);
+    void collectQueues(const PTQueueFamilies& queue_families);
+    void initSwapChain(const PTSwapChainDetails& swap_chain_info, PTQueueFamilies& queue_families, VkSurfaceFormatKHR& selected_surface_format, VkExtent2D& selected_extent, uint32_t& selected_image_count);
+    void collectSwapChainImages(const VkSurfaceFormatKHR& selected_surface_format, const VkExtent2D& selected_extent, uint32_t& selected_image_count);
+
     int evaluatePhysicalDevice(VkPhysicalDevice d, PTQueueFamilies& families, PTSwapChainDetails& swap_chain);
 };
