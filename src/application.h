@@ -60,6 +60,13 @@ private:
 
 public:
     PTApplication(unsigned int _width, unsigned int _height);
+
+    PTApplication() = delete;
+    PTApplication(PTApplication& other) = delete;
+    PTApplication(PTApplication&& other) = delete;
+    void operator=(PTApplication& other) = delete;
+    void operator=(PTApplication&& other) = delete;
+
     void start();
 
 private:

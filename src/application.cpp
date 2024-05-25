@@ -76,6 +76,9 @@ void PTApplication::initVulkan()
     // retrieve images from the swap chain
     collectSwapChainImages(selected_surface_format, selected_extent, selected_image_count);
 
+    // initialise a basic pipeline
+    // TODO: here
+
     cout << "done." << endl;
 }
 

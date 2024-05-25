@@ -45,7 +45,8 @@
         "streambuf": "cpp",
         "typeinfo": "cpp",
         "cstring": "cpp",
-        "set": "cpp"
+        "set": "cpp",
+        "fstream": "cpp"
     },
     "C_Cpp.default.compilerPath": "/usr/bin/g++"
 }
