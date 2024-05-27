@@ -5,6 +5,7 @@
 #include <vulkan/vulkan.h>
 #include <map>
 #include <vector>
+#include <pipeline.h>
 
 using namespace std;
 
@@ -84,6 +85,7 @@ private:
     void collectQueues(const PTQueueFamilies& queue_families);
     void initSwapChain(const PTSwapChainDetails& swap_chain_info, PTQueueFamilies& queue_families, VkSurfaceFormatKHR& selected_surface_format, VkExtent2D& selected_extent, uint32_t& selected_image_count);
     void collectSwapChainImages(const VkSurfaceFormatKHR& selected_surface_format, const VkExtent2D& selected_extent, uint32_t& selected_image_count);
+    PTPipeline constructPipeline(const VkShaderModule& vert_shader, const VkShaderModule& frag_shader);
 
     int evaluatePhysicalDevice(VkPhysicalDevice d, PTQueueFamilies& families, PTSwapChainDetails& swap_chain);
 };

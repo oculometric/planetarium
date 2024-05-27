@@ -42,7 +42,7 @@ void PTApplication::initWindow()
 void PTApplication::initVulkan()
 {
     cout << "initialising vulkan..." << endl;
-    
+
     // initialise vulkan app instance
     vector<const char*> layers;
     initVulkanInstance(layers);
@@ -98,7 +98,7 @@ void PTApplication::deinitVulkan()
     vkDestroyDevice(device, nullptr);
 
     vkDestroySurfaceKHR(instance, surface, nullptr);
-    
+
     vkDestroyInstance(instance, nullptr);
 }
 
@@ -121,28 +121,28 @@ void PTApplication::initVulkanInstance(vector<const char*>& layers)
     app_info.engineVersion = VK_MAKE_VERSION(1, 0, 0);
     app_info.apiVersion = VK_API_VERSION_1_3;
 
-    #ifndef NDEBUG
-        // get debug validation layer
-        cout << "   searching for debug validation layer..." << endl;
-        uint32_t layer_count;
-        vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
-        std::vector<VkLayerProperties> available_layers(layer_count);
-        vkEnumerateInstanceLayerProperties(&layer_count, available_layers.data());
+#ifndef NDEBUG
+    // get debug validation layer
+    cout << "   searching for debug validation layer..." << endl;
+    uint32_t layer_count;
+    vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
+    std::vector<VkLayerProperties> available_layers(layer_count);
+    vkEnumerateInstanceLayerProperties(&layer_count, available_layers.data());
 
-        bool debug_layer_found = false;
-        const char* target_debug_layer = "VK_LAYER_KHRONOS_validation";
-        for (VkLayerProperties layer : available_layers)
+    bool debug_layer_found = false;
+    const char* target_debug_layer = "VK_LAYER_KHRONOS_validation";
+    for (VkLayerProperties layer : available_layers)
+    {
+        if (strcmp(layer.layerName, target_debug_layer))
         {
-            if (strcmp(layer.layerName, target_debug_layer))
-            {
-                debug_layer_found = true;
-                break;
-            }
+            debug_layer_found = true;
+            break;
         }
-        if (!debug_layer_found)
-            throw std::runtime_error("unable to access VK debug validation layer");
-        cout << "   debug validation layer found (" << target_debug_layer << ")" << endl;
-    #endif
+    }
+    if (!debug_layer_found)
+        throw std::runtime_error("unable to access VK debug validation layer");
+    cout << "   debug validation layer found (" << target_debug_layer << ")" << endl;
+#endif
 
     // instance creation
     VkInstanceCreateInfo create_info{ };
@@ -152,15 +152,15 @@ void PTApplication::initVulkanInstance(vector<const char*>& layers)
     const char** glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extension_count);
     create_info.enabledExtensionCount = glfw_extension_count;
     create_info.ppEnabledExtensionNames = glfw_extensions;
-    #ifdef NDEBUG
-        create_info.enabledLayerCount = 0;
-        create_info.ppEnabledLayerNames = nullptr;
-    #else
-        layers.clear();
-        layers.push_back(target_debug_layer);
-        create_info.enabledLayerCount = layers.size();
-        create_info.ppEnabledLayerNames = layers.data();
-    #endif
+#ifdef NDEBUG
+    create_info.enabledLayerCount = 0;
+    create_info.ppEnabledLayerNames = nullptr;
+#else
+    layers.clear();
+    layers.push_back(target_debug_layer);
+    create_info.enabledLayerCount = layers.size();
+    create_info.ppEnabledLayerNames = layers.data();
+#endif
     cout << "   extensions enabled:" << endl;
     for (size_t i = 0; i < glfw_extension_count; i++)
         cout << "       " << glfw_extensions[i] << endl;
@@ -252,16 +252,16 @@ void PTApplication::initLogicalDevice(const vector<VkDeviceQueueCreateInfo>& que
 
     device_create_info.pEnabledFeatures = &features;
 
-    cout << "       enabling " << sizeof(required_device_extensions)/sizeof(required_device_extensions[0]) << " device extensions" << endl;
-    device_create_info.enabledExtensionCount = sizeof(required_device_extensions)/sizeof(required_device_extensions[0]);
+    cout << "       enabling " << sizeof(required_device_extensions) / sizeof(required_device_extensions[0]) << " device extensions" << endl;
+    device_create_info.enabledExtensionCount = sizeof(required_device_extensions) / sizeof(required_device_extensions[0]);
     device_create_info.ppEnabledExtensionNames = required_device_extensions;
-    #ifdef NDEBUG
-        device_create_info.enabledLayerCount = 0;
-    #else
-        cout << "       enabling " << layers.size() << " layers" << endl;
-        device_create_info.enabledLayerCount = layers.size();
-        device_create_info.ppEnabledLayerNames = layers.data();
-    #endif
+#ifdef NDEBUG
+    device_create_info.enabledLayerCount = 0;
+#else
+    cout << "       enabling " << layers.size() << " layers" << endl;
+    device_create_info.enabledLayerCount = layers.size();
+    device_create_info.ppEnabledLayerNames = layers.data();
+#endif
 
     if (vkCreateDevice(physical_device, &device_create_info, nullptr, &device) != VK_SUCCESS)
         throw runtime_error("unable to create device");
@@ -319,7 +319,7 @@ void PTApplication::initSwapChain(const PTSwapChainDetails& swap_chain_info, PTQ
     selected_image_count = swap_chain_info.capabilities.minImageCount + 1;
     if (swap_chain_info.capabilities.maxImageCount > 0 && selected_image_count > swap_chain_info.capabilities.maxImageCount)
         selected_image_count = swap_chain_info.capabilities.maxImageCount;
-    
+
     cout << "       image count: " << selected_image_count << endl;
 
     VkSwapchainCreateInfoKHR swap_chain_create_info{ };
@@ -357,7 +357,7 @@ void PTApplication::initSwapChain(const PTSwapChainDetails& swap_chain_info, PTQ
 
 void PTApplication::collectSwapChainImages(const VkSurfaceFormatKHR& selected_surface_format, const VkExtent2D& selected_extent, uint32_t& selected_image_count)
 {
-        cout << "   retrieving images..." << endl;
+    cout << "   retrieving images..." << endl;
     vkGetSwapchainImagesKHR(device, swap_chain, &selected_image_count, nullptr);
     swap_chain_images.resize(selected_image_count);
     vkGetSwapchainImagesKHR(device, swap_chain, &selected_image_count, swap_chain_images.data());
@@ -392,10 +392,118 @@ void PTApplication::collectSwapChainImages(const VkSurfaceFormatKHR& selected_su
     cout << "   created " << swap_chain_image_views.size() << " image views." << endl;
 }
 
+PTPipeline PTApplication::constructPipeline(const VkShaderModule& vert_shader, const VkShaderModule& frag_shader)
+{
+    // TODO: convert to param
+    std::vector<VkDynamicState> dynamic_states =
+    { };
+    VkPipelineDynamicStateCreateInfo dynamic_state_create_info{ };
+    dynamic_state_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+    dynamic_state_create_info.dynamicStateCount = static_cast<uint32_t>(dynamic_states.size());
+    dynamic_state_create_info.pDynamicStates = dynamic_states.data();
+
+    // TODO: passing in of vertices
+    VkPipelineVertexInputStateCreateInfo vertex_input_create_info{ };
+    vertex_input_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+    vertex_input_create_info.vertexBindingDescriptionCount = 0;
+    vertex_input_create_info.pVertexBindingDescriptions = nullptr;
+    vertex_input_create_info.vertexAttributeDescriptionCount = 0;
+    vertex_input_create_info.pVertexAttributeDescriptions = nullptr;
+
+    // TODO: needs options to switch to line mode
+    VkPipelineInputAssemblyStateCreateInfo input_assembly_create_info{ };
+    input_assembly_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+    input_assembly_create_info.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+    input_assembly_create_info.primitiveRestartEnable = VK_FALSE;
+
+    VkViewport viewport{ };
+    viewport.x = 0.0f;
+    viewport.y = 0.0f;
+    viewport.width = (float)swap_chain_extent.width;
+    viewport.height = (float)swap_chain_extent.height;
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+
+    VkRect2D scissor{ };
+    scissor.offset = { 0, 0 };
+    scissor.extent = swap_chain_extent;
+
+    // TODO: this could be converted to a dynamic state
+    VkPipelineViewportStateCreateInfo viewport_state_create_info{ };
+    viewport_state_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+    viewport_state_create_info.viewportCount = 1;
+    viewport_state_create_info.pViewports = &viewport;
+    viewport_state_create_info.scissorCount = 1;
+    viewport_state_create_info.pScissors = &scissor;
+
+    // TODO: enable line rendering, requires GPU feature
+    VkPipelineRasterizationStateCreateInfo rasteriser_create_info{ };
+    rasteriser_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+    rasteriser_create_info.depthClampEnable = VK_FALSE;
+    rasteriser_create_info.rasterizerDiscardEnable = VK_FALSE;
+    rasteriser_create_info.polygonMode = VK_POLYGON_MODE_FILL;
+    rasteriser_create_info.lineWidth = 1.0f;
+    rasteriser_create_info.cullMode = VK_CULL_MODE_BACK_BIT;
+    rasteriser_create_info.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+    rasteriser_create_info.depthBiasEnable = VK_FALSE;
+    rasteriser_create_info.depthBiasConstantFactor = 0.0f;
+    rasteriser_create_info.depthBiasClamp = 0.0f;
+    rasteriser_create_info.depthBiasSlopeFactor = 0.0f;
+
+    VkPipelineMultisampleStateCreateInfo multisampling_create_info{ };
+    multisampling_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+    multisampling_create_info.sampleShadingEnable = VK_FALSE;
+    multisampling_create_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+    multisampling_create_info.minSampleShading = 1.0f;
+    multisampling_create_info.pSampleMask = nullptr;
+    multisampling_create_info.alphaToCoverageEnable = VK_FALSE;
+    multisampling_create_info.alphaToOneEnable = VK_FALSE;
+
+    VkPipelineColorBlendAttachmentState colour_blend_attachment{ };
+    colour_blend_attachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    colour_blend_attachment.blendEnable = VK_TRUE;
+    colour_blend_attachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+    colour_blend_attachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    colour_blend_attachment.colorBlendOp = VK_BLEND_OP_ADD;
+    colour_blend_attachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+    colour_blend_attachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+    colour_blend_attachment.alphaBlendOp = VK_BLEND_OP_ADD;
+
+    VkPipelineColorBlendStateCreateInfo colour_blend_create_info{ };
+    colour_blend_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    colour_blend_create_info.logicOpEnable = VK_FALSE;
+    colour_blend_create_info.logicOp = VK_LOGIC_OP_COPY;
+    colour_blend_create_info.attachmentCount = 1;
+    colour_blend_create_info.pAttachments = &colour_blend_attachment;
+    colour_blend_create_info.blendConstants[0] = 0.0f;
+    colour_blend_create_info.blendConstants[1] = 0.0f;
+    colour_blend_create_info.blendConstants[2] = 0.0f;
+    colour_blend_create_info.blendConstants[3] = 0.0f;
+
+    // TODO: move all this code into the pipeline class?
+    PTPipeline pipeline;
+
+    VkPipelineLayoutCreateInfo pipeline_layout_create_info{ };
+    pipeline_layout_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipeline_layout_create_info.setLayoutCount = 0;
+    pipeline_layout_create_info.pSetLayouts = nullptr;
+    pipeline_layout_create_info.pushConstantRangeCount = 0;
+    pipeline_layout_create_info.pPushConstantRanges = nullptr;
+
+    if (vkCreatePipelineLayout(device, &pipeline_layout_create_info, nullptr, &(pipeline.layout)) != VK_SUCCESS)
+        throw runtime_error("unable to create pipeline layout");
+
+
+
+    // TODO: destroy pipeline layout
+
+    return pipeline;
+}
+
 int PTApplication::evaluatePhysicalDevice(VkPhysicalDevice d, PTQueueFamilies& families, PTSwapChainDetails& swap_chain)
 {
     int score = 0;
-    
+
     // fetch information about the device
     VkPhysicalDeviceFeatures device_features;
     VkPhysicalDeviceProperties device_properties;
