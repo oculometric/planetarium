@@ -10,7 +10,7 @@ PTShader::PTShader(VkDevice _device, const string shader_path_stub)
         createShaderModules(vert, frag);
 }
 
-vector<VkPipelineShaderStageCreateInfo> PTShader::getStageCreateInfo()
+vector<VkPipelineShaderStageCreateInfo> PTShader::getStageCreateInfo() const
 {
     vector<VkPipelineShaderStageCreateInfo> infos;
 

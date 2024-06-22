@@ -2,6 +2,8 @@
 
 #include <vulkan/vulkan.h>
 
+#include "shader.h"
+
 struct PTPipeline
 {
     VkPipelineLayout layout;

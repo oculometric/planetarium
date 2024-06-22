@@ -48,7 +48,14 @@
         "set": "cpp",
         "fstream": "cpp",
         "map": "cpp",
-        "cinttypes": "cpp"
+        "cinttypes": "cpp",
+        "format": "cpp",
+        "charconv": "cpp",
+        "ctime": "cpp",
+        "optional": "cpp",
+        "span": "cpp",
+        "text_encoding": "cpp",
+        "variant": "cpp"
     },
     "C_Cpp.default.compilerPath": "/usr/bin/g++"
 }

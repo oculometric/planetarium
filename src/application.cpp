@@ -77,7 +77,11 @@ void PTApplication::initVulkan()
     collectSwapChainImages(selected_surface_format, selected_extent, selected_image_count);
 
     // initialise a basic pipeline
-    // TODO: here
+    demo_shader = new PTShader(device, "demo");
+    demo_render_pass = createRenderPass();
+    demo_pipeline = constructPipeline(*demo_shader, demo_render_pass);
+
+    createFramebuffers(demo_render_pass);
 
     cout << "done." << endl;
 }
@@ -90,6 +94,14 @@ void PTApplication::mainLoop()
 
 void PTApplication::deinitVulkan()
 {
+    for (auto framebuffer : framebuffers)
+        vkDestroyFramebuffer(device, framebuffer, nullptr);
+
+    vkDestroyPipeline(device, demo_pipeline.pipeline, nullptr);
+    vkDestroyPipelineLayout(device, demo_pipeline.layout, nullptr);
+    delete demo_shader;
+    vkDestroyRenderPass(device, demo_render_pass, nullptr);
+
     for (auto image_view : swap_chain_image_views)
         vkDestroyImageView(device, image_view, nullptr);
 
@@ -392,11 +404,53 @@ void PTApplication::collectSwapChainImages(const VkSurfaceFormatKHR& selected_su
     cout << "   created " << swap_chain_image_views.size() << " image views." << endl;
 }
 
-PTPipeline PTApplication::constructPipeline(const VkShaderModule& vert_shader, const VkShaderModule& frag_shader)
+VkRenderPass PTApplication::createRenderPass()
 {
+    cout << "   creating render pass..." << endl;
+
+    VkAttachmentDescription colour_attachment{ };
+    colour_attachment.format = swap_chain_image_format;
+    colour_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    colour_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    colour_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    colour_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    colour_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    colour_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    colour_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+    VkAttachmentReference colour_attachment_ref{ };
+    colour_attachment_ref.attachment = 0;
+    colour_attachment_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkSubpassDescription subpass{ };
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &colour_attachment_ref;
+
+    VkRenderPassCreateInfo render_pass_create_info{ };
+    render_pass_create_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    render_pass_create_info.attachmentCount = 1;
+    render_pass_create_info.pAttachments = &colour_attachment;
+    render_pass_create_info.subpassCount = 1;
+    render_pass_create_info.pSubpasses = &subpass;
+
+    VkRenderPass render_pass;
+
+    if (vkCreateRenderPass(device, &render_pass_create_info, nullptr, &render_pass) != VK_SUCCESS)
+        throw std::runtime_error("  unable to create render pass");
+
+    cout << "   done." << endl;
+
+    return render_pass;
+}
+
+PTPipeline PTApplication::constructPipeline(const PTShader& shader, const VkRenderPass render_pass)
+{
+    cout << "   constructing pipeline..." << endl;
+    // TODO: move all this code into the pipeline class?
+
     // TODO: convert to param
-    std::vector<VkDynamicState> dynamic_states =
-    { };
+    std::vector<VkDynamicState> dynamic_states = { };
     VkPipelineDynamicStateCreateInfo dynamic_state_create_info{ };
     dynamic_state_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
     dynamic_state_create_info.dynamicStateCount = static_cast<uint32_t>(dynamic_states.size());
@@ -480,9 +534,6 @@ PTPipeline PTApplication::constructPipeline(const VkShaderModule& vert_shader, c
     colour_blend_create_info.blendConstants[2] = 0.0f;
     colour_blend_create_info.blendConstants[3] = 0.0f;
 
-    // TODO: move all this code into the pipeline class?
-    PTPipeline pipeline;
-
     VkPipelineLayoutCreateInfo pipeline_layout_create_info{ };
     pipeline_layout_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipeline_layout_create_info.setLayoutCount = 0;
@@ -490,14 +541,73 @@ PTPipeline PTApplication::constructPipeline(const VkShaderModule& vert_shader, c
     pipeline_layout_create_info.pushConstantRangeCount = 0;
     pipeline_layout_create_info.pPushConstantRanges = nullptr;
 
+    cout << "       creating pipeline layout... ";
+
+    PTPipeline pipeline;
+
     if (vkCreatePipelineLayout(device, &pipeline_layout_create_info, nullptr, &(pipeline.layout)) != VK_SUCCESS)
         throw runtime_error("unable to create pipeline layout");
 
+    cout << "done." << endl;
+
+    cout << "       creating graphics pipeline... ";
+
+    vector<VkPipelineShaderStageCreateInfo> shader_stages = shader.getStageCreateInfo();
+
+    VkGraphicsPipelineCreateInfo pipeline_create_info{ };
+    pipeline_create_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    pipeline_create_info.stageCount = 2;
+    pipeline_create_info.pStages = shader_stages.data();
+    pipeline_create_info.pVertexInputState = &vertex_input_create_info;
+    pipeline_create_info.pInputAssemblyState = &input_assembly_create_info;
+    pipeline_create_info.pViewportState = &viewport_state_create_info;
+    pipeline_create_info.pRasterizationState = &rasteriser_create_info;
+    pipeline_create_info.pMultisampleState = &multisampling_create_info;
+    pipeline_create_info.pDepthStencilState = nullptr;
+    pipeline_create_info.pColorBlendState = &colour_blend_create_info;
+    pipeline_create_info.pDynamicState = &dynamic_state_create_info;
+    pipeline_create_info.layout = pipeline.layout;
+    pipeline_create_info.renderPass = render_pass;
+    pipeline_create_info.subpass = 0;
+    pipeline_create_info.basePipelineHandle = VK_NULL_HANDLE;
+    pipeline_create_info.basePipelineIndex = -1;
 
 
-    // TODO: destroy pipeline layout
+    if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipeline_create_info, nullptr, &(pipeline.pipeline)) != VK_SUCCESS)
+        throw std::runtime_error("unable to create to create graphics pipeline");
+    
+    cout << "done." << endl;
+
+    cout << "   done." << endl;
 
     return pipeline;
+}
+
+void PTApplication::createFramebuffers(const VkRenderPass render_pass)
+{
+    cout << "   creating framebuffers..." << endl;
+
+    framebuffers.resize(swap_chain_image_views.size());
+
+    for (size_t i = 0; i < swap_chain_image_views.size(); i++)
+    {
+        VkImageView attachments[] = { swap_chain_image_views[i] };
+
+        VkFramebufferCreateInfo framebuffer_create_info{ };
+        framebuffer_create_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        framebuffer_create_info.renderPass = render_pass;
+        framebuffer_create_info.attachmentCount = 1;
+        framebuffer_create_info.pAttachments = attachments;
+        framebuffer_create_info.width = swap_chain_extent.width;
+        framebuffer_create_info.height = swap_chain_extent.height;
+        framebuffer_create_info.layers = 1;
+
+        if (vkCreateFramebuffer(device, &framebuffer_create_info, nullptr, &framebuffers[i]) != VK_SUCCESS)
+            throw std::runtime_error("unable to create framebuffer");
+    }
+
+    cout << "       created " << framebuffers.size() << " framebuffer objects" << endl;
+    cout << "   done." << endl;
 }
 
 int PTApplication::evaluatePhysicalDevice(VkPhysicalDevice d, PTQueueFamilies& families, PTSwapChainDetails& swap_chain)

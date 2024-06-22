@@ -21,7 +21,7 @@ public:
     void operator=(PTShader& other) = delete;
     void operator=(PTShader&& other) = delete;
 
-    vector<VkPipelineShaderStageCreateInfo> getStageCreateInfo();
+    vector<VkPipelineShaderStageCreateInfo> getStageCreateInfo() const;
 
     ~PTShader();
 private:

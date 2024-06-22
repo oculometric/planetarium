@@ -6,6 +6,7 @@
 #include <map>
 #include <vector>
 #include "pipeline.h"
+#include "shader.h"
 
 using namespace std;
 
@@ -51,9 +52,14 @@ private:
     VkExtent2D swap_chain_extent;
     vector<VkImage> swap_chain_images;
     vector<VkImageView> swap_chain_image_views;
+    vector<VkFramebuffer> framebuffers;
 
     map<PTQueueFamily, VkQueue> queues;
     
+    VkRenderPass demo_render_pass;
+    PTPipeline demo_pipeline;
+    PTShader* demo_shader;
+
     static constexpr char* required_device_extensions[1] =
     {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME
@@ -85,7 +91,9 @@ private:
     void collectQueues(const PTQueueFamilies& queue_families);
     void initSwapChain(const PTSwapChainDetails& swap_chain_info, PTQueueFamilies& queue_families, VkSurfaceFormatKHR& selected_surface_format, VkExtent2D& selected_extent, uint32_t& selected_image_count);
     void collectSwapChainImages(const VkSurfaceFormatKHR& selected_surface_format, const VkExtent2D& selected_extent, uint32_t& selected_image_count);
-    PTPipeline constructPipeline(const VkShaderModule& vert_shader, const VkShaderModule& frag_shader);
+    VkRenderPass createRenderPass();
+    PTPipeline constructPipeline(const PTShader& shader, const VkRenderPass render_pass);
+    void createFramebuffers(const VkRenderPass render_pass);
 
     int evaluatePhysicalDevice(VkPhysicalDevice d, PTQueueFamilies& families, PTSwapChainDetails& swap_chain);
 };
