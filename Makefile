@@ -9,7 +9,7 @@ CC_INCLUDE		:=
 
 LD				:= g++
 LD_FLAGS		:= -g
-LD_INCLUDE		:= -lpthread -lglfw -lvulkan -ldl -lX11 -lXxf86vm -lXrandr -lXi
+LD_INCLUDE		:= -lpthread -lglfw -lvulkan -ldl -lX11  -lXrandr -lXi
 
 SC				:= glslc
 SC_FLAGS		:=

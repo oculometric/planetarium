@@ -7,7 +7,7 @@
 #include <set>
 #include <algorithm>
 
-#include <vulkan/vk_enum_string_helper.h>
+//#include <vulkan/vk_enum_string_helper.h>
 
 PTApplication::PTApplication(unsigned int _width, unsigned int _height)
 {
@@ -169,7 +169,7 @@ void PTApplication::initVulkanInstance(vector<const char*>& layers)
     VkResult result = vkCreateInstance(&create_info, nullptr, &instance);
     if (result != VK_SUCCESS)
     {
-        cout << "   VK instance creation failed: " << string_VkResult(result) << endl;
+        cout << "   VK instance creation failed: " << /*string_VkResult(result) <<*/ endl;
         throw runtime_error("unable to create VK instance");
     }
     cout << "   done." << endl;
@@ -293,11 +293,11 @@ void PTApplication::initSwapChain(const PTSwapChainDetails& swap_chain_info, PTQ
             break;
         }
     }
-    cout << "       surface format: " << string_VkFormat(selected_surface_format.format) << endl;
-    cout << "       colour space: " << string_VkColorSpaceKHR(selected_surface_format.colorSpace) << endl;
+    cout << "       surface format: " << /*string_VkFormat(selected_surface_format.format) <<*/ endl;
+    cout << "       colour space: " << /*string_VkColorSpaceKHR(selected_surface_format.colorSpace) <<*/ endl;
 
     VkPresentModeKHR selected_surface_present_mode = VK_PRESENT_MODE_FIFO_KHR;
-    cout << "       present mode: " << string_VkPresentModeKHR(selected_surface_present_mode) << endl;
+    cout << "       present mode: " << /*string_VkPresentModeKHR(selected_surface_present_mode) <<*/ endl;
 
     if (swap_chain_info.capabilities.currentExtent.width != UINT32_MAX)
         selected_extent = swap_chain_info.capabilities.currentExtent;
