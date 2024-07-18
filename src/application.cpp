@@ -86,17 +86,103 @@ void PTApplication::initVulkan()
 
     createCommandPoolAndBuffer(queue_families);
 
+    createSyncObjects();
+
     cout << "done." << endl;
 }
 
 void PTApplication::mainLoop()
 {
+    cout << endl;
+    cout << endl;
+
+    last_frame_start = chrono::high_resolution_clock::now();
     while (!glfwWindowShouldClose(window))
+    {
         glfwPollEvents();
+
+        // TODO: move the following into appropriate functions, this is just a test
+        vkWaitForFences(device, 1, &in_flight_fence, VK_TRUE, UINT64_MAX);
+        vkResetFences(device, 1, &in_flight_fence);
+
+        uint32_t image_index;
+        vkAcquireNextImageKHR(device, swap_chain, UINT64_MAX, image_available_semaphore, VK_NULL_HANDLE, &image_index);
+
+        vkResetCommandBuffer(command_buffer, 0);
+
+        VkCommandBufferBeginInfo command_buffer_begin_info{ };
+        command_buffer_begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        command_buffer_begin_info.flags = 0;
+        command_buffer_begin_info.pInheritanceInfo = nullptr;
+
+        if (vkBeginCommandBuffer(command_buffer, &command_buffer_begin_info) != VK_SUCCESS)
+            throw std::runtime_error("unable to begin recording command buffer");
+
+        VkRenderPassBeginInfo render_pass_begin_info{ };
+        render_pass_begin_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        render_pass_begin_info.renderPass = demo_render_pass;
+        render_pass_begin_info.framebuffer = framebuffers[image_index];
+        render_pass_begin_info.renderArea.offset = { 0, 0 };
+        render_pass_begin_info.renderArea.extent = swap_chain_extent;
+        VkClearValue clear_color = {{{1.0f, 0.0f, 1.0f, 1.0f}}};
+        render_pass_begin_info.clearValueCount = 1;
+        render_pass_begin_info.pClearValues = &clear_color;
+
+        vkCmdBeginRenderPass(command_buffer, &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+        vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, demo_pipeline.pipeline);
+        vkCmdDraw(command_buffer, 3, 1, 0, 0);
+        vkCmdEndRenderPass(command_buffer);
+
+        if (vkEndCommandBuffer(command_buffer) != VK_SUCCESS)
+            throw std::runtime_error("unable to record command buffer");
+
+        VkSubmitInfo submit_info{ };
+        submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        VkSemaphore submit_wait_semaphores[] = { image_available_semaphore };
+        VkPipelineStageFlags submit_wait_stages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+        submit_info.waitSemaphoreCount = 1;
+        submit_info.pWaitSemaphores = submit_wait_semaphores;
+        submit_info.pWaitDstStageMask = submit_wait_stages;
+        submit_info.commandBufferCount = 1;
+        submit_info.pCommandBuffers = &command_buffer;
+        VkSemaphore signal_semaphores[] = { render_finished_semaphore };
+        submit_info.signalSemaphoreCount = 1;
+        submit_info.pSignalSemaphores = signal_semaphores;
+
+        if (vkQueueSubmit(queues[PTQueueFamily::GRAPHICS], 1, &submit_info, in_flight_fence) != VK_SUCCESS)
+            throw std::runtime_error("unable to submit draw command buffer");
+
+        VkPresentInfoKHR present_info{ };
+        present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+        present_info.waitSemaphoreCount = 1;
+        present_info.pWaitSemaphores = signal_semaphores;
+        VkSwapchainKHR swap_chains[] = { swap_chain };
+        present_info.swapchainCount = 1;
+        present_info.pSwapchains = swap_chains;
+        present_info.pImageIndices = &image_index;
+        present_info.pResults = nullptr;
+
+        if (vkQueuePresentKHR(queues[PTQueueFamily::PRESENT], &present_info) != VK_SUCCESS)
+            throw std::runtime_error("unable to present swapchain image");
+        
+        auto now = chrono::high_resolution_clock::now();
+        auto frame_time = now - last_frame_start;
+
+        cout << "\r                                                ";
+        cout << '\r' << "frame time: " << chrono::duration_cast<chrono::milliseconds>(frame_time).count() << " ms";
+        cout.flush();
+        last_frame_start = now;
+    }
+    
+    vkDeviceWaitIdle(device);
 }
 
 void PTApplication::deinitVulkan()
 {
+    vkDestroySemaphore(device, image_available_semaphore, nullptr);
+    vkDestroySemaphore(device, render_finished_semaphore, nullptr);
+    vkDestroyFence(device, in_flight_fence, nullptr);
+
     vkDestroyCommandPool(device, command_pool, nullptr);
 
     for (auto framebuffer : framebuffers)
@@ -432,12 +518,22 @@ VkRenderPass PTApplication::createRenderPass()
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &colour_attachment_ref;
 
+    VkSubpassDependency dependency{ };
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass = 0;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.srcAccessMask = 0;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
     VkRenderPassCreateInfo render_pass_create_info{ };
     render_pass_create_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     render_pass_create_info.attachmentCount = 1;
     render_pass_create_info.pAttachments = &colour_attachment;
     render_pass_create_info.subpassCount = 1;
     render_pass_create_info.pSubpasses = &subpass;
+    render_pass_create_info.dependencyCount = 1;
+    render_pass_create_info.pDependencies = &dependency;
 
     VkRenderPass render_pass;
 
@@ -634,6 +730,25 @@ void PTApplication::createCommandPoolAndBuffer(const PTQueueFamilies& queue_fami
 
     if (vkAllocateCommandBuffers(device, &buffer_alloc_info, &command_buffer) != VK_SUCCESS)
         throw std::runtime_error("unable to allocate command buffer");
+}
+
+void PTApplication::createSyncObjects()
+{
+    VkSemaphoreCreateInfo semaphore_create_info{ };
+    semaphore_create_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+    
+    VkFenceCreateInfo fence_create_info{ };
+    fence_create_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fence_create_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+    if (vkCreateSemaphore(device, &semaphore_create_info, nullptr, &image_available_semaphore) != VK_SUCCESS)
+        throw std::runtime_error("unable to create semaphore");
+
+    if (vkCreateSemaphore(device, &semaphore_create_info, nullptr, &render_finished_semaphore) != VK_SUCCESS)
+        throw std::runtime_error("unable to create semaphore");
+    
+    if (vkCreateFence(device, &fence_create_info, nullptr, &in_flight_fence) != VK_SUCCESS)
+        throw std::runtime_error("unable to create fence");
 }
 
 int PTApplication::evaluatePhysicalDevice(VkPhysicalDevice d, PTQueueFamilies& families, PTSwapChainDetails& swap_chain)

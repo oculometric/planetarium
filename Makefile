@@ -39,6 +39,7 @@ $(BIN_DIR)/%_frag.spv: $(SHR_DIR)/%.frag $(BIN_DIR)
 	@$(SC) $< -o $@
 
 shaders: $(SC_FILES_OUT)
+	@cp $(SC_FILES_OUT) .
 
 build: $(BIN_DIR) $(CC_FILES_OUT) shaders
 	@echo "Linking" $(EXE_OUT)
@@ -49,3 +50,4 @@ execute: build
 
 clean:
 	@rm -r $(BIN_DIR)
+	@rm *.spv

@@ -7,6 +7,7 @@
 #include <vector>
 #include "pipeline.h"
 #include "shader.h"
+#include <chrono>
 
 using namespace std;
 
@@ -59,6 +60,9 @@ private:
     VkCommandPool command_pool;
     VkCommandBuffer command_buffer;
     
+    VkSemaphore image_available_semaphore;
+    VkSemaphore render_finished_semaphore;
+    VkFence in_flight_fence;
     VkRenderPass demo_render_pass;
     PTPipeline demo_pipeline;
     PTShader* demo_shader;
@@ -67,6 +71,8 @@ private:
     {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME
     };
+
+    chrono::system_clock::time_point last_frame_start;
 
 public:
     PTApplication(unsigned int _width, unsigned int _height);
@@ -98,6 +104,7 @@ private:
     PTPipeline constructPipeline(const PTShader& shader, const VkRenderPass render_pass);
     void createFramebuffers(const VkRenderPass render_pass);
     void createCommandPoolAndBuffer(const PTQueueFamilies& queue_families);
+    void createSyncObjects();
 
     int evaluatePhysicalDevice(VkPhysicalDevice d, PTQueueFamilies& families, PTSwapChainDetails& swap_chain);
 };
