@@ -55,6 +55,9 @@ private:
     vector<VkFramebuffer> framebuffers;
 
     map<PTQueueFamily, VkQueue> queues;
+
+    VkCommandPool command_pool;
+    VkCommandBuffer command_buffer;
     
     VkRenderPass demo_render_pass;
     PTPipeline demo_pipeline;
@@ -94,6 +97,7 @@ private:
     VkRenderPass createRenderPass();
     PTPipeline constructPipeline(const PTShader& shader, const VkRenderPass render_pass);
     void createFramebuffers(const VkRenderPass render_pass);
+    void createCommandPoolAndBuffer(const PTQueueFamilies& queue_families);
 
     int evaluatePhysicalDevice(VkPhysicalDevice d, PTQueueFamilies& families, PTSwapChainDetails& swap_chain);
 };

@@ -31,11 +31,12 @@ void PTApplication::initWindow()
     cout << "initialising glfw..." << endl;
     glfwInit();
 
-    cout << "   initialising window..." << endl;
+    cout << "    initialising window..." << endl;
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
     window = glfwCreateWindow(width, height, "planetarium", nullptr, nullptr);
+
     cout << "done." << endl;
 }
 
@@ -83,6 +84,8 @@ void PTApplication::initVulkan()
 
     createFramebuffers(demo_render_pass);
 
+    createCommandPoolAndBuffer(queue_families);
+
     cout << "done." << endl;
 }
 
@@ -94,6 +97,8 @@ void PTApplication::mainLoop()
 
 void PTApplication::deinitVulkan()
 {
+    vkDestroyCommandPool(device, command_pool, nullptr);
+
     for (auto framebuffer : framebuffers)
         vkDestroyFramebuffer(device, framebuffer, nullptr);
 
@@ -124,7 +129,7 @@ void PTApplication::deinitWindow()
 void PTApplication::initVulkanInstance(vector<const char*>& layers)
 {
     const char* application_name = "planetarium";
-    cout << "   vulkan app name: " << application_name << endl;
+    cout << "    vulkan app name: " << application_name << endl;
     VkApplicationInfo app_info{ };
     app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     app_info.pApplicationName = application_name;
@@ -135,7 +140,7 @@ void PTApplication::initVulkanInstance(vector<const char*>& layers)
 
 #ifndef NDEBUG
     // get debug validation layer
-    cout << "   searching for debug validation layer..." << endl;
+    cout << "    searching for debug validation layer..." << endl;
     uint32_t layer_count;
     vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
     std::vector<VkLayerProperties> available_layers(layer_count);
@@ -153,7 +158,7 @@ void PTApplication::initVulkanInstance(vector<const char*>& layers)
     }
     if (!debug_layer_found)
         throw std::runtime_error("unable to access VK debug validation layer");
-    cout << "   debug validation layer found (" << target_debug_layer << ")" << endl;
+    cout << "    debug validation layer found (" << target_debug_layer << ")" << endl;
 #endif
 
     // instance creation
@@ -173,31 +178,31 @@ void PTApplication::initVulkanInstance(vector<const char*>& layers)
     create_info.enabledLayerCount = layers.size();
     create_info.ppEnabledLayerNames = layers.data();
 #endif
-    cout << "   extensions enabled:" << endl;
+    cout << "    extensions enabled:" << endl;
     for (size_t i = 0; i < glfw_extension_count; i++)
         cout << "       " << glfw_extensions[i] << endl;
 
-    cout << "   creating VK instance..." << endl;
+    cout << "    creating VK instance..." << endl;
     VkResult result = vkCreateInstance(&create_info, nullptr, &instance);
     if (result != VK_SUCCESS)
     {
-        cout << "   VK instance creation failed: " << /*string_VkResult(result) <<*/ endl;
+        cout << "    VK instance creation failed: " << /*string_VkResult(result) <<*/ endl;
         throw runtime_error("unable to create VK instance");
     }
-    cout << "   done." << endl;
+    cout << "    done." << endl;
 }
 
 void PTApplication::initSurface()
 {
-    cout << "   creating window surface..." << endl;
+    cout << "    creating window surface..." << endl;
     if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS)
         throw runtime_error("unable to create window surface");
-    cout << "   done." << endl;
+    cout << "    done." << endl;
 }
 
 void PTApplication::initPhysicalDevice(PTQueueFamilies& queue_families, PTSwapChainDetails& swap_chain_info)
 {
-    cout << "   selecting physical device..." << endl;
+    cout << "    selecting physical device..." << endl;
     uint32_t device_count = 0;
     vkEnumeratePhysicalDevices(instance, &device_count, nullptr);
     if (device_count == 0)
@@ -205,7 +210,7 @@ void PTApplication::initPhysicalDevice(PTQueueFamilies& queue_families, PTSwapCh
     vector<VkPhysicalDevice> physical_devices(device_count);
     multimap<int, PTPhysicalDeviceDetails> device_scores;
     vkEnumeratePhysicalDevices(instance, &device_count, physical_devices.data());
-    cout << "       found " << device_count << " devices" << endl;
+    cout << "        found " << device_count << " devices" << endl;
     for (VkPhysicalDevice found_device : physical_devices)
     {
         queue_families.clear();
@@ -225,8 +230,8 @@ void PTApplication::initPhysicalDevice(PTQueueFamilies& queue_families, PTSwapCh
 
     VkPhysicalDeviceProperties properties;
     vkGetPhysicalDeviceProperties(physical_device, &properties);
-    cout << "       selected device: \'" << properties.deviceName << "\' (" << properties.deviceID << ")" << " with score " << device_scores.rbegin()->first << endl;
-    cout << "   done." << endl;
+    cout << "        selected device: \'" << properties.deviceName << "\' (" << properties.deviceID << ")" << " with score " << device_scores.rbegin()->first << endl;
+    cout << "    done." << endl;
 }
 
 void PTApplication::constructQueues(const PTQueueFamilies& queue_families, vector<VkDeviceQueueCreateInfo>& queue_create_infos)
@@ -255,34 +260,34 @@ void PTApplication::initLogicalDevice(const vector<VkDeviceQueueCreateInfo>& que
     // TODO: specify physical device features
     VkPhysicalDeviceFeatures features{ };
 
-    cout << "   creating logical device..." << endl;
+    cout << "    creating logical device..." << endl;
     VkDeviceCreateInfo device_create_info{ };
     device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    cout << "       enabling " << queue_create_infos.size() << " device queues" << endl;
+    cout << "        enabling " << queue_create_infos.size() << " device queues" << endl;
     device_create_info.pQueueCreateInfos = queue_create_infos.data();
     device_create_info.queueCreateInfoCount = queue_create_infos.size();
 
     device_create_info.pEnabledFeatures = &features;
 
-    cout << "       enabling " << sizeof(required_device_extensions) / sizeof(required_device_extensions[0]) << " device extensions" << endl;
+    cout << "        enabling " << sizeof(required_device_extensions) / sizeof(required_device_extensions[0]) << " device extensions" << endl;
     device_create_info.enabledExtensionCount = sizeof(required_device_extensions) / sizeof(required_device_extensions[0]);
     device_create_info.ppEnabledExtensionNames = required_device_extensions;
 #ifdef NDEBUG
     device_create_info.enabledLayerCount = 0;
 #else
-    cout << "       enabling " << layers.size() << " layers" << endl;
+    cout << "        enabling " << layers.size() << " layers" << endl;
     device_create_info.enabledLayerCount = layers.size();
     device_create_info.ppEnabledLayerNames = layers.data();
 #endif
 
     if (vkCreateDevice(physical_device, &device_create_info, nullptr, &device) != VK_SUCCESS)
         throw runtime_error("unable to create device");
-    cout << "   done." << endl;
+    cout << "    done." << endl;
 }
 
 void PTApplication::collectQueues(const PTQueueFamilies& queue_families)
 {
-    cout << "   grabbing queue handles:" << endl;
+    cout << "    grabbing queue handles:" << endl;
     VkQueue queue;
     queues.clear();
     for (pair<PTQueueFamily, uint32_t> queue_family : queue_families)
@@ -295,7 +300,7 @@ void PTApplication::collectQueues(const PTQueueFamilies& queue_families)
 
 void PTApplication::initSwapChain(const PTSwapChainDetails& swap_chain_info, PTQueueFamilies& queue_families, VkSurfaceFormatKHR& selected_surface_format, VkExtent2D& selected_extent, uint32_t& selected_image_count)
 {
-    cout << "   creating swap chain..." << endl;
+    cout << "    creating swap chain..." << endl;
     selected_surface_format = swap_chain_info.formats[0];
     for (const auto& format : swap_chain_info.formats)
     {
@@ -305,11 +310,11 @@ void PTApplication::initSwapChain(const PTSwapChainDetails& swap_chain_info, PTQ
             break;
         }
     }
-    cout << "       surface format: " << /*string_VkFormat(selected_surface_format.format) <<*/ endl;
-    cout << "       colour space: " << /*string_VkColorSpaceKHR(selected_surface_format.colorSpace) <<*/ endl;
+    cout << "        surface format: " << /*string_VkFormat(selected_surface_format.format) <<*/ endl;
+    cout << "        colour space: " << /*string_VkColorSpaceKHR(selected_surface_format.colorSpace) <<*/ endl;
 
     VkPresentModeKHR selected_surface_present_mode = VK_PRESENT_MODE_FIFO_KHR;
-    cout << "       present mode: " << /*string_VkPresentModeKHR(selected_surface_present_mode) <<*/ endl;
+    cout << "        present mode: " << /*string_VkPresentModeKHR(selected_surface_present_mode) <<*/ endl;
 
     if (swap_chain_info.capabilities.currentExtent.width != UINT32_MAX)
         selected_extent = swap_chain_info.capabilities.currentExtent;
@@ -326,13 +331,13 @@ void PTApplication::initSwapChain(const PTSwapChainDetails& swap_chain_info, PTQ
         selected_extent.height = clamp(selected_extent.height, swap_chain_info.capabilities.minImageExtent.height, swap_chain_info.capabilities.maxImageExtent.height);
     }
 
-    cout << "       extent: " << selected_extent.width << "," << selected_extent.height << endl;
+    cout << "        extent: " << selected_extent.width << "," << selected_extent.height << endl;
 
     selected_image_count = swap_chain_info.capabilities.minImageCount + 1;
     if (swap_chain_info.capabilities.maxImageCount > 0 && selected_image_count > swap_chain_info.capabilities.maxImageCount)
         selected_image_count = swap_chain_info.capabilities.maxImageCount;
 
-    cout << "       image count: " << selected_image_count << endl;
+    cout << "        image count: " << selected_image_count << endl;
 
     VkSwapchainCreateInfoKHR swap_chain_create_info{ };
     swap_chain_create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
@@ -364,22 +369,22 @@ void PTApplication::initSwapChain(const PTSwapChainDetails& swap_chain_info, PTQ
 
     if (vkCreateSwapchainKHR(device, &swap_chain_create_info, nullptr, &swap_chain) != VK_SUCCESS)
         throw runtime_error("unable to create swap chain");
-    cout << "   done." << endl;
+    cout << "    done." << endl;
 }
 
 void PTApplication::collectSwapChainImages(const VkSurfaceFormatKHR& selected_surface_format, const VkExtent2D& selected_extent, uint32_t& selected_image_count)
 {
-    cout << "   retrieving images..." << endl;
+    cout << "    retrieving images..." << endl;
     vkGetSwapchainImagesKHR(device, swap_chain, &selected_image_count, nullptr);
     swap_chain_images.resize(selected_image_count);
     vkGetSwapchainImagesKHR(device, swap_chain, &selected_image_count, swap_chain_images.data());
 
     swap_chain_image_format = selected_surface_format.format;
     swap_chain_extent = selected_extent;
-    cout << "   done." << endl;
+    cout << "    done." << endl;
 
     // construct image views
-    cout << "   constructing image views..." << endl;
+    cout << "    constructing image views..." << endl;
     swap_chain_image_views.resize(swap_chain_images.size());
     for (size_t i = 0; i < swap_chain_images.size(); i++)
     {
@@ -401,12 +406,12 @@ void PTApplication::collectSwapChainImages(const VkSurfaceFormatKHR& selected_su
         if (vkCreateImageView(device, &image_view_create_info, nullptr, &swap_chain_image_views[i]) != VK_SUCCESS)
             throw runtime_error("unable to create image view");
     }
-    cout << "   created " << swap_chain_image_views.size() << " image views." << endl;
+    cout << "    created " << swap_chain_image_views.size() << " image views." << endl;
 }
 
 VkRenderPass PTApplication::createRenderPass()
 {
-    cout << "   creating render pass..." << endl;
+    cout << "    creating render pass..." << endl;
 
     VkAttachmentDescription colour_attachment{ };
     colour_attachment.format = swap_chain_image_format;
@@ -437,16 +442,16 @@ VkRenderPass PTApplication::createRenderPass()
     VkRenderPass render_pass;
 
     if (vkCreateRenderPass(device, &render_pass_create_info, nullptr, &render_pass) != VK_SUCCESS)
-        throw std::runtime_error("  unable to create render pass");
+        throw std::runtime_error("unable to create render pass");
 
-    cout << "   done." << endl;
+    cout << "    done." << endl;
 
     return render_pass;
 }
 
 PTPipeline PTApplication::constructPipeline(const PTShader& shader, const VkRenderPass render_pass)
 {
-    cout << "   constructing pipeline..." << endl;
+    cout << "    constructing pipeline..." << endl;
     // TODO: move all this code into the pipeline class?
 
     // TODO: convert to param
@@ -541,7 +546,7 @@ PTPipeline PTApplication::constructPipeline(const PTShader& shader, const VkRend
     pipeline_layout_create_info.pushConstantRangeCount = 0;
     pipeline_layout_create_info.pPushConstantRanges = nullptr;
 
-    cout << "       creating pipeline layout... ";
+    cout << "        creating pipeline layout... ";
 
     PTPipeline pipeline;
 
@@ -550,7 +555,7 @@ PTPipeline PTApplication::constructPipeline(const PTShader& shader, const VkRend
 
     cout << "done." << endl;
 
-    cout << "       creating graphics pipeline... ";
+    cout << "        creating graphics pipeline... ";
 
     vector<VkPipelineShaderStageCreateInfo> shader_stages = shader.getStageCreateInfo();
 
@@ -578,14 +583,14 @@ PTPipeline PTApplication::constructPipeline(const PTShader& shader, const VkRend
     
     cout << "done." << endl;
 
-    cout << "   done." << endl;
+    cout << "    done." << endl;
 
     return pipeline;
 }
 
 void PTApplication::createFramebuffers(const VkRenderPass render_pass)
 {
-    cout << "   creating framebuffers..." << endl;
+    cout << "    creating framebuffers..." << endl;
 
     framebuffers.resize(swap_chain_image_views.size());
 
@@ -606,8 +611,29 @@ void PTApplication::createFramebuffers(const VkRenderPass render_pass)
             throw std::runtime_error("unable to create framebuffer");
     }
 
-    cout << "       created " << framebuffers.size() << " framebuffer objects" << endl;
-    cout << "   done." << endl;
+    cout << "        created " << framebuffers.size() << " framebuffer objects" << endl;
+    cout << "    done." << endl;
+}
+
+void PTApplication::createCommandPoolAndBuffer(const PTQueueFamilies& queue_families)
+{
+
+    VkCommandPoolCreateInfo pool_create_info{ };
+    pool_create_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    pool_create_info.queueFamilyIndex = queue_families.at(PTQueueFamily::GRAPHICS);
+
+    if (vkCreateCommandPool(device, &pool_create_info, nullptr, &command_pool))
+        throw std::runtime_error("unable to create command pool");
+
+    VkCommandBufferAllocateInfo buffer_alloc_info{ };
+    buffer_alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    buffer_alloc_info.commandPool = command_pool;
+    buffer_alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    buffer_alloc_info.commandBufferCount = 1;
+
+    if (vkAllocateCommandBuffers(device, &buffer_alloc_info, &command_buffer) != VK_SUCCESS)
+        throw std::runtime_error("unable to allocate command buffer");
 }
 
 int PTApplication::evaluatePhysicalDevice(VkPhysicalDevice d, PTQueueFamilies& families, PTSwapChainDetails& swap_chain)

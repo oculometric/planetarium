@@ -4,7 +4,7 @@
 
 int main(int argc, char* argv[])
 {
-    std::cout << "Hello, World!" << std::endl;
+    std::cout << "Hello, Universe!" << std::endl;
     PTApplication app = PTApplication(640, 480);
     try
     {
