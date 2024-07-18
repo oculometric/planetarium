@@ -1,0 +1,3 @@
+[submodule "lib/oculib"]
+	path = lib/oculib
+	url = https://github.com/oculometric/oculib.git
