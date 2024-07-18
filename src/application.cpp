@@ -130,7 +130,7 @@ void PTApplication::mainLoop()
 
         vkCmdBeginRenderPass(command_buffer, &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
         vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, demo_pipeline.pipeline);
-        vkCmdDraw(command_buffer, 3, 1, 0, 0);
+        vkCmdDraw(command_buffer, 6, 1, 0, 0);
         vkCmdEndRenderPass(command_buffer);
 
         if (vkEndCommandBuffer(command_buffer) != VK_SUCCESS)
@@ -168,12 +168,14 @@ void PTApplication::mainLoop()
         auto now = chrono::high_resolution_clock::now();
         auto frame_time = now - last_frame_start;
 
-        cout << "\r                                                ";
-        cout << '\r' << "frame time: " << chrono::duration_cast<chrono::milliseconds>(frame_time).count() << " ms";
+        frame_time_running_mean_us = (frame_time_running_mean_us + (chrono::duration_cast<chrono::microseconds>(frame_time).count())) / 2;
+
+        cout << "\r                                                                  ";
+        cout << '\r' << "fps: " << 1000000 / frame_time_running_mean_us << ", frame time: " << chrono::duration_cast<chrono::milliseconds>(frame_time).count() << " ms (running mean: " << frame_time_running_mean_us / 1000 << " ms)";
         cout.flush();
         last_frame_start = now;
     }
-    
+
     vkDeviceWaitIdle(device);
 }
 

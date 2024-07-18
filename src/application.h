@@ -73,6 +73,7 @@ private:
     };
 
     chrono::system_clock::time_point last_frame_start;
+    uint32_t frame_time_running_mean_us;
 
 public:
     PTApplication(unsigned int _width, unsigned int _height);
