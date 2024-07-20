@@ -84,6 +84,8 @@ void PTApplication::initVulkan()
 
     createFramebuffers(demo_render_pass);
 
+    createVertexBuffer();
+
     createCommandPoolAndBuffer(queue_families);
 
     createSyncObjects();
@@ -130,7 +132,11 @@ void PTApplication::mainLoop()
 
         vkCmdBeginRenderPass(command_buffer, &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
         vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, demo_pipeline.pipeline);
-        vkCmdDraw(command_buffer, 6, 1, 0, 0);
+
+        VkBuffer vertex_buffers[] = { vertex_buffer };
+        VkDeviceSize offsets[] = { 0 };
+        vkCmdBindVertexBuffers(command_buffer, 0, 1, vertex_buffers, offsets);
+        vkCmdDraw(command_buffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
         vkCmdEndRenderPass(command_buffer);
 
         if (vkEndCommandBuffer(command_buffer) != VK_SUCCESS)
@@ -199,6 +205,9 @@ void PTApplication::deinitVulkan()
         vkDestroyImageView(device, image_view, nullptr);
 
     vkDestroySwapchainKHR(device, swap_chain, nullptr);
+
+    vkDestroyBuffer(device, vertex_buffer, nullptr);
+    vkFreeMemory(device, vertex_buffer_memory, nullptr);
 
     vkDestroyDevice(device, nullptr);
 
@@ -559,13 +568,15 @@ PTPipeline PTApplication::constructPipeline(const PTShader& shader, const VkRend
     dynamic_state_create_info.dynamicStateCount = static_cast<uint32_t>(dynamic_states.size());
     dynamic_state_create_info.pDynamicStates = dynamic_states.data();
 
-    // TODO: passing in of vertices
+    auto binding_description = getVertexBindingDescription();
+    auto attribute_descriptions = getVertexAttributeDescriptions();
+
     VkPipelineVertexInputStateCreateInfo vertex_input_create_info{ };
     vertex_input_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertex_input_create_info.vertexBindingDescriptionCount = 0;
-    vertex_input_create_info.pVertexBindingDescriptions = nullptr;
-    vertex_input_create_info.vertexAttributeDescriptionCount = 0;
-    vertex_input_create_info.pVertexAttributeDescriptions = nullptr;
+    vertex_input_create_info.vertexBindingDescriptionCount = 1;
+    vertex_input_create_info.pVertexBindingDescriptions = &binding_description;
+    vertex_input_create_info.vertexAttributeDescriptionCount = static_cast<uint32_t>(attribute_descriptions.size());
+    vertex_input_create_info.pVertexAttributeDescriptions = attribute_descriptions.data();
 
     // TODO: needs options to switch to line mode
     VkPipelineInputAssemblyStateCreateInfo input_assembly_create_info{ };
@@ -713,6 +724,36 @@ void PTApplication::createFramebuffers(const VkRenderPass render_pass)
     cout << "    done." << endl;
 }
 
+void PTApplication::createVertexBuffer()
+{
+    VkBufferCreateInfo buffer_create_info{ };
+    buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    buffer_create_info.size = sizeof(OLVertex) * vertices.size();
+    buffer_create_info.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    buffer_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    if (vkCreateBuffer(device, &buffer_create_info, nullptr, &vertex_buffer) != VK_SUCCESS)
+        throw runtime_error("unable to construct vertex buffer");
+    
+    VkMemoryRequirements memory_requirements;
+    vkGetBufferMemoryRequirements(device, vertex_buffer, &memory_requirements);
+
+    VkMemoryAllocateInfo allocate_info{ };
+    allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocate_info.allocationSize = memory_requirements.size;
+    allocate_info.memoryTypeIndex = findMemoryType(memory_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+    if (vkAllocateMemory(device, &allocate_info, nullptr, &vertex_buffer_memory) != VK_SUCCESS)
+        throw runtime_error("unable to allocate vertex buffer memory");
+
+    vkBindBufferMemory(device, vertex_buffer, vertex_buffer_memory, 0);
+
+    void* vertex_data;
+    vkMapMemory(device, vertex_buffer_memory, 0, buffer_create_info.size, 0, &vertex_data);
+    memcpy(vertex_data, vertices.data(), (size_t)buffer_create_info.size);
+    vkUnmapMemory(device, vertex_buffer_memory);
+}
+
 void PTApplication::createCommandPoolAndBuffer(const PTQueueFamilies& queue_families)
 {
 
@@ -846,6 +887,17 @@ int PTApplication::evaluatePhysicalDevice(VkPhysicalDevice d, PTQueueFamilies& f
         return 0;
 
     return score;
+}
+
+uint32_t PTApplication::findMemoryType(uint32_t type_bits, VkMemoryPropertyFlags properties)
+{
+    VkPhysicalDeviceMemoryProperties memory_properties;
+    vkGetPhysicalDeviceMemoryProperties(physical_device, &memory_properties);
+
+    for (uint32_t i = 0; i < memory_properties.memoryTypeCount; i++)
+        if ((type_bits & (1 << i)) && (memory_properties.memoryTypes[i].propertyFlags & properties) == properties) return i;
+
+    throw runtime_error("unable to find suitable memory type");
 }
 
 bool areQueuesPresent(PTQueueFamilies& families)
