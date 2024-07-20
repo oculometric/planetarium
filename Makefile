@@ -41,11 +41,11 @@ $(BIN_DIR)/%_frag.spv: $(SHR_DIR)/%.frag $(BIN_DIR)
 shaders: $(SC_FILES_OUT)
 	@cp $(SC_FILES_OUT) .
 
-build: $(BIN_DIR) $(CC_FILES_OUT) shaders
+build: $(BIN_DIR) $(CC_FILES_OUT)
 	@echo "Linking" $(EXE_OUT)
 	@$(LD) $(LD_FLAGS) -o $(EXE_OUT) $(CC_FILES_OUT) $(LD_INCLUDE)
 
-execute: build
+execute: $(EXE_OUT) $(SC_FILES_OUT)
 	@$(EXE_OUT)
 
 clean:
