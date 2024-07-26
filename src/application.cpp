@@ -19,9 +19,11 @@ void PTApplication::start()
 {
     initWindow();
     initVulkan();
+    initController();
 
     mainLoop();
 
+    deinitController();
     deinitVulkan();
     deinitWindow();
 }
@@ -93,6 +95,13 @@ void PTApplication::initVulkan()
     cout << "done." << endl;
 }
 
+void PTApplication::initController()
+{
+    glfwSetKeyCallback(window, keyboardCallback);
+    input_manager = new PTInputManager();
+    initInputManager(input_manager);
+}
+
 void PTApplication::mainLoop()
 {
     cout << endl;
@@ -102,6 +111,7 @@ void PTApplication::mainLoop()
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
+        input_manager->pollControllers();
 
         // TODO: move the following into appropriate functions, this is just a test
         vkWaitForFences(device, 1, &in_flight_fence, VK_TRUE, UINT64_MAX);
@@ -183,6 +193,10 @@ void PTApplication::mainLoop()
     }
 
     vkDeviceWaitIdle(device);
+}
+
+void PTApplication::deinitController()
+{
 }
 
 void PTApplication::deinitVulkan()

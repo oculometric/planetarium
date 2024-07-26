@@ -9,6 +9,7 @@
 #include "pipeline.h"
 #include "shader.h"
 #include <chrono>
+#include "input.h"
 
 using namespace std;
 
@@ -114,6 +115,7 @@ private:
     chrono::system_clock::time_point last_frame_start;
     uint32_t frame_time_running_mean_us;
 
+    PTInputManager* input_manager;
 public:
     PTApplication(unsigned int _width, unsigned int _height);
 
@@ -128,7 +130,9 @@ public:
 private:
     void initWindow();
     void initVulkan();
+    void initController();
     void mainLoop();
+    void deinitController();
     void deinitVulkan();
     void deinitWindow();
 
