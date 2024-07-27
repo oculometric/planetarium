@@ -93,9 +93,9 @@ void PTApplication::initVulkan()
 
     createFramebuffers(demo_render_pass);
 
-    createVertexBuffer();
-
     createCommandPoolAndBuffer(queue_families);
+
+    createVertexBuffer();
 
     createSyncObjects();
 
@@ -167,7 +167,8 @@ void PTApplication::mainLoop()
         VkBuffer vertex_buffers[] = { vertex_buffer };
         VkDeviceSize offsets[] = { 0 };
         vkCmdBindVertexBuffers(command_buffer, 0, 1, vertex_buffers, offsets);
-        vkCmdDraw(command_buffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
+        vkCmdBindIndexBuffer(command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT16);
+        vkCmdDrawIndexed(command_buffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
         vkCmdEndRenderPass(command_buffer);
 
         if (vkEndCommandBuffer(command_buffer) != VK_SUCCESS)
@@ -230,6 +231,9 @@ void PTApplication::deinitVulkan()
         vkDestroyImageView(device, image_view, nullptr);
 
     vkDestroySwapchainKHR(device, swap_chain, nullptr);
+
+    vkDestroyBuffer(device, index_buffer, nullptr);
+    vkFreeMemory(device, index_buffer_memory, nullptr);
 
     vkDestroyBuffer(device, vertex_buffer, nullptr);
     vkFreeMemory(device, vertex_buffer_memory, nullptr);
@@ -751,32 +755,41 @@ void PTApplication::createFramebuffers(const VkRenderPass render_pass)
 
 void PTApplication::createVertexBuffer()
 {
-    VkBufferCreateInfo buffer_create_info{ };
-    buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    buffer_create_info.size = sizeof(OLVertex) * vertices.size();
-    buffer_create_info.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-    buffer_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-    if (vkCreateBuffer(device, &buffer_create_info, nullptr, &vertex_buffer) != VK_SUCCESS)
-        throw runtime_error("unable to construct vertex buffer");
+    // vertex buffer creation (via staging buffer)
+    VkDeviceSize size = sizeof(OLVertex) * vertices.size();
     
-    VkMemoryRequirements memory_requirements;
-    vkGetBufferMemoryRequirements(device, vertex_buffer, &memory_requirements);
-
-    VkMemoryAllocateInfo allocate_info{ };
-    allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    allocate_info.allocationSize = memory_requirements.size;
-    allocate_info.memoryTypeIndex = findMemoryType(memory_requirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-
-    if (vkAllocateMemory(device, &allocate_info, nullptr, &vertex_buffer_memory) != VK_SUCCESS)
-        throw runtime_error("unable to allocate vertex buffer memory");
-
-    vkBindBufferMemory(device, vertex_buffer, vertex_buffer_memory, 0);
+    VkBuffer staging_buffer;
+    VkDeviceMemory staging_buffer_memory;
+    createBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, staging_buffer, staging_buffer_memory);
 
     void* vertex_data;
-    vkMapMemory(device, vertex_buffer_memory, 0, buffer_create_info.size, 0, &vertex_data);
-    memcpy(vertex_data, vertices.data(), (size_t)buffer_create_info.size);
-    vkUnmapMemory(device, vertex_buffer_memory);
+    vkMapMemory(device, staging_buffer_memory, 0, size, 0, &vertex_data);
+    memcpy(vertex_data, vertices.data(), (size_t)size);
+    vkUnmapMemory(device, staging_buffer_memory);
+
+    createBuffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertex_buffer, vertex_buffer_memory);
+
+    copyBuffer(staging_buffer, vertex_buffer, size);
+
+    vkDestroyBuffer(device, staging_buffer, nullptr);
+    vkFreeMemory(device, staging_buffer_memory, nullptr);
+    
+    // index buffer creation (via staging buffer)
+    size = sizeof(uint16_t) * indices.size();
+    
+    createBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, staging_buffer, staging_buffer_memory);
+
+    void* index_data;
+    vkMapMemory(device, staging_buffer_memory, 0, size, 0, &index_data);
+    memcpy(index_data, indices.data(), (size_t)size);
+    vkUnmapMemory(device, staging_buffer_memory);
+
+    createBuffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, index_buffer, index_buffer_memory);
+
+    copyBuffer(staging_buffer, index_buffer, size);
+
+    vkDestroyBuffer(device, staging_buffer, nullptr);
+    vkFreeMemory(device, staging_buffer_memory, nullptr);
 }
 
 void PTApplication::createCommandPoolAndBuffer(const PTQueueFamilies& queue_families)
@@ -817,6 +830,68 @@ void PTApplication::createSyncObjects()
     
     if (vkCreateFence(device, &fence_create_info, nullptr, &in_flight_fence) != VK_SUCCESS)
         throw std::runtime_error("unable to create fence");
+}
+
+void PTApplication::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage_flags, VkMemoryPropertyFlags memory_flags, VkBuffer& buffer, VkDeviceMemory& buffer_memory)
+{
+    VkBufferCreateInfo buffer_create_info{ };
+    buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    buffer_create_info.size = size;
+    buffer_create_info.usage = usage_flags;
+    buffer_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    if (vkCreateBuffer(device, &buffer_create_info, nullptr, &buffer) != VK_SUCCESS)
+        throw runtime_error("unable to construct buffer");
+    
+    VkMemoryRequirements memory_requirements;
+    vkGetBufferMemoryRequirements(device, buffer, &memory_requirements);
+
+    VkMemoryAllocateInfo allocate_info{ };
+    allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocate_info.allocationSize = memory_requirements.size;
+    allocate_info.memoryTypeIndex = findMemoryType(memory_requirements.memoryTypeBits, memory_flags);
+
+    if (vkAllocateMemory(device, &allocate_info, nullptr, &buffer_memory) != VK_SUCCESS)
+        throw runtime_error("unable to allocate buffer memory");
+
+    vkBindBufferMemory(device, buffer, buffer_memory, 0);
+}
+
+void PTApplication::copyBuffer(VkBuffer source, VkBuffer destination, VkDeviceSize size)
+{
+    VkCommandBufferAllocateInfo allocation_info{ };
+    allocation_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocation_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocation_info.commandPool = command_pool;
+    allocation_info.commandBufferCount = 1;
+
+    VkCommandBuffer copy_command_buffer;
+    vkAllocateCommandBuffers(device, &allocation_info, &copy_command_buffer);
+
+    VkCommandBufferBeginInfo begin_info{ };
+    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    vkBeginCommandBuffer(copy_command_buffer, &begin_info);
+
+    VkBufferCopy copy_command{ };
+    copy_command.dstOffset = 0;
+    copy_command.srcOffset = 0;
+    copy_command.size = size;
+
+    vkCmdCopyBuffer(copy_command_buffer, source, destination, 1, &copy_command);
+
+    vkEndCommandBuffer(copy_command_buffer);
+
+    VkSubmitInfo submit_info{ };
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &copy_command_buffer;
+
+    vkQueueSubmit(queues[PTQueueFamily::GRAPHICS], 1, &submit_info, VK_NULL_HANDLE);
+    vkQueueWaitIdle(queues[PTQueueFamily::GRAPHICS]);
+
+    vkFreeCommandBuffers(device, command_pool, 1, &copy_command_buffer);
 }
 
 int PTApplication::evaluatePhysicalDevice(VkPhysicalDevice d, PTQueueFamilies& families, PTSwapChainDetails& swap_chain)

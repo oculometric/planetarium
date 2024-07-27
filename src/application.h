@@ -18,9 +18,16 @@ using namespace std;
 
 const vector<OLVertex> vertices = 
 {
-    { { -1, -1, 0 }, { 1, 1, 1 } },
-    { { 0, 1, 0 }, { 1, 0, 1 } },
-    { { 1, 0, 0 }, { 0, 1, 0 } }
+    { { -1, -1, 0 }, { 0, 0, 0 } },
+    { {  1, -1, 0 }, { 1, 0, 0 } },
+    { { -1,  1, 0 }, { 0, 1, 0 } },
+    { {  1,  1, 0 }, { 0, 0, 1 } }
+};
+
+const vector<uint16_t> indices =
+{
+    0, 2, 1,
+    1, 2, 3
 };
 
 inline VkVertexInputBindingDescription getVertexBindingDescription()
@@ -107,6 +114,8 @@ private:
     PTShader* demo_shader;
     VkBuffer vertex_buffer;
     VkDeviceMemory vertex_buffer_memory;
+    VkBuffer index_buffer;
+    VkDeviceMemory index_buffer_memory;
 
     static constexpr char* required_device_extensions[1] =
     {
@@ -151,10 +160,12 @@ private:
     VkRenderPass createRenderPass();
     PTPipeline constructPipeline(const PTShader& shader, const VkRenderPass render_pass);
     void createFramebuffers(const VkRenderPass render_pass);
-    void createVertexBuffer();
     void createCommandPoolAndBuffer(const PTQueueFamilies& queue_families);
+    void createVertexBuffer();
     void createSyncObjects();
 
+    void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage_flags, VkMemoryPropertyFlags memory_flags, VkBuffer& buffer, VkDeviceMemory& buffer_memory);
+    void copyBuffer(VkBuffer source, VkBuffer destination, VkDeviceSize size);
     int evaluatePhysicalDevice(VkPhysicalDevice d, PTQueueFamilies& families, PTSwapChainDetails& swap_chain);
     uint32_t findMemoryType(uint32_t type_bits, VkMemoryPropertyFlags properties);
 };
