@@ -105,7 +105,7 @@ void PTInputManager::translate(PTControllerEvent gamepad_event)
 void PTInputManager::translate(int key, int action, int mods)
 {
     if (action == 2) return;
-
+    
     cout << "keyboard event: " << endl;
     cout << "    key       : " << key << endl;
     cout << "    action    : " << action << endl;

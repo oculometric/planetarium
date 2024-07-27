@@ -70,8 +70,6 @@ private:
     PTController gamepad_2 = PTController(2);
     PTController gamepad_3 = PTController(3);
 
-    void translate(PTControllerEvent gamepad_event);
-    void translate(int key, int action, int mods);
 
     int16_t move_axis_x = 0;
     int16_t move_axis_y = 0;
@@ -79,9 +77,6 @@ private:
     int16_t look_axis_y = 0;
 
     uint32_t button_states;
-
-    void setButtonState(PTInputButton button, bool state);
-    void setAxisState(PTInputAxis axis, int16_t value);
 
 public:
     void pollControllers();
@@ -96,6 +91,13 @@ public:
     PTInputManager(PTInputManager&& other) = delete;
     PTInputManager operator=(PTInputManager& other) = delete;
     PTInputManager operator=(PTInputManager&& other) = delete;
+
+private:
+    void translate(PTControllerEvent gamepad_event);
+    void translate(int key, int action, int mods);
+
+    void setButtonState(PTInputButton button, bool state);
+    void setAxisState(PTInputAxis axis, int16_t value);
 };
 
 void initInputManager(PTInputManager* manager);

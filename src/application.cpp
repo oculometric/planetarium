@@ -6,6 +6,8 @@
 #include <iostream>
 #include <set>
 #include <algorithm>
+#include "scene.h"
+#include <cstdlib>
 
 //#include <vulkan/vk_enum_string_helper.h>
 
@@ -26,6 +28,11 @@ void PTApplication::start()
     deinitController();
     deinitVulkan();
     deinitWindow();
+}
+
+PTInputManager* PTApplication::getInputManager()
+{
+    return input_manager;
 }
 
 void PTApplication::initWindow()
@@ -107,11 +114,25 @@ void PTApplication::mainLoop()
     cout << endl;
     cout << endl;
 
+    current_scene = new PTScene(this);
+
     last_frame_start = chrono::high_resolution_clock::now();
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
         input_manager->pollControllers();
+
+        auto now = chrono::high_resolution_clock::now();
+        chrono::duration<float> frame_time = now - last_frame_start;
+
+        frame_time_running_mean_us = (frame_time_running_mean_us + (chrono::duration_cast<chrono::microseconds>(frame_time).count())) / 2;
+
+        cout << "\033[2J\033[3J\033[1;1H";
+        cout << "fps: " << 1000000 / frame_time_running_mean_us << ", frame time: " << chrono::duration_cast<chrono::milliseconds>(frame_time).count() << " ms (running mean: " << frame_time_running_mean_us / 1000 << " ms)" << endl;
+        cout.flush();
+        last_frame_start = now;
+
+        current_scene->update(frame_time.count());
 
         // TODO: move the following into appropriate functions, this is just a test
         vkWaitForFences(device, 1, &in_flight_fence, VK_TRUE, UINT64_MAX);
@@ -180,16 +201,6 @@ void PTApplication::mainLoop()
 
         if (vkQueuePresentKHR(queues[PTQueueFamily::PRESENT], &present_info) != VK_SUCCESS)
             throw std::runtime_error("unable to present swapchain image");
-        
-        auto now = chrono::high_resolution_clock::now();
-        auto frame_time = now - last_frame_start;
-
-        frame_time_running_mean_us = (frame_time_running_mean_us + (chrono::duration_cast<chrono::microseconds>(frame_time).count())) / 2;
-
-        cout << "\r                                                                  ";
-        cout << '\r' << "fps: " << 1000000 / frame_time_running_mean_us << ", frame time: " << chrono::duration_cast<chrono::milliseconds>(frame_time).count() << " ms (running mean: " << frame_time_running_mean_us / 1000 << " ms)";
-        cout.flush();
-        last_frame_start = now;
     }
 
     vkDeviceWaitIdle(device);

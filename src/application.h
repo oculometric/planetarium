@@ -10,6 +10,7 @@
 #include "shader.h"
 #include <chrono>
 #include "input.h"
+#include "defs.h"
 
 using namespace std;
 
@@ -116,6 +117,7 @@ private:
     uint32_t frame_time_running_mean_us;
 
     PTInputManager* input_manager;
+    PTScene* current_scene;
 public:
     PTApplication(unsigned int _width, unsigned int _height);
 
@@ -126,6 +128,8 @@ public:
     void operator=(PTApplication&& other) = delete;
 
     void start();
+
+    PTInputManager* getInputManager();
 
 private:
     void initWindow();
