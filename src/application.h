@@ -11,24 +11,9 @@
 #include <chrono>
 #include "input.h"
 #include "defs.h"
+#include "../lib/oculib/mesh.h"
 
 using namespace std;
-
-#include "../lib/oculib/vertex.h"
-
-const vector<OLVertex> vertices = 
-{
-    { { -1, -1, 0 }, { 0, 0, 0 } },
-    { {  1, -1, 0 }, { 1, 0, 0 } },
-    { { -1,  1, 0 }, { 0, 1, 0 } },
-    { {  1,  1, 0 }, { 0, 0, 1 } }
-};
-
-const vector<uint16_t> indices =
-{
-    0, 2, 1,
-    1, 2, 3
-};
 
 inline VkVertexInputBindingDescription getVertexBindingDescription()
 {
@@ -127,6 +112,7 @@ private:
 
     PTInputManager* input_manager;
     PTScene* current_scene;
+    OLMesh demo_mesh;
 public:
     PTApplication(unsigned int _width, unsigned int _height);
 

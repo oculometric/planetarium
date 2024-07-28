@@ -19,6 +19,7 @@ PTApplication::PTApplication(unsigned int _width, unsigned int _height)
 
 void PTApplication::start()
 {
+    demo_mesh = OLMesh("suzanne.obj");
     initWindow();
     initVulkan();
     initController();
@@ -168,7 +169,7 @@ void PTApplication::mainLoop()
         VkDeviceSize offsets[] = { 0 };
         vkCmdBindVertexBuffers(command_buffer, 0, 1, vertex_buffers, offsets);
         vkCmdBindIndexBuffer(command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT16);
-        vkCmdDrawIndexed(command_buffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+        vkCmdDrawIndexed(command_buffer, static_cast<uint32_t>(demo_mesh.indices.size()), 1, 0, 0, 0);
         vkCmdEndRenderPass(command_buffer);
 
         if (vkEndCommandBuffer(command_buffer) != VK_SUCCESS)
@@ -756,7 +757,7 @@ void PTApplication::createFramebuffers(const VkRenderPass render_pass)
 void PTApplication::createVertexBuffer()
 {
     // vertex buffer creation (via staging buffer)
-    VkDeviceSize size = sizeof(OLVertex) * vertices.size();
+    VkDeviceSize size = sizeof(OLVertex) * demo_mesh.vertices.size();
     
     VkBuffer staging_buffer;
     VkDeviceMemory staging_buffer_memory;
@@ -764,7 +765,7 @@ void PTApplication::createVertexBuffer()
 
     void* vertex_data;
     vkMapMemory(device, staging_buffer_memory, 0, size, 0, &vertex_data);
-    memcpy(vertex_data, vertices.data(), (size_t)size);
+    memcpy(vertex_data, demo_mesh.vertices.data(), (size_t)size);
     vkUnmapMemory(device, staging_buffer_memory);
 
     createBuffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertex_buffer, vertex_buffer_memory);
@@ -775,13 +776,13 @@ void PTApplication::createVertexBuffer()
     vkFreeMemory(device, staging_buffer_memory, nullptr);
     
     // index buffer creation (via staging buffer)
-    size = sizeof(uint16_t) * indices.size();
+    size = sizeof(uint16_t) * demo_mesh.indices.size();
     
     createBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, staging_buffer, staging_buffer_memory);
 
     void* index_data;
     vkMapMemory(device, staging_buffer_memory, 0, size, 0, &index_data);
-    memcpy(index_data, indices.data(), (size_t)size);
+    memcpy(index_data, demo_mesh.indices.data(), (size_t)size);
     vkUnmapMemory(device, staging_buffer_memory);
 
     createBuffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, index_buffer, index_buffer_memory);
