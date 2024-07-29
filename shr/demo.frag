@@ -12,6 +12,11 @@ const mat4 bayer =
     { 5, 13, 7, 15 }
 };
 
+ivec3 get_grid(vec3 position, vec3 grid_divisions)
+{
+    return ivec3(floor(position * grid_divisions));
+}
+
 float filter_value(vec2 screen_position, vec2 grid_divisions)
 {
     ivec2 grid_position = ivec2(floor(screen_position * grid_divisions));
@@ -33,5 +38,9 @@ void main()
         ))
     ) / divisions;
     
-    out_colour = vec4(vec3(outp), 1.0);
+    //out_colour = vec4(vec3(outp), 1.0);
+
+    //out_colour = vec4(frag_colour, 1.0);
+    ivec3 grid = get_grid(frag_position, vec3(16, 16, 16)) % 2;
+    out_colour = vec4((vec3(grid.x * grid.y) + 0.2) * frag_position, 1.0);
 }

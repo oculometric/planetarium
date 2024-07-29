@@ -87,6 +87,8 @@ void PTApplication::initVulkan()
     // retrieve images from the swap chain
     collectSwapChainImages(selected_surface_format, selected_extent, selected_image_count);
 
+    createDescriptorSetLayout();
+
     // initialise a basic pipeline
     demo_shader = new PTShader(device, "demo");
     demo_render_pass = createRenderPass();
@@ -94,9 +96,13 @@ void PTApplication::initVulkan()
 
     createFramebuffers(demo_render_pass);
 
-    createCommandPoolAndBuffer(queue_families);
+    createCommandPoolAndBuffers(queue_families);
 
     createVertexBuffer();
+
+    createUniformBuffers();
+
+    createDescriptorPoolAndSets();
 
     createSyncObjects();
 
@@ -117,6 +123,7 @@ void PTApplication::mainLoop()
 
     current_scene = new PTScene(this);
 
+    uint32_t frame_index = 0;
     last_frame_start = chrono::high_resolution_clock::now();
     while (!glfwWindowShouldClose(window))
     {
@@ -135,21 +142,23 @@ void PTApplication::mainLoop()
 
         current_scene->update(frame_time.count());
 
+        updateUniformBuffers(frame_index);
+
         // TODO: move the following into appropriate functions, this is just a test
-        vkWaitForFences(device, 1, &in_flight_fence, VK_TRUE, UINT64_MAX);
-        vkResetFences(device, 1, &in_flight_fence);
+        vkWaitForFences(device, 1, &in_flight_fences[frame_index], VK_TRUE, UINT64_MAX);
+        vkResetFences(device, 1, &in_flight_fences[frame_index]);
 
         uint32_t image_index;
-        vkAcquireNextImageKHR(device, swap_chain, UINT64_MAX, image_available_semaphore, VK_NULL_HANDLE, &image_index);
+        vkAcquireNextImageKHR(device, swap_chain, UINT64_MAX, image_available_semaphores[frame_index], VK_NULL_HANDLE, &image_index);
 
-        vkResetCommandBuffer(command_buffer, 0);
+        vkResetCommandBuffer(command_buffers[frame_index], 0);
 
         VkCommandBufferBeginInfo command_buffer_begin_info{ };
         command_buffer_begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
         command_buffer_begin_info.flags = 0;
         command_buffer_begin_info.pInheritanceInfo = nullptr;
 
-        if (vkBeginCommandBuffer(command_buffer, &command_buffer_begin_info) != VK_SUCCESS)
+        if (vkBeginCommandBuffer(command_buffers[frame_index], &command_buffer_begin_info) != VK_SUCCESS)
             throw std::runtime_error("unable to begin recording command buffer");
 
         VkRenderPassBeginInfo render_pass_begin_info{ };
@@ -162,33 +171,34 @@ void PTApplication::mainLoop()
         render_pass_begin_info.clearValueCount = 1;
         render_pass_begin_info.pClearValues = &clear_color;
 
-        vkCmdBeginRenderPass(command_buffer, &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
-        vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, demo_pipeline.pipeline);
+        vkCmdBeginRenderPass(command_buffers[frame_index], &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+        vkCmdBindPipeline(command_buffers[frame_index], VK_PIPELINE_BIND_POINT_GRAPHICS, demo_pipeline.pipeline);
 
         VkBuffer vertex_buffers[] = { vertex_buffer };
         VkDeviceSize offsets[] = { 0 };
-        vkCmdBindVertexBuffers(command_buffer, 0, 1, vertex_buffers, offsets);
-        vkCmdBindIndexBuffer(command_buffer, index_buffer, 0, VK_INDEX_TYPE_UINT16);
-        vkCmdDrawIndexed(command_buffer, static_cast<uint32_t>(demo_mesh.indices.size()), 1, 0, 0, 0);
-        vkCmdEndRenderPass(command_buffer);
+        vkCmdBindVertexBuffers(command_buffers[frame_index], 0, 1, vertex_buffers, offsets);
+        vkCmdBindIndexBuffer(command_buffers[frame_index], index_buffer, 0, VK_INDEX_TYPE_UINT16);
+        vkCmdBindDescriptorSets(command_buffers[frame_index], VK_PIPELINE_BIND_POINT_GRAPHICS, demo_pipeline.layout, 0, 1, &descriptor_sets[frame_index], 0, nullptr);
+        vkCmdDrawIndexed(command_buffers[frame_index], static_cast<uint32_t>(demo_mesh.indices.size()), 1, 0, 0, 0);
+        vkCmdEndRenderPass(command_buffers[frame_index]);
 
-        if (vkEndCommandBuffer(command_buffer) != VK_SUCCESS)
+        if (vkEndCommandBuffer(command_buffers[frame_index]) != VK_SUCCESS)
             throw std::runtime_error("unable to record command buffer");
 
         VkSubmitInfo submit_info{ };
         submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        VkSemaphore submit_wait_semaphores[] = { image_available_semaphore };
+        VkSemaphore submit_wait_semaphores[] = { image_available_semaphores[frame_index] };
         VkPipelineStageFlags submit_wait_stages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
         submit_info.waitSemaphoreCount = 1;
         submit_info.pWaitSemaphores = submit_wait_semaphores;
         submit_info.pWaitDstStageMask = submit_wait_stages;
         submit_info.commandBufferCount = 1;
-        submit_info.pCommandBuffers = &command_buffer;
-        VkSemaphore signal_semaphores[] = { render_finished_semaphore };
+        submit_info.pCommandBuffers = &command_buffers[frame_index];
+        VkSemaphore signal_semaphores[] = { render_finished_semaphores[frame_index] };
         submit_info.signalSemaphoreCount = 1;
         submit_info.pSignalSemaphores = signal_semaphores;
 
-        if (vkQueueSubmit(queues[PTQueueFamily::GRAPHICS], 1, &submit_info, in_flight_fence) != VK_SUCCESS)
+        if (vkQueueSubmit(queues[PTQueueFamily::GRAPHICS], 1, &submit_info, in_flight_fences[frame_index]) != VK_SUCCESS)
             throw std::runtime_error("unable to submit draw command buffer");
 
         VkPresentInfoKHR present_info{ };
@@ -203,6 +213,8 @@ void PTApplication::mainLoop()
 
         if (vkQueuePresentKHR(queues[PTQueueFamily::PRESENT], &present_info) != VK_SUCCESS)
             throw std::runtime_error("unable to present swapchain image");
+
+        frame_index = (frame_index + 1) % MAX_FRAMES_IN_FLIGHT;
     }
 
     vkDeviceWaitIdle(device);
@@ -214,14 +226,27 @@ void PTApplication::deinitController()
 
 void PTApplication::deinitVulkan()
 {
-    vkDestroySemaphore(device, image_available_semaphore, nullptr);
-    vkDestroySemaphore(device, render_finished_semaphore, nullptr);
-    vkDestroyFence(device, in_flight_fence, nullptr);
-
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    {
+        vkDestroySemaphore(device, image_available_semaphores[i], nullptr);
+        vkDestroySemaphore(device, render_finished_semaphores[i], nullptr);
+        vkDestroyFence(device, in_flight_fences[i], nullptr);
+    }
+    
     vkDestroyCommandPool(device, command_pool, nullptr);
 
     for (auto framebuffer : framebuffers)
         vkDestroyFramebuffer(device, framebuffer, nullptr);
+
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    {
+        vkDestroyBuffer(device, uniform_buffers[i], nullptr);
+        vkFreeMemory(device, uniform_buffers_memory[i], nullptr);
+    }
+
+    vkDestroyDescriptorPool(device, descriptor_pool, nullptr);
+
+    vkDestroyDescriptorSetLayout(device, demo_descriptor_set_layout, nullptr);
 
     vkDestroyPipeline(device, demo_pipeline.pipeline, nullptr);
     vkDestroyPipelineLayout(device, demo_pipeline.layout, nullptr);
@@ -536,6 +561,25 @@ void PTApplication::collectSwapChainImages(const VkSurfaceFormatKHR& selected_su
     cout << "    created " << swap_chain_image_views.size() << " image views." << endl;
 }
 
+void PTApplication::createDescriptorSetLayout()
+{
+    VkDescriptorSetLayoutBinding transform_binding{ };
+    transform_binding.binding = 0;
+    transform_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    transform_binding.descriptorCount = 1;
+    transform_binding.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS;
+
+    VkDescriptorSetLayoutCreateInfo layout_create_info{ };
+    layout_create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layout_create_info.bindingCount = 1;
+    layout_create_info.pBindings = &transform_binding;
+
+    if (vkCreateDescriptorSetLayout(device, &layout_create_info, nullptr, &demo_descriptor_set_layout) != VK_SUCCESS)
+        throw runtime_error("unable to create descriptor set layout");
+    
+
+}
+
 VkRenderPass PTApplication::createRenderPass()
 {
     cout << "    creating render pass..." << endl;
@@ -680,8 +724,9 @@ PTPipeline PTApplication::constructPipeline(const PTShader& shader, const VkRend
 
     VkPipelineLayoutCreateInfo pipeline_layout_create_info{ };
     pipeline_layout_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipeline_layout_create_info.setLayoutCount = 0;
-    pipeline_layout_create_info.pSetLayouts = nullptr;
+    pipeline_layout_create_info.setLayoutCount = 1;
+    // TODO: convert this to a parameter
+    pipeline_layout_create_info.pSetLayouts = &demo_descriptor_set_layout;
     pipeline_layout_create_info.pushConstantRangeCount = 0;
     pipeline_layout_create_info.pPushConstantRanges = nullptr;
 
@@ -793,9 +838,23 @@ void PTApplication::createVertexBuffer()
     vkFreeMemory(device, staging_buffer_memory, nullptr);
 }
 
-void PTApplication::createCommandPoolAndBuffer(const PTQueueFamilies& queue_families)
+void PTApplication::createUniformBuffers()
 {
+    VkDeviceSize transform_buffer_size = sizeof(TransformMatrices);
 
+    uniform_buffers.resize(MAX_FRAMES_IN_FLIGHT);
+    uniform_buffers_memory.resize(MAX_FRAMES_IN_FLIGHT);
+    uniform_buffers_mapped.resize(MAX_FRAMES_IN_FLIGHT);
+
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    {
+        createBuffer(transform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniform_buffers[i], uniform_buffers_memory[i]);
+        vkMapMemory(device, uniform_buffers_memory[i], 0, transform_buffer_size, 0, &uniform_buffers_mapped[i]);
+    }
+}
+
+void PTApplication::createCommandPoolAndBuffers(const PTQueueFamilies& queue_families)
+{
     VkCommandPoolCreateInfo pool_create_info{ };
     pool_create_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
@@ -808,10 +867,58 @@ void PTApplication::createCommandPoolAndBuffer(const PTQueueFamilies& queue_fami
     buffer_alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     buffer_alloc_info.commandPool = command_pool;
     buffer_alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    buffer_alloc_info.commandBufferCount = 1;
+    buffer_alloc_info.commandBufferCount = MAX_FRAMES_IN_FLIGHT;
+    
+    command_buffers.resize(MAX_FRAMES_IN_FLIGHT);
 
-    if (vkAllocateCommandBuffers(device, &buffer_alloc_info, &command_buffer) != VK_SUCCESS)
-        throw std::runtime_error("unable to allocate command buffer");
+    if (vkAllocateCommandBuffers(device, &buffer_alloc_info, command_buffers.data()) != VK_SUCCESS)
+        throw std::runtime_error("unable to allocate command buffers");
+}
+
+void PTApplication::createDescriptorPoolAndSets()
+{
+    VkDescriptorPoolSize pool_size{ };
+    pool_size.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    pool_size.descriptorCount = MAX_FRAMES_IN_FLIGHT;
+
+    VkDescriptorPoolCreateInfo pool_create_info{ };
+    pool_create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    pool_create_info.maxSets = MAX_FRAMES_IN_FLIGHT;
+    pool_create_info.poolSizeCount = 1;
+    pool_create_info.pPoolSizes = &pool_size;
+
+    if (vkCreateDescriptorPool(device, &pool_create_info, nullptr, &descriptor_pool) != VK_SUCCESS)
+        throw runtime_error("unable to create descriptor pool");
+
+    vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, demo_descriptor_set_layout);
+    VkDescriptorSetAllocateInfo set_allocation_info{ };
+    set_allocation_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    set_allocation_info.descriptorPool = descriptor_pool;
+    set_allocation_info.descriptorSetCount = MAX_FRAMES_IN_FLIGHT;
+    set_allocation_info.pSetLayouts = layouts.data();
+
+    descriptor_sets.resize(MAX_FRAMES_IN_FLIGHT);
+    if (vkAllocateDescriptorSets(device, &set_allocation_info, descriptor_sets.data()) != VK_SUCCESS)
+        throw runtime_error("unable to allocate descriptor sets");
+    
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    {
+        VkDescriptorBufferInfo buffer_info{ };
+        buffer_info.buffer = uniform_buffers[i];
+        buffer_info.offset = 0;
+        buffer_info.range = sizeof(TransformMatrices);
+
+        VkWriteDescriptorSet write_set{ };
+        write_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        write_set.dstSet = descriptor_sets[i];
+        write_set.dstBinding = 0;
+        write_set.dstArrayElement = 0;
+        write_set.descriptorCount = 1;
+        write_set.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        write_set.pBufferInfo = &buffer_info;
+
+        vkUpdateDescriptorSets(device, 1, &write_set, 0, nullptr);
+    }
 }
 
 void PTApplication::createSyncObjects()
@@ -823,14 +930,42 @@ void PTApplication::createSyncObjects()
     fence_create_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fence_create_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-    if (vkCreateSemaphore(device, &semaphore_create_info, nullptr, &image_available_semaphore) != VK_SUCCESS)
-        throw std::runtime_error("unable to create semaphore");
+    image_available_semaphores.resize(MAX_FRAMES_IN_FLIGHT);
+    render_finished_semaphores.resize(MAX_FRAMES_IN_FLIGHT);
+    in_flight_fences.resize(MAX_FRAMES_IN_FLIGHT);
 
-    if (vkCreateSemaphore(device, &semaphore_create_info, nullptr, &render_finished_semaphore) != VK_SUCCESS)
-        throw std::runtime_error("unable to create semaphore");
-    
-    if (vkCreateFence(device, &fence_create_info, nullptr, &in_flight_fence) != VK_SUCCESS)
-        throw std::runtime_error("unable to create fence");
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    {
+        if (vkCreateSemaphore(device, &semaphore_create_info, nullptr, &image_available_semaphores[i]) != VK_SUCCESS)
+            throw std::runtime_error("unable to create semaphore");
+
+        if (vkCreateSemaphore(device, &semaphore_create_info, nullptr, &render_finished_semaphores[i]) != VK_SUCCESS)
+            throw std::runtime_error("unable to create semaphore");
+        
+        if (vkCreateFence(device, &fence_create_info, nullptr, &in_flight_fences[i]) != VK_SUCCESS)
+            throw std::runtime_error("unable to create fence");
+    }
+}
+
+void PTApplication::updateUniformBuffers(uint32_t frame_index)
+{
+    TransformMatrices transform;
+    current_scene->getCameraMatrix().getColumnMajor(transform.world_to_clip);
+    OLMatrix4f().getColumnMajor(transform.model_to_world);
+
+    cout << "world to clip matrix:" << endl;
+    cout << current_scene->getCameraMatrix().row_0() << endl;
+    cout << current_scene->getCameraMatrix().row_1() << endl;
+    cout << current_scene->getCameraMatrix().row_2() << endl;
+    cout << current_scene->getCameraMatrix().row_3() << endl;
+
+    cout << "blank matrix:" << endl;
+    cout << OLMatrix4f().row_0() << endl;;
+    cout << OLMatrix4f().row_1() << endl;;
+    cout << OLMatrix4f().row_2() << endl;;
+    cout << OLMatrix4f().row_3() << endl;;
+
+    memcpy(uniform_buffers_mapped[frame_index], &transform, sizeof(TransformMatrices));
 }
 
 void PTApplication::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage_flags, VkMemoryPropertyFlags memory_flags, VkBuffer& buffer, VkDeviceMemory& buffer_memory)

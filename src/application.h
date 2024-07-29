@@ -15,6 +15,12 @@
 
 using namespace std;
 
+struct TransformMatrices
+{
+    float model_to_world[16];
+    float world_to_clip[16];
+};
+
 inline VkVertexInputBindingDescription getVertexBindingDescription()
 {
     VkVertexInputBindingDescription description{ };
@@ -66,6 +72,8 @@ struct PTPhysicalDeviceDetails
 
 bool areQueuesPresent(PTQueueFamilies& families);
 
+const uint32_t MAX_FRAMES_IN_FLIGHT = 2;
+
 class PTApplication
 {
 private:
@@ -89,18 +97,27 @@ private:
     map<PTQueueFamily, VkQueue> queues;
 
     VkCommandPool command_pool;
-    VkCommandBuffer command_buffer;
+    vector<VkCommandBuffer> command_buffers;
+    VkDescriptorPool descriptor_pool;
+    vector<VkDescriptorSet> descriptor_sets;
     
-    VkSemaphore image_available_semaphore;
-    VkSemaphore render_finished_semaphore;
-    VkFence in_flight_fence;
+    vector<VkSemaphore> image_available_semaphores;
+    vector<VkSemaphore> render_finished_semaphores;
+    vector<VkFence> in_flight_fences;
+
     VkRenderPass demo_render_pass;
+    VkDescriptorSetLayout demo_descriptor_set_layout;
     PTPipeline demo_pipeline;
     PTShader* demo_shader;
+
     VkBuffer vertex_buffer;
     VkDeviceMemory vertex_buffer_memory;
     VkBuffer index_buffer;
     VkDeviceMemory index_buffer_memory;
+
+    vector<VkBuffer> uniform_buffers;
+    vector<VkDeviceMemory> uniform_buffers_memory;
+    vector<void*> uniform_buffers_mapped;
 
     static constexpr char* required_device_extensions[1] =
     {
@@ -143,13 +160,17 @@ private:
     void collectQueues(const PTQueueFamilies& queue_families);
     void initSwapChain(const PTSwapChainDetails& swap_chain_info, PTQueueFamilies& queue_families, VkSurfaceFormatKHR& selected_surface_format, VkExtent2D& selected_extent, uint32_t& selected_image_count);
     void collectSwapChainImages(const VkSurfaceFormatKHR& selected_surface_format, const VkExtent2D& selected_extent, uint32_t& selected_image_count);
+    void createDescriptorSetLayout();
     VkRenderPass createRenderPass();
     PTPipeline constructPipeline(const PTShader& shader, const VkRenderPass render_pass);
     void createFramebuffers(const VkRenderPass render_pass);
-    void createCommandPoolAndBuffer(const PTQueueFamilies& queue_families);
+    void createCommandPoolAndBuffers(const PTQueueFamilies& queue_families);
     void createVertexBuffer();
+    void createUniformBuffers();
+    void createDescriptorPoolAndSets();
     void createSyncObjects();
 
+    void updateUniformBuffers(uint32_t frame_index);
     void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage_flags, VkMemoryPropertyFlags memory_flags, VkBuffer& buffer, VkDeviceMemory& buffer_memory);
     void copyBuffer(VkBuffer source, VkBuffer destination, VkDeviceSize size);
     int evaluatePhysicalDevice(VkPhysicalDevice d, PTQueueFamilies& families, PTSwapChainDetails& swap_chain);

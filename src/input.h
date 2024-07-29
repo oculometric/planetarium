@@ -76,7 +76,7 @@ private:
     int16_t look_axis_x = 0;
     int16_t look_axis_y = 0;
 
-    uint32_t button_states;
+    uint32_t button_states = 0;
 
 public:
     void pollControllers();
