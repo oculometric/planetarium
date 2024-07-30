@@ -170,7 +170,12 @@ private:
     void createDescriptorPoolAndSets();
     void createSyncObjects();
 
+    VkCommandBuffer beginTransientCommands();
+    void endTransientCommands(VkCommandBuffer transient_command_buffer);
     void updateUniformBuffers(uint32_t frame_index);
+    void loadTextureToImage(string texture_file);
+    void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout);
+    void createImage(uint32_t image_width, uint32_t image_height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& image_memory);
     void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage_flags, VkMemoryPropertyFlags memory_flags, VkBuffer& buffer, VkDeviceMemory& buffer_memory);
     void copyBuffer(VkBuffer source, VkBuffer destination, VkDeviceSize size);
     int evaluatePhysicalDevice(VkPhysicalDevice d, PTQueueFamilies& families, PTSwapChainDetails& swap_chain);

@@ -8,6 +8,7 @@
 #include <algorithm>
 #include "scene.h"
 #include <cstdlib>
+#include "../lib/oculib/image.h"
 
 //#include <vulkan/vk_enum_string_helper.h>
 
@@ -947,6 +948,41 @@ void PTApplication::createSyncObjects()
     }
 }
 
+VkCommandBuffer PTApplication::beginTransientCommands()
+{
+    VkCommandBufferAllocateInfo allocation_info{ };
+    allocation_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocation_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocation_info.commandPool = command_pool;
+    allocation_info.commandBufferCount = 1;
+
+    VkCommandBuffer transient_command_buffer;
+    vkAllocateCommandBuffers(device, &allocation_info, &transient_command_buffer);
+
+    VkCommandBufferBeginInfo begin_info{ };
+    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+
+    vkBeginCommandBuffer(transient_command_buffer, &begin_info);
+
+    return transient_command_buffer;
+}
+
+void PTApplication::endTransientCommands(VkCommandBuffer transient_command_buffer)
+{
+    vkEndCommandBuffer(transient_command_buffer);
+
+    VkSubmitInfo submit_info{ };
+    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submit_info.commandBufferCount = 1;
+    submit_info.pCommandBuffers = &transient_command_buffer;
+
+    vkQueueSubmit(queues[PTQueueFamily::GRAPHICS], 1, &submit_info, VK_NULL_HANDLE);
+    vkQueueWaitIdle(queues[PTQueueFamily::GRAPHICS]);
+
+    vkFreeCommandBuffers(device, command_pool, 1, &transient_command_buffer);
+}
+
 void PTApplication::updateUniformBuffers(uint32_t frame_index)
 {
     TransformMatrices transform;
@@ -966,6 +1002,97 @@ void PTApplication::updateUniformBuffers(uint32_t frame_index)
     cout << OLMatrix4f().row_3() << endl;;
 
     memcpy(uniform_buffers_mapped[frame_index], &transform, sizeof(TransformMatrices));
+}
+
+void PTApplication::loadTextureToImage(string texture_file)
+{
+    // TODO: load an image to a memory buffer from the file
+    OLImage texture(texture_file);
+    VkDeviceSize image_size = texture.getSize().x * texture.getSize().y * 4;
+
+    VkBuffer staging_buffer;
+    VkDeviceMemory staging_memory;
+    createBuffer(image_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, staging_buffer, staging_memory);
+    
+    void* data;
+    vkMapMemory(device, staging_memory, 0, image_size, 0, &data);
+    memcpy(data, texture.getData(), static_cast<size_t>(image_size));
+    vkUnmapMemory(device, staging_memory);
+
+    VkImage texture_image;
+    VkDeviceMemory texture_image_memory;
+
+    createImage(texture.getSize().x, texture.getSize().y, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, texture_image, texture_image_memory);
+    // TODO: finish this
+}
+
+// TODO: buffer-to-image copy
+
+void PTApplication::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout)
+{
+    VkCommandBuffer command_buffer = beginTransientCommands();
+
+    VkImageMemoryBarrier image_barrier{ };
+    image_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    image_barrier.image = image;
+    image_barrier.oldLayout = old_layout;
+    image_barrier.newLayout = new_layout;
+    image_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    image_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    image_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    image_barrier.subresourceRange.baseMipLevel = 0;
+    image_barrier.subresourceRange.levelCount = 1;
+    image_barrier.subresourceRange.baseArrayLayer = 0;
+    image_barrier.subresourceRange.layerCount = 1;
+    image_barrier.srcAccessMask = 0; // TODO:
+    image_barrier.dstAccessMask = 0; // TODO:
+
+    vkCmdPipelineBarrier
+    (
+        command_buffer,
+        0, 0,
+        0,
+        0, nullptr,
+        0, nullptr,
+        1, &image_barrier
+    );
+
+    endTransientCommands(command_buffer);
+}
+
+void PTApplication::createImage(uint32_t image_width, uint32_t image_height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& image_memory)
+{
+    VkImageCreateInfo image_create_info{ };
+    image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    image_create_info.imageType = VK_IMAGE_TYPE_2D;
+    image_create_info.extent.width = image_width;
+    image_create_info.extent.height = image_height;
+    image_create_info.extent.depth = 1;
+    image_create_info.mipLevels = 1;
+    image_create_info.arrayLayers = 1;
+    image_create_info.format = format;
+    image_create_info.tiling = tiling;
+    image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    image_create_info.usage = usage;
+    image_create_info.flags = 0;
+    image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
+
+    if (vkCreateImage(device, &image_create_info, nullptr, &image) != VK_SUCCESS)
+        throw runtime_error("unable to create image");
+    
+    VkMemoryRequirements memory_requirements{ };
+    vkGetImageMemoryRequirements(device, image, &memory_requirements);
+
+    VkMemoryAllocateInfo allocate_info{ };
+    allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocate_info.allocationSize = memory_requirements.size;
+    allocate_info.memoryTypeIndex = findMemoryType(memory_requirements.memoryTypeBits, properties);
+
+    if (vkAllocateMemory(device, &allocate_info, nullptr, &image_memory) != VK_SUCCESS)
+        throw runtime_error("unable to allocate image memory");
+
+    vkBindImageMemory(device, image, image_memory, 0);
 }
 
 void PTApplication::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage_flags, VkMemoryPropertyFlags memory_flags, VkBuffer& buffer, VkDeviceMemory& buffer_memory)
@@ -995,20 +1122,7 @@ void PTApplication::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage_fla
 
 void PTApplication::copyBuffer(VkBuffer source, VkBuffer destination, VkDeviceSize size)
 {
-    VkCommandBufferAllocateInfo allocation_info{ };
-    allocation_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocation_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocation_info.commandPool = command_pool;
-    allocation_info.commandBufferCount = 1;
-
-    VkCommandBuffer copy_command_buffer;
-    vkAllocateCommandBuffers(device, &allocation_info, &copy_command_buffer);
-
-    VkCommandBufferBeginInfo begin_info{ };
-    begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-    vkBeginCommandBuffer(copy_command_buffer, &begin_info);
+    VkCommandBuffer copy_command_buffer = beginTransientCommands();
 
     VkBufferCopy copy_command{ };
     copy_command.dstOffset = 0;
@@ -1017,17 +1131,7 @@ void PTApplication::copyBuffer(VkBuffer source, VkBuffer destination, VkDeviceSi
 
     vkCmdCopyBuffer(copy_command_buffer, source, destination, 1, &copy_command);
 
-    vkEndCommandBuffer(copy_command_buffer);
-
-    VkSubmitInfo submit_info{ };
-    submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-    submit_info.commandBufferCount = 1;
-    submit_info.pCommandBuffers = &copy_command_buffer;
-
-    vkQueueSubmit(queues[PTQueueFamily::GRAPHICS], 1, &submit_info, VK_NULL_HANDLE);
-    vkQueueWaitIdle(queues[PTQueueFamily::GRAPHICS]);
-
-    vkFreeCommandBuffers(device, command_pool, 1, &copy_command_buffer);
+    endTransientCommands(copy_command_buffer);
 }
 
 int PTApplication::evaluatePhysicalDevice(VkPhysicalDevice d, PTQueueFamilies& families, PTSwapChainDetails& swap_chain)
