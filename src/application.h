@@ -15,6 +15,9 @@
 
 using namespace std;
 
+// TODO: streamline this by separating functionality into smaller classes which handle specific parts of functionality (e.g. handling the window, handling the devices, handling resources, providing helper functions)
+// TODO: create a resource management system to handle creating/destroying resources and their associated device memory
+
 struct TransformMatrices
 {
     float model_to_world[16];
@@ -119,6 +122,10 @@ private:
     vector<VkDeviceMemory> uniform_buffers_memory;
     vector<void*> uniform_buffers_mapped;
 
+    VkImage depth_image;
+    VkDeviceMemory depth_image_memory;
+    VkImageView depth_image_view;
+
     static constexpr char* required_device_extensions[1] =
     {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME
@@ -165,6 +172,7 @@ private:
     PTPipeline constructPipeline(const PTShader& shader, const VkRenderPass render_pass);
     void createFramebuffers(const VkRenderPass render_pass);
     void createCommandPoolAndBuffers(const PTQueueFamilies& queue_families);
+    void createDepthResources();
     void createVertexBuffer();
     void createUniformBuffers();
     void createDescriptorPoolAndSets();
@@ -175,7 +183,9 @@ private:
     void updateUniformBuffers(uint32_t frame_index);
     void loadTextureToImage(string texture_file);
     void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout);
+    void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
     void createImage(uint32_t image_width, uint32_t image_height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& image_memory);
+    VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspect_flags);
     void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage_flags, VkMemoryPropertyFlags memory_flags, VkBuffer& buffer, VkDeviceMemory& buffer_memory);
     void copyBuffer(VkBuffer source, VkBuffer destination, VkDeviceSize size);
     int evaluatePhysicalDevice(VkPhysicalDevice d, PTQueueFamilies& families, PTSwapChainDetails& swap_chain);
