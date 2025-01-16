@@ -138,7 +138,7 @@ void PTApplication::mainLoop()
 
         frame_time_running_mean_us = (frame_time_running_mean_us + (chrono::duration_cast<chrono::microseconds>(frame_time).count())) / 2;
 
-        cout << "\033[2J\033[3J\033[1;1H";
+        //cout << "\033[2J\033[3J\033[1;1H";
         cout << "fps: " << 1000000 / frame_time_running_mean_us << ", frame time: " << chrono::duration_cast<chrono::milliseconds>(frame_time).count() << " ms (running mean: " << frame_time_running_mean_us / 1000 << " ms)" << endl;
         cout.flush();
         last_frame_start = now;
@@ -216,7 +216,8 @@ void PTApplication::mainLoop()
         present_info.pImageIndices = &image_index;
         present_info.pResults = nullptr;
 
-        if (vkQueuePresentKHR(queues[PTQueueFamily::PRESENT], &present_info) != VK_SUCCESS)
+        VkResult res = vkQueuePresentKHR(queues[PTQueueFamily::PRESENT], &present_info);
+        if (res != VK_SUCCESS)
             throw std::runtime_error("unable to present swapchain image");
 
         frame_index = (frame_index + 1) % MAX_FRAMES_IN_FLIGHT;
@@ -767,7 +768,6 @@ PTPipeline PTApplication::constructPipeline(const PTShader& shader, const VkRend
     pipeline_create_info.pViewportState = &viewport_state_create_info;
     pipeline_create_info.pRasterizationState = &rasteriser_create_info;
     pipeline_create_info.pMultisampleState = &multisampling_create_info;
-    pipeline_create_info.pDepthStencilState = nullptr;
     pipeline_create_info.pColorBlendState = &colour_blend_create_info;
     pipeline_create_info.pDepthStencilState = &depth_create_info;
     pipeline_create_info.pDynamicState = &dynamic_state_create_info;

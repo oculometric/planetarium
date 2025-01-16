@@ -4,7 +4,7 @@ OBJ_DIR			:= bin/obj
 SHR_DIR			:= shr
 
 CC				:= g++
-CC_FLAGS		:= -std=c++17 -g -O2
+CC_FLAGS		:= -std=c++17 -g -O0
 CC_INCLUDE		:= 
 
 LD				:= g++

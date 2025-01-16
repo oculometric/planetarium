@@ -33,14 +33,14 @@ void PTScene::update(float delta_time)
     OLVector4f world_movement = camera.getLocalRotation() * local_movement;
 
     camera.local_position += OLVector3f{ world_movement.x, world_movement.y, world_movement.z };
-    cout << "camera position: " << endl << camera.local_position << endl;
+    cout << "camera position: " << camera.local_position << endl;
     
     camera.local_rotation -= (OLVector3f{ (float)manager->getAxisState(PTInputAxis::LOOK_AXIS_Y), 0, (float)manager->getAxisState(PTInputAxis::LOOK_AXIS_X) } / INT16_MAX) * delta_time * 90.0f;
-    cout << "camera rotation: " << endl << camera.local_rotation << endl;
+    cout << "camera rotation: " << camera.local_rotation << endl;
 
     camera.horizontal_fov += ((float)manager->getButtonState(PTInputButton::RIGHT_MINOR) - (float)manager->getButtonState(PTInputButton::LEFT_MINOR)) * delta_time * 30.0f;
     camera.horizontal_fov = max(min(camera.horizontal_fov, 120.0f), 10.0f);
-    cout << "camera fov: " << endl << camera.horizontal_fov << endl;
+    cout << "camera fov: " << camera.horizontal_fov << endl;
 }
 
 OLMatrix4f PTScene::getCameraMatrix()
