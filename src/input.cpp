@@ -7,6 +7,8 @@
 #include <iostream>
 #include <pthread.h>
 
+#include "debug.h"
+
 using namespace std;
 
 PTController::PTController()
@@ -94,11 +96,11 @@ void PTInputManager::translate(PTControllerEvent gamepad_event)
     }
     else if (gamepad_event.type == PTControllerEventType::INIT)
     {
-        cout << "gamepad init" << endl;
+        debugLog("gamepad init");
     }
     else
     {
-        cout << "uh oh! invalid gamepad event" << endl;
+        debugLog("uh oh! invalid gamepad event");
     }
 }
 
@@ -106,10 +108,7 @@ void PTInputManager::translate(int key, int action, int mods)
 {
     if (action == 2) return;
     
-    cout << "keyboard event: " << endl;
-    cout << "    key       : " << key << endl;
-    cout << "    action    : " << action << endl;
-    cout << "    mods      : " << mods << endl;
+    debugLog("keyboard event: key (" + to_string(key) + "), action (" + to_string(action) + "), mods (" + to_string(mods) + ")");
 }
 
 void PTInputManager::setButtonState(PTInputButton button, bool state)

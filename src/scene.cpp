@@ -24,8 +24,8 @@ void PTScene::update(float delta_time)
     OLVector4f local_movement = OLVector4f
     {
         (float)manager->getAxisState(PTInputAxis::MOVE_AXIS_X) / (float)INT16_MAX,
-        -(float)manager->getAxisState(PTInputAxis::MOVE_AXIS_Y) / (float)INT16_MAX, 
-        (float)manager->getButtonState(PTInputButton::LEFT_MAJOR) - (float)manager->getButtonState(PTInputButton::RIGHT_MAJOR),
+        -((float)manager->getButtonState(PTInputButton::LEFT_MAJOR) - (float)manager->getButtonState(PTInputButton::RIGHT_MAJOR)),
+        (float)manager->getAxisState(PTInputAxis::MOVE_AXIS_Y) / (float)INT16_MAX, 
         0
     } * delta_time * 2.0f;
 

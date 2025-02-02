@@ -40,10 +40,11 @@ public:
 
     void appendToLog(string s);
     void setFrametime(float delta, int number);
+    void showExitButton();
+    static void exitButtonCallback();
 
     inline ~PTDebugManager()
     {
-        should_halt = true;
         render_thread.join();
 
         main_page->render();
@@ -77,8 +78,8 @@ void debugDeinit()
 {
     if (mgr != nullptr)
     {
+        mgr->showExitButton();
         delete mgr;
-        mgr = nullptr;
     }
 }
 
@@ -94,17 +95,22 @@ void debugFrametiming(float delta_time, int frame_number)
     mgr->setFrametime(delta_time, frame_number);
 }
 
+void PTDebugManager::exitButtonCallback()
+{
+    mgr->should_halt = true;
+}
+
 void PTDebugManager::appendToLog(string s)
 {
     console->text += s + '\n';
     console->scroll++;
-    if (console->text.length() > 5000)
-    {
-        size_t cutoff = console->text.find('\n', 5000);
-        if (cutoff == string::npos || cutoff - 5000 > 200)
-            cutoff = 5000;
-        console->text = console->text.substr(cutoff);
-    }
+    // if (console->text.length() > 5000)
+    // {
+    //     size_t cutoff = console->text.find('\n', 5000);
+    //     if (cutoff == string::npos || cutoff - 5000 > 200)
+    //         cutoff = 5000;
+    //     console->text = console->text.substr(cutoff);
+    // }
 }
 
 void PTDebugManager::setFrametime(float delta, int number)
@@ -112,14 +118,24 @@ void PTDebugManager::setFrametime(float delta, int number)
     frame_label->text = format("{:.2f}fps | {:.2f}ms ({})", 1000.0f / delta, delta, number);
 }
 
+void PTDebugManager::showExitButton()
+{
+    VerticalBox* vb = (VerticalBox*)((main_page->getRoot()->getAllChildren())[0]->getAllChildren()[0]);
+    Label* l = (Label*)(vb->children[3]);
+    vb->children[3] = new Button("press enter to exit", exitButtonCallback);
+    main_page->focusable_component_sequence.push_back(vb->children[3]);
+    main_page->setFocusIndex(main_page->focusable_component_sequence.size() - 1);
+    main_page->ensureIntegrity();
+}
+
 void PTDebugManager::renderLoop()
 {
-    while (true)
+    while (!should_halt)
     {
         bool dirty = main_page->checkInput();
 
         main_page->render();
 
-        main_page->framerate(48);
+        main_page->framerate(24);
     }
 }

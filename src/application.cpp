@@ -44,7 +44,7 @@ void PTApplication::initWindow()
 
     debugLog("    initialising window...");
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
     window = glfwCreateWindow(width, height, "planetarium", nullptr, nullptr);
 
@@ -117,9 +117,6 @@ void PTApplication::initController()
 
 void PTApplication::mainLoop()
 {
-    cout << endl;
-    cout << endl;
-
     current_scene = new PTScene(this);
 
     int frame_total_number = 0;
@@ -136,7 +133,6 @@ void PTApplication::mainLoop()
         frame_time_running_mean_us = (frame_time_running_mean_us + (chrono::duration_cast<chrono::microseconds>(frame_time).count())) / 2;
 
         debugFrametiming(chrono::duration_cast<chrono::nanoseconds>(frame_time).count() / 1000000.0f, frame_total_number);        
-        cout.flush();
         last_frame_start = now;
 
         current_scene->update(frame_time.count());
@@ -369,9 +365,9 @@ void PTApplication::initSurface()
 
 PTPhysicalDevice PTApplication::selectPhysicalDevice()
 {
-    cout << "    enumerating physical devices: ";
+    debugLog("    enumerating physical devices: ");
     vector<PTPhysicalDevice> devices = PTPhysicalDevice::enumerateDevices(instance, surface);
-    cout << devices.size() << " found.";
+    debugLog("    " + to_string(devices.size()) + " found.");
     debugLog("    selecting physical device...");
     if (devices.size() == 0)
         throw runtime_error("unable to find physical device");
@@ -657,7 +653,7 @@ PTPipeline PTApplication::constructPipeline(const PTShader& shader, const VkRend
 
     debugLog("done.");
 
-    cout << "        creating graphics pipeline... ";
+    debugLog("        creating graphics pipeline... ");
 
     vector<VkPipelineShaderStageCreateInfo> shader_stages = shader.getStageCreateInfo();
 

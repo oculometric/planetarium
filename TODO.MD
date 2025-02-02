@@ -14,7 +14,6 @@
 
 ## Engine Stuff
 
-- [ ] make input file respect new debug system
 - [ ] integrate STUI for terminal stuff
 - [ ] develop a debugging utility class
 - [ ] scene tree system
@@ -37,3 +36,4 @@
 - [x] make swapchain stuff (swapchain, swapchain format, extent, images, imageviews, framebuffers) its own file, and handle creation/destruction, maybe recreation (as opposed to just destroy whole thing and recreate)
 - [x] implement swapchain/framebuffer resizing
 - [x] fix instantly crashing on frame 2 or whatever
+- [x] make input file respect new debug system

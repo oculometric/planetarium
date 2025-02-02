@@ -21,5 +21,6 @@ int main(int argc, char* argv[])
         //std::cerr << e.what() << std::endl;
         return EXIT_FAILURE;
     }
+    debugDeinit();
     return EXIT_SUCCESS;
 };
