@@ -1,10 +1,14 @@
 #include <iostream>
 #include <string>
+
 #include "application.h"
+#include "debug.h"
 
 int main(int argc, char* argv[])
 {
-    std::cout << "Hello, Universe!" << std::endl;
+    debugInit();
+
+    debugLog("Hello, Universe!");
     PTApplication app = PTApplication(640, 480);
     try
     {
@@ -12,7 +16,9 @@ int main(int argc, char* argv[])
     }
     catch (const std::exception& e)
     {
-        std::cerr << e.what() << std::endl;
+        debugLog("FATAL ERROR: " + string(e.what()));
+        debugDeinit();
+        //std::cerr << e.what() << std::endl;
         return EXIT_FAILURE;
     }
     return EXIT_SUCCESS;

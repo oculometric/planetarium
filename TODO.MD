@@ -16,6 +16,8 @@
 
 ## Engine Stuff
 
+- [ ] integrate STUI for terminal stuff
+- [ ] develop a debugging utility class
 - [ ] scene tree system
 - [ ] UI system (use STUI to generate charbufs, then pass it into a shader maybe????)
 - [ ] object and vertex picking
