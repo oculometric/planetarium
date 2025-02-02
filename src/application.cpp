@@ -65,25 +65,22 @@ void PTApplication::initVulkan()
     initSurface();
 
     // scan physical devices
-    PTQueueFamilies queue_families;
-    PTSwapChainDetails swap_chain_info;
-    initPhysicalDevice(queue_families, swap_chain_info);
+    physical_device = selectPhysicalDevice();
 
     // create queue indices
-    vector<VkDeviceQueueCreateInfo> queue_create_infos;
-    constructQueues(queue_families, queue_create_infos);
+    vector<VkDeviceQueueCreateInfo> queue_create_infos = constructQueues();
 
     // create logical device
     initLogicalDevice(queue_create_infos, layers);
 
     // grab queue handles
-    collectQueues(queue_families);
+    collectQueues();
 
     // create swap chain
     VkSurfaceFormatKHR selected_surface_format;
     VkExtent2D selected_extent;
     uint32_t selected_image_count;
-    initSwapChain(swap_chain_info, queue_families, selected_surface_format, selected_extent, selected_image_count);
+    initSwapChain(selected_surface_format, selected_extent, selected_image_count);
 
     // retrieve images from the swap chain
     collectSwapChainImages(selected_surface_format, selected_extent, selected_image_count);
@@ -95,7 +92,7 @@ void PTApplication::initVulkan()
     demo_render_pass = createRenderPass();
     demo_pipeline = constructPipeline(*demo_shader, demo_render_pass);
 
-    createCommandPoolAndBuffers(queue_families);
+    createCommandPoolAndBuffers();
 
     createDepthResources();
 
@@ -362,49 +359,37 @@ void PTApplication::initSurface()
     cout << "    done." << endl;
 }
 
-void PTApplication::initPhysicalDevice(PTQueueFamilies& queue_families, PTSwapChainDetails& swap_chain_info)
+PTPhysicalDevice PTApplication::selectPhysicalDevice()
 {
+    cout << "    enumerating physical devices: ";
+    vector<PTPhysicalDevice> devices = PTPhysicalDevice::enumerateDevices(instance, surface);
+    cout << devices.size() << " found.";
     cout << "    selecting physical device..." << endl;
-    uint32_t device_count = 0;
-    vkEnumeratePhysicalDevices(instance, &device_count, nullptr);
-    if (device_count == 0)
+    if (devices.size() == 0)
         throw runtime_error("unable to find physical device");
-    vector<VkPhysicalDevice> physical_devices(device_count);
-    multimap<int, PTPhysicalDeviceDetails> device_scores;
-    vkEnumeratePhysicalDevices(instance, &device_count, physical_devices.data());
-    cout << "        found " << device_count << " devices" << endl;
-    for (VkPhysicalDevice found_device : physical_devices)
-    {
-        queue_families.clear();
-        int score = evaluatePhysicalDevice(found_device, queue_families, swap_chain_info);
-        device_scores.insert(make_pair(score, PTPhysicalDeviceDetails{ found_device, queue_families, swap_chain_info }));
-    }
+
+    multimap<int, PTPhysicalDevice> device_scores;
+    for (PTPhysicalDevice dev : devices)
+        device_scores.insert(make_pair(evaluatePhysicalDevice(dev), dev));
 
     // select physical device
-    if (device_scores.rbegin()->first > 0)
-    {
-        physical_device = device_scores.rbegin()->second.device;
-        queue_families = device_scores.rbegin()->second.queue_families;
-        swap_chain_info = device_scores.rbegin()->second.swap_chain;
-    }
-    else
+    if (device_scores.rbegin()->first <= 0)
         throw runtime_error("no valid physical device found");
 
-    VkPhysicalDeviceProperties properties;
-    vkGetPhysicalDeviceProperties(physical_device, &properties);
-    cout << "        selected device: \'" << properties.deviceName << "\' (" << properties.deviceID << ")" << " with score " << device_scores.rbegin()->first << endl;
+    cout << "        selected device: \'" << physical_device.getProperties().deviceName << "\' (" << physical_device.getProperties().deviceID << ")" << " with score " << device_scores.rbegin()->first << endl;
     cout << "    done." << endl;
+
+    return device_scores.rbegin()->second;
 }
 
-void PTApplication::constructQueues(const PTQueueFamilies& queue_families, vector<VkDeviceQueueCreateInfo>& queue_create_infos)
+vector<VkDeviceQueueCreateInfo> PTApplication::constructQueues()
 {
-    queue_create_infos.resize(queue_families.size());
+    vector<VkDeviceQueueCreateInfo> queue_create_infos;
     set<uint32_t> queue_indices;
-    queue_create_infos.clear();
     float graphics_queue_priority = 1.0f;
-    for (pair<PTQueueFamily, uint32_t> queue_family : queue_families)
+    for (pair<PTQueueFamily, uint32_t> queue_family : physical_device.getAllQueueFamilies())
     {
-        if (queue_indices.find(queue_family.second) != queue_indices.cend())
+        if (queue_indices.count(queue_family.second) > 0)
             continue;
         VkDeviceQueueCreateInfo queue_create_info{ };
         queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
@@ -415,6 +400,8 @@ void PTApplication::constructQueues(const PTQueueFamilies& queue_families, vecto
         queue_create_infos.push_back(queue_create_info);
         queue_indices.insert(queue_family.second);
     }
+
+    return queue_create_infos;
 }
 
 void PTApplication::initLogicalDevice(const vector<VkDeviceQueueCreateInfo>& queue_create_infos, const vector<const char*>& layers)
@@ -442,17 +429,17 @@ void PTApplication::initLogicalDevice(const vector<VkDeviceQueueCreateInfo>& que
     device_create_info.ppEnabledLayerNames = layers.data();
 #endif
 
-    if (vkCreateDevice(physical_device, &device_create_info, nullptr, &device) != VK_SUCCESS)
+    if (vkCreateDevice(physical_device.getDevice(), &device_create_info, nullptr, &device) != VK_SUCCESS)
         throw runtime_error("unable to create device");
     cout << "    done." << endl;
 }
 
-void PTApplication::collectQueues(const PTQueueFamilies& queue_families)
+void PTApplication::collectQueues()
 {
     cout << "    grabbing queue handles:" << endl;
     VkQueue queue;
     queues.clear();
-    for (pair<PTQueueFamily, uint32_t> queue_family : queue_families)
+    for (pair<PTQueueFamily, uint32_t> queue_family : physical_device.getAllQueueFamilies())
     {
         vkGetDeviceQueue(device, queue_family.second, 0, &queue);
         queues.insert(make_pair(queue_family.first, queue));
@@ -460,11 +447,11 @@ void PTApplication::collectQueues(const PTQueueFamilies& queue_families)
     }
 }
 
-void PTApplication::initSwapChain(const PTSwapChainDetails& swap_chain_info, PTQueueFamilies& queue_families, VkSurfaceFormatKHR& selected_surface_format, VkExtent2D& selected_extent, uint32_t& selected_image_count)
+void PTApplication::initSwapChain(VkSurfaceFormatKHR& selected_surface_format, VkExtent2D& selected_extent, uint32_t& selected_image_count)
 {
     cout << "    creating swap chain..." << endl;
-    selected_surface_format = swap_chain_info.formats[0];
-    for (const auto& format : swap_chain_info.formats)
+    selected_surface_format = physical_device.getSwapchainFormats()[0];
+    for (const auto& format : physical_device.getSwapchainFormats())
     {
         if (format.format == VK_FORMAT_B8G8R8A8_SRGB && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
         {
@@ -478,8 +465,10 @@ void PTApplication::initSwapChain(const PTSwapChainDetails& swap_chain_info, PTQ
     VkPresentModeKHR selected_surface_present_mode = VK_PRESENT_MODE_FIFO_KHR;
     cout << "        present mode: " << /*string_VkPresentModeKHR(selected_surface_present_mode) <<*/ endl;
 
-    if (swap_chain_info.capabilities.currentExtent.width != UINT32_MAX)
-        selected_extent = swap_chain_info.capabilities.currentExtent;
+    VkSurfaceCapabilitiesKHR capabilities = physical_device.getSwapchainCapabilities();
+
+    if (capabilities.currentExtent.width != UINT32_MAX)
+        selected_extent = capabilities.currentExtent;
     else
     {
         int width;
@@ -489,15 +478,15 @@ void PTApplication::initSwapChain(const PTSwapChainDetails& swap_chain_info, PTQ
         selected_extent.width = (uint32_t)width;
         selected_extent.height = (uint32_t)height;
 
-        selected_extent.width = clamp(selected_extent.width, swap_chain_info.capabilities.minImageExtent.width, swap_chain_info.capabilities.maxImageExtent.width);
-        selected_extent.height = clamp(selected_extent.height, swap_chain_info.capabilities.minImageExtent.height, swap_chain_info.capabilities.maxImageExtent.height);
+        selected_extent.width = clamp(selected_extent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
+        selected_extent.height = clamp(selected_extent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
     }
 
     cout << "        extent: " << selected_extent.width << "," << selected_extent.height << endl;
 
-    selected_image_count = swap_chain_info.capabilities.minImageCount + 1;
-    if (swap_chain_info.capabilities.maxImageCount > 0 && selected_image_count > swap_chain_info.capabilities.maxImageCount)
-        selected_image_count = swap_chain_info.capabilities.maxImageCount;
+    selected_image_count = capabilities.minImageCount + 1;
+    if (capabilities.maxImageCount > 0 && selected_image_count > capabilities.maxImageCount)
+        selected_image_count = capabilities.maxImageCount;
 
     cout << "        image count: " << selected_image_count << endl;
 
@@ -511,10 +500,10 @@ void PTApplication::initSwapChain(const PTSwapChainDetails& swap_chain_info, PTQ
     swap_chain_create_info.imageArrayLayers = 1;
     swap_chain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-    if (queue_families[PTQueueFamily::PRESENT] != queue_families[PTQueueFamily::GRAPHICS])
+    if (physical_device.getQueueFamily(PTQueueFamily::PRESENT) != physical_device.getQueueFamily(PTQueueFamily::GRAPHICS))
     {
-        vector<uint32_t> queue_family_indices(queue_families.size());
-        for (pair<PTQueueFamily, uint32_t> family : queue_families)
+        vector<uint32_t> queue_family_indices(physical_device.getAllQueueFamilies().size());
+        for (pair<PTQueueFamily, uint32_t> family : physical_device.getAllQueueFamilies())
             queue_family_indices.push_back(family.second);
         swap_chain_create_info.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
         swap_chain_create_info.queueFamilyIndexCount = queue_family_indices.size();
@@ -523,7 +512,7 @@ void PTApplication::initSwapChain(const PTSwapChainDetails& swap_chain_info, PTQ
     else
         swap_chain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    swap_chain_create_info.preTransform = swap_chain_info.capabilities.currentTransform;
+    swap_chain_create_info.preTransform = capabilities.currentTransform;
     swap_chain_create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
     swap_chain_create_info.presentMode = selected_surface_present_mode;
     swap_chain_create_info.clipped = VK_TRUE;
@@ -869,12 +858,12 @@ void PTApplication::createUniformBuffers()
     }
 }
 
-void PTApplication::createCommandPoolAndBuffers(const PTQueueFamilies& queue_families)
+void PTApplication::createCommandPoolAndBuffers()
 {
     VkCommandPoolCreateInfo pool_create_info{ };
     pool_create_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     pool_create_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    pool_create_info.queueFamilyIndex = queue_families.at(PTQueueFamily::GRAPHICS);
+    pool_create_info.queueFamilyIndex = physical_device.getQueueFamily(PTQueueFamily::GRAPHICS);
 
     if (vkCreateCommandPool(device, &pool_create_info, nullptr, &command_pool))
         throw std::runtime_error("unable to create command pool");
@@ -1227,17 +1216,41 @@ void PTApplication::copyBuffer(VkBuffer source, VkBuffer destination, VkDeviceSi
     endTransientCommands(copy_command_buffer);
 }
 
-int PTApplication::evaluatePhysicalDevice(VkPhysicalDevice d, PTQueueFamilies& families, PTSwapChainDetails& swap_chain)
+int PTApplication::evaluatePhysicalDevice(PTPhysicalDevice d)
 {
     int score = 0;
 
-    // fetch information about the device
-    VkPhysicalDeviceFeatures device_features;
-    VkPhysicalDeviceProperties device_properties;
-    vkGetPhysicalDeviceFeatures(d, &device_features);
-    vkGetPhysicalDeviceProperties(d, &device_properties);
+    // this device is unsuitable if it doesn't have all the queues we want
+    if (!d.hasQueueFamily(PTQueueFamily::GRAPHICS))
+        return 0;
+    if (!d.hasQueueFamily(PTQueueFamily::PRESENT))
+        return 0;
+
+    // if any required extensions are absent, the device is unsuitable
+    for (const char* extension_name : required_device_extensions)
+    {
+        bool found = false;
+        for (VkExtensionProperties& prop : d.getExtensions())
+        {
+            if (strcmp(prop.extensionName, extension_name) == 0)
+            {
+                found = true;
+                break;
+            }
+        }
+        if (!found)
+            return 0;
+    }
+
+    // query swapchain support
+    if (d.getSwapchainFormats().size() == 0)
+        return 0;
+    if (d.getSwapchainPresentModes().size() == 0)
+        return 0;
 
     // award points for being a good boy
+    auto device_properties = d.getProperties();
+    auto device_features = d.getFeatures();
     if (device_properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU)
         score += 10000;
     if (device_properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU)
@@ -1251,94 +1264,16 @@ int PTApplication::evaluatePhysicalDevice(VkPhysicalDevice d, PTQueueFamilies& f
     if (device_features.fillModeNonSolid == VK_TRUE)
         score += 10;
 
-    // grab the list of supported queue families
-    uint32_t queue_family_count = 0;
-    vkGetPhysicalDeviceQueueFamilyProperties(d, &queue_family_count, nullptr);
-    vector<VkQueueFamilyProperties> queue_families(queue_family_count);
-    vkGetPhysicalDeviceQueueFamilyProperties(d, &queue_family_count, queue_families.data());
-
-    // insert the families we want into the list
-    families = PTQueueFamilies();
-    int index = 0;
-    for (const auto& queue_family : queue_families)
-    {
-        if (queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT)
-            families.insert(make_pair(PTQueueFamily::GRAPHICS, index));
-        VkBool32 present_support;
-        vkGetPhysicalDeviceSurfaceSupportKHR(d, index, surface, &present_support);
-        if (present_support)
-            families.insert(make_pair(PTQueueFamily::PRESENT, index));
-        index++;
-    }
-
-    // this device is unsuitable if it doesn't have all the queues we want
-    if (!areQueuesPresent(families)) return 0;
-
-    // check for the presence of required extensions
-    uint32_t device_extension_count = 0;
-    vkEnumerateDeviceExtensionProperties(d, nullptr, &device_extension_count, nullptr);
-    vector<VkExtensionProperties> device_extensions(device_extension_count);
-    vkEnumerateDeviceExtensionProperties(d, nullptr, &device_extension_count, device_extensions.data());
-
-    // if any required extensions are absent, the device is unsuitable
-    for (const char* extension_name : required_device_extensions)
-    {
-        bool found = false;
-        for (VkExtensionProperties& prop : device_extensions)
-        {
-            if (strcmp(prop.extensionName, extension_name) == 0)
-            {
-                found = true;
-                break;
-            }
-        }
-        if (!found)
-            return 0;
-    }
-
-    // query swapchain support
-    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(d, surface, &swap_chain.capabilities);
-    uint32_t swap_chain_format_count = 0;
-    vkGetPhysicalDeviceSurfaceFormatsKHR(d, surface, &swap_chain_format_count, nullptr);
-    swap_chain.formats.clear();
-    if (swap_chain_format_count > 0)
-    {
-        swap_chain.formats.resize(swap_chain_format_count);
-        vkGetPhysicalDeviceSurfaceFormatsKHR(d, surface, &swap_chain_format_count, swap_chain.formats.data());
-    }
-    else
-        return 0;
-    uint32_t swap_chain_present_mode_count = 0;
-    vkGetPhysicalDeviceSurfacePresentModesKHR(d, surface, &swap_chain_present_mode_count, nullptr);
-    swap_chain.present_modes.clear();
-    if (swap_chain_present_mode_count > 0)
-    {
-        swap_chain.present_modes.resize(swap_chain_present_mode_count);
-        vkGetPhysicalDeviceSurfacePresentModesKHR(d, surface, &swap_chain_present_mode_count, swap_chain.present_modes.data());
-    }
-    else
-        return 0;
-
     return score;
 }
 
 uint32_t PTApplication::findMemoryType(uint32_t type_bits, VkMemoryPropertyFlags properties)
 {
     VkPhysicalDeviceMemoryProperties memory_properties;
-    vkGetPhysicalDeviceMemoryProperties(physical_device, &memory_properties);
+    vkGetPhysicalDeviceMemoryProperties(physical_device.getDevice(), &memory_properties);
 
     for (uint32_t i = 0; i < memory_properties.memoryTypeCount; i++)
         if ((type_bits & (1 << i)) && (memory_properties.memoryTypes[i].propertyFlags & properties) == properties) return i;
 
     throw runtime_error("unable to find suitable memory type");
-}
-
-bool areQueuesPresent(PTQueueFamilies& families)
-{
-    if (families.find(PTQueueFamily::GRAPHICS) == families.cend())
-        return false;
-    if (families.find(PTQueueFamily::PRESENT) == families.cend())
-        return false;
-
-    return true;
 }
