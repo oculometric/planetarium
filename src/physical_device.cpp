@@ -1,4 +1,4 @@
-#include "physicaldevice.h"
+#include "physical_device.h"
 
 std::vector<PTPhysicalDevice> PTPhysicalDevice::enumerateDevices(VkInstance instance, VkSurfaceKHR surface)
 {

@@ -12,7 +12,7 @@
 #include "defs.h"
 #include "shader.h"
 #include "pipeline.h"
-#include "physicaldevice.h"
+#include "physical_device.h"
 
 #include "../lib/oculib/mesh.h"
 
