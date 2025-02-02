@@ -42,6 +42,8 @@ PTControllerEvent PTController::poll()
     case JS_EVENT_AXIS: event.type = PTControllerEventType::JOYSTICK; break;
     case JS_EVENT_BUTTON: event.type = PTControllerEventType::BUTTON; break;
     case JS_EVENT_INIT: event.type = PTControllerEventType::INIT; break;
+    default:
+        event.type = (PTControllerEventType)((int)(raw_event.type) << 8); break;
     }
 
     return event;
@@ -100,7 +102,7 @@ void PTInputManager::translate(PTControllerEvent gamepad_event)
     }
     else
     {
-        debugLog("uh oh! invalid gamepad event");
+        debugLog("uh oh! invalid gamepad event: " + to_string(gamepad_event.type >> 8));
     }
 }
 
