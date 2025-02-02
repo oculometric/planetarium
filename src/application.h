@@ -152,6 +152,8 @@ private:
     void createDescriptorPoolAndSets();
     void createSyncObjects();
 
+    void resizeSwapchain();
+
     VkCommandBuffer beginTransientCommands();
     void endTransientCommands(VkCommandBuffer transient_command_buffer);
     void updateUniformBuffers(uint32_t frame_index);

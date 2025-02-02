@@ -135,7 +135,7 @@ void PTApplication::mainLoop()
 
         frame_time_running_mean_us = (frame_time_running_mean_us + (chrono::duration_cast<chrono::microseconds>(frame_time).count())) / 2;
 
-        debugFrametiming(chrono::duration_cast<chrono::milliseconds>(frame_time).count(), frame_total_number);        
+        debugFrametiming(chrono::duration_cast<chrono::nanoseconds>(frame_time).count() / 1000000.0f, frame_total_number);        
         cout.flush();
         last_frame_start = now;
 
@@ -145,10 +145,19 @@ void PTApplication::mainLoop()
 
         // TODO: move the following into appropriate functions, this is just a test
         vkWaitForFences(device, 1, &in_flight_fences[frame_index], VK_TRUE, UINT64_MAX);
-        vkResetFences(device, 1, &in_flight_fences[frame_index]);
 
         uint32_t image_index;
-        vkAcquireNextImageKHR(device, swapchain->getSwapchain(), UINT64_MAX, image_available_semaphores[frame_index], VK_NULL_HANDLE, &image_index);
+        VkResult result = vkAcquireNextImageKHR(device, swapchain->getSwapchain(), UINT64_MAX, image_available_semaphores[frame_index], VK_NULL_HANDLE, &image_index);
+
+        if (result == VK_ERROR_OUT_OF_DATE_KHR)
+        {
+            resizeSwapchain();
+            continue;
+        }
+        else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+            throw runtime_error("unable to acquire next swapchain image");
+
+        vkResetFences(device, 1, &in_flight_fences[frame_index]);
 
         vkResetCommandBuffer(command_buffers[frame_index], 0);
 
@@ -212,9 +221,11 @@ void PTApplication::mainLoop()
         present_info.pImageIndices = &image_index;
         present_info.pResults = nullptr;
 
-        VkResult res = vkQueuePresentKHR(queues[PTQueueFamily::PRESENT], &present_info);
-        if (res != VK_SUCCESS)
-            throw std::runtime_error("unable to present swapchain image");
+        result = vkQueuePresentKHR(queues[PTQueueFamily::PRESENT], &present_info);
+        if (result == VK_ERROR_OUT_OF_DATE_KHR)
+            resizeSwapchain();
+        else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+            throw runtime_error("unable to present swapchain image");
 
         frame_index = (frame_index + 1) % MAX_FRAMES_IN_FLIGHT;
         frame_total_number++;
@@ -858,6 +869,23 @@ void PTApplication::createSyncObjects()
         if (vkCreateFence(device, &fence_create_info, nullptr, &in_flight_fences[i]) != VK_SUCCESS)
             throw std::runtime_error("unable to create fence");
     }
+}
+
+void PTApplication::resizeSwapchain()
+{
+    debugLog("resizing swapchain + framebuffer...");
+    vkDeviceWaitIdle(device);
+
+    for (auto framebuffer : framebuffers)
+        vkDestroyFramebuffer(device, framebuffer, nullptr);
+
+    delete swapchain;
+
+    swapchain = new PTSwapchain(width, height, physical_device, device, surface);
+    
+    createFramebuffers(demo_render_pass);
+
+    debugLog("done.");
 }
 
 VkCommandBuffer PTApplication::beginTransientCommands()

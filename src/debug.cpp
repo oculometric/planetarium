@@ -109,7 +109,7 @@ void PTDebugManager::appendToLog(string s)
 
 void PTDebugManager::setFrametime(float delta, int number)
 {
-    frame_label->text = format("{:2f}fps | {:3f}ms ({})", 1000.0f / delta, delta, number);
+    frame_label->text = format("{:.2f}fps | {:.2f}ms ({})", 1000.0f / delta, delta, number);
 }
 
 void PTDebugManager::renderLoop()

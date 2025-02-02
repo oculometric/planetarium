@@ -2,8 +2,8 @@
 
 ## Vulkan Stuff
 
+- [ ] add explicit window resize callback
 - [ ] make pipeline sutff its own file, properly handle creation and destruction
-- [ ] fix instantly crashing on frame 2 or whatever
 - [ ] specify required device features (non-solid fill for wireframe, etc)
 - [ ] make renderpass and subpass stuff its own file, handle creation/destruction
 - [ ] implement proper shader config and reflection, and checking this when creating render passes
@@ -14,6 +14,7 @@
 
 ## Engine Stuff
 
+- [ ] make input file respect new debug system
 - [ ] integrate STUI for terminal stuff
 - [ ] develop a debugging utility class
 - [ ] scene tree system
@@ -34,3 +35,5 @@
 ## Completed
 - [x] make physical device stuff its own file (finding swapchain info, supported features, etc)
 - [x] make swapchain stuff (swapchain, swapchain format, extent, images, imageviews, framebuffers) its own file, and handle creation/destruction, maybe recreation (as opposed to just destroy whole thing and recreate)
+- [x] implement swapchain/framebuffer resizing
+- [x] fix instantly crashing on frame 2 or whatever
