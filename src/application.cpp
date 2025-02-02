@@ -11,7 +11,6 @@
 
 #include "scene.h"
 #include "debug.h"
-//#include <vulkan/vk_enum_string_helper.h>
 
 PTApplication::PTApplication(unsigned int _width, unsigned int _height)
 {
@@ -78,13 +77,12 @@ void PTApplication::initVulkan()
     collectQueues();
 
     // create swap chain
-    VkSurfaceFormatKHR selected_surface_format;
-    VkExtent2D selected_extent;
-    uint32_t selected_image_count;
-    initSwapChain(selected_surface_format, selected_extent, selected_image_count);
-
-    // retrieve images from the swap chain
-    collectSwapChainImages(selected_surface_format, selected_extent, selected_image_count);
+    int width;
+    int height;
+    glfwGetFramebufferSize(window, &width, &height);
+    debugLog("    creating swapchain...");
+    swapchain = new PTSwapchain(width, height, physical_device, device, surface);
+    debugLog("    done.");
 
     createDescriptorSetLayout();
 
@@ -150,7 +148,7 @@ void PTApplication::mainLoop()
         vkResetFences(device, 1, &in_flight_fences[frame_index]);
 
         uint32_t image_index;
-        vkAcquireNextImageKHR(device, swap_chain, UINT64_MAX, image_available_semaphores[frame_index], VK_NULL_HANDLE, &image_index);
+        vkAcquireNextImageKHR(device, swapchain->getSwapchain(), UINT64_MAX, image_available_semaphores[frame_index], VK_NULL_HANDLE, &image_index);
 
         vkResetCommandBuffer(command_buffers[frame_index], 0);
 
@@ -167,7 +165,7 @@ void PTApplication::mainLoop()
         render_pass_begin_info.renderPass = demo_render_pass;
         render_pass_begin_info.framebuffer = framebuffers[image_index];
         render_pass_begin_info.renderArea.offset = { 0, 0 };
-        render_pass_begin_info.renderArea.extent = swap_chain_extent;
+        render_pass_begin_info.renderArea.extent = swapchain->getExtent();
         array<VkClearValue, 2> clear_values{ };
         clear_values[0].color = { { 1.0f, 0.0f, 1.0f, 1.0f } };
         clear_values[1].depthStencil = { 1.0f, 0 };
@@ -208,7 +206,7 @@ void PTApplication::mainLoop()
         present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
         present_info.waitSemaphoreCount = 1;
         present_info.pWaitSemaphores = signal_semaphores;
-        VkSwapchainKHR swap_chains[] = { swap_chain };
+        VkSwapchainKHR swap_chains[] = { swapchain->getSwapchain() };
         present_info.swapchainCount = 1;
         present_info.pSwapchains = swap_chains;
         present_info.pImageIndices = &image_index;
@@ -258,10 +256,7 @@ void PTApplication::deinitVulkan()
     delete demo_shader;
     vkDestroyRenderPass(device, demo_render_pass, nullptr);
 
-    for (auto image_view : swap_chain_image_views)
-        vkDestroyImageView(device, image_view, nullptr);
-
-    vkDestroySwapchainKHR(device, swap_chain, nullptr);
+    delete swapchain;
 
     vkDestroyBuffer(device, index_buffer, nullptr);
     vkFreeMemory(device, index_buffer_memory, nullptr);
@@ -449,101 +444,6 @@ void PTApplication::collectQueues()
     }
 }
 
-void PTApplication::initSwapChain(VkSurfaceFormatKHR& selected_surface_format, VkExtent2D& selected_extent, uint32_t& selected_image_count)
-{
-    debugLog("    creating swap chain...");
-    selected_surface_format = physical_device.getSwapchainFormats()[0];
-    for (const auto& format : physical_device.getSwapchainFormats())
-    {
-        if (format.format == VK_FORMAT_B8G8R8A8_SRGB && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
-        {
-            selected_surface_format = format;
-            break;
-        }
-    }
-    cout << "        surface format: " << /*string_VkFormat(selected_surface_format.format) <<*/ endl;
-    cout << "        colour space: " << /*string_VkColorSpaceKHR(selected_surface_format.colorSpace) <<*/ endl;
-
-    VkPresentModeKHR selected_surface_present_mode = VK_PRESENT_MODE_FIFO_KHR;
-    cout << "        present mode: " << /*string_VkPresentModeKHR(selected_surface_present_mode) <<*/ endl;
-
-    VkSurfaceCapabilitiesKHR capabilities = physical_device.getSwapchainCapabilities();
-
-    if (capabilities.currentExtent.width != UINT32_MAX)
-        selected_extent = capabilities.currentExtent;
-    else
-    {
-        int width;
-        int height;
-        glfwGetFramebufferSize(window, &width, &height);
-
-        selected_extent.width = (uint32_t)width;
-        selected_extent.height = (uint32_t)height;
-
-        selected_extent.width = clamp(selected_extent.width, capabilities.minImageExtent.width, capabilities.maxImageExtent.width);
-        selected_extent.height = clamp(selected_extent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
-    }
-
-    debugLog("        extent: " + to_string(selected_extent.width) + "," + to_string(selected_extent.height));
-
-    selected_image_count = capabilities.minImageCount + 1;
-    if (capabilities.maxImageCount > 0 && selected_image_count > capabilities.maxImageCount)
-        selected_image_count = capabilities.maxImageCount;
-
-    debugLog("        image count: " + to_string(selected_image_count));
-
-    VkSwapchainCreateInfoKHR swap_chain_create_info{ };
-    swap_chain_create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    swap_chain_create_info.surface = surface;
-    swap_chain_create_info.minImageCount = selected_image_count;
-    swap_chain_create_info.imageFormat = selected_surface_format.format;
-    swap_chain_create_info.imageColorSpace = selected_surface_format.colorSpace;
-    swap_chain_create_info.imageExtent = selected_extent;
-    swap_chain_create_info.imageArrayLayers = 1;
-    swap_chain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-
-    if (physical_device.getQueueFamily(PTQueueFamily::PRESENT) != physical_device.getQueueFamily(PTQueueFamily::GRAPHICS))
-    {
-        vector<uint32_t> queue_family_indices(physical_device.getAllQueueFamilies().size());
-        for (pair<PTQueueFamily, uint32_t> family : physical_device.getAllQueueFamilies())
-            queue_family_indices.push_back(family.second);
-        swap_chain_create_info.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-        swap_chain_create_info.queueFamilyIndexCount = queue_family_indices.size();
-        swap_chain_create_info.pQueueFamilyIndices = queue_family_indices.data();
-    }
-    else
-        swap_chain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-    swap_chain_create_info.preTransform = capabilities.currentTransform;
-    swap_chain_create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-    swap_chain_create_info.presentMode = selected_surface_present_mode;
-    swap_chain_create_info.clipped = VK_TRUE;
-    swap_chain_create_info.oldSwapchain = VK_NULL_HANDLE;
-
-    if (vkCreateSwapchainKHR(device, &swap_chain_create_info, nullptr, &swap_chain) != VK_SUCCESS)
-        throw runtime_error("unable to create swap chain");
-    debugLog("    done.");
-}
-
-void PTApplication::collectSwapChainImages(const VkSurfaceFormatKHR& selected_surface_format, const VkExtent2D& selected_extent, uint32_t& selected_image_count)
-{
-    debugLog("    retrieving images...");
-    vkGetSwapchainImagesKHR(device, swap_chain, &selected_image_count, nullptr);
-    swap_chain_images.resize(selected_image_count);
-    vkGetSwapchainImagesKHR(device, swap_chain, &selected_image_count, swap_chain_images.data());
-
-    swap_chain_image_format = selected_surface_format.format;
-    swap_chain_extent = selected_extent;
-    debugLog("    done.");
-
-    // construct image views
-    debugLog("    constructing image views...");
-    swap_chain_image_views.resize(swap_chain_images.size());
-    for (size_t i = 0; i < swap_chain_images.size(); i++)
-        swap_chain_image_views[i] = createImageView(swap_chain_images[i], swap_chain_image_format, VK_IMAGE_ASPECT_COLOR_BIT);
-    debugLog("    created " + to_string(swap_chain_image_views.size()) + " image views.");
-}
-
 void PTApplication::createDescriptorSetLayout()
 {
     VkDescriptorSetLayoutBinding transform_binding{ };
@@ -568,7 +468,7 @@ VkRenderPass PTApplication::createRenderPass()
     debugLog("    creating render pass...");
 
     VkAttachmentDescription colour_attachment{ };
-    colour_attachment.format = swap_chain_image_format;
+    colour_attachment.format = swapchain->getImageFormat();
     colour_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
     colour_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
     colour_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -668,14 +568,14 @@ PTPipeline PTApplication::constructPipeline(const PTShader& shader, const VkRend
     VkViewport viewport{ };
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (float)swap_chain_extent.width;
-    viewport.height = (float)swap_chain_extent.height;
+    viewport.width = (float)swapchain->getExtent().width;
+    viewport.height = (float)swapchain->getExtent().height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
 
     VkRect2D scissor{ };
     scissor.offset = { 0, 0 };
-    scissor.extent = swap_chain_extent;
+    scissor.extent = swapchain->getExtent();
 
     // TODO: this could be converted to a dynamic state
     VkPipelineViewportStateCreateInfo viewport_state_create_info{ };
@@ -783,19 +683,19 @@ void PTApplication::createFramebuffers(const VkRenderPass render_pass)
 {
     debugLog("    creating framebuffers...");
 
-    framebuffers.resize(swap_chain_image_views.size());
+    framebuffers.resize(swapchain->getImageCount());
 
-    for (size_t i = 0; i < swap_chain_image_views.size(); i++)
+    for (size_t i = 0; i < swapchain->getImageCount(); i++)
     {
-        VkImageView attachments[] = { swap_chain_image_views[i], depth_image_view };
+        VkImageView attachments[] = { swapchain->getImageView(i), depth_image_view };
 
         VkFramebufferCreateInfo framebuffer_create_info{ };
         framebuffer_create_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         framebuffer_create_info.renderPass = render_pass;
         framebuffer_create_info.attachmentCount = 2;
         framebuffer_create_info.pAttachments = attachments;
-        framebuffer_create_info.width = swap_chain_extent.width;
-        framebuffer_create_info.height = swap_chain_extent.height;
+        framebuffer_create_info.width = swapchain->getExtent().width;
+        framebuffer_create_info.height = swapchain->getExtent().height;
         framebuffer_create_info.layers = 1;
 
         if (vkCreateFramebuffer(device, &framebuffer_create_info, nullptr, &framebuffers[i]) != VK_SUCCESS)
@@ -884,7 +784,7 @@ void PTApplication::createCommandPoolAndBuffers()
 
 void PTApplication::createDepthResources()
 {
-    createImage(swap_chain_extent.width, swap_chain_extent.height, VK_FORMAT_D32_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depth_image, depth_image_memory);
+    createImage(swapchain->getExtent().width, swapchain->getExtent().height, VK_FORMAT_D32_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depth_image, depth_image_memory);
     depth_image_view = createImageView(depth_image, VK_FORMAT_D32_SFLOAT, VK_IMAGE_ASPECT_DEPTH_BIT);
 }
 

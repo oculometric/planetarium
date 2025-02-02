@@ -13,6 +13,7 @@
 #include "shader.h"
 #include "pipeline.h"
 #include "physical_device.h"
+#include "swapchain.h"
 
 #include "../lib/oculib/mesh.h"
 
@@ -69,11 +70,7 @@ private:
     PTPhysicalDevice physical_device;
     VkDevice device;
 
-    VkSwapchainKHR swap_chain;
-    VkFormat swap_chain_image_format;
-    VkExtent2D swap_chain_extent;
-    vector<VkImage> swap_chain_images;
-    vector<VkImageView> swap_chain_image_views;
+    PTSwapchain* swapchain;
     vector<VkFramebuffer> framebuffers;
 
     map<PTQueueFamily, VkQueue> queues;
@@ -144,8 +141,6 @@ private:
     vector<VkDeviceQueueCreateInfo> constructQueues();
     void initLogicalDevice(const vector<VkDeviceQueueCreateInfo>& queue_create_infos, const vector<const char*>& layers);
     void collectQueues();
-    void initSwapChain(VkSurfaceFormatKHR& selected_surface_format, VkExtent2D& selected_extent, uint32_t& selected_image_count);
-    void collectSwapChainImages(const VkSurfaceFormatKHR& selected_surface_format, const VkExtent2D& selected_extent, uint32_t& selected_image_count);
     void createDescriptorSetLayout();
     VkRenderPass createRenderPass();
     PTPipeline constructPipeline(const PTShader& shader, const VkRenderPass render_pass);
