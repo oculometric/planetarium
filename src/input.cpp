@@ -111,6 +111,7 @@ void PTInputManager::translate(int key, int action, int mods)
     if (action == 2) return;
     
     debugLog("keyboard event: key (" + to_string(key) + "), action (" + to_string(action) + "), mods (" + to_string(mods) + ")");
+    key_states[key] = PTKeyState{ key, action, mods };
 }
 
 void PTInputManager::setButtonState(PTInputButton button, bool state)
@@ -196,6 +197,13 @@ int16_t PTInputManager::getAxisState(PTInputAxis axis)
     }
 
     return 0;
+}
+
+PTKeyState PTInputManager::getKeyState(int key)
+{
+    if (key_states.contains(key))
+        return key_states[key];
+    return PTKeyState{ key, 0, 0 };
 }
 
 PTInputManager::PTInputManager()

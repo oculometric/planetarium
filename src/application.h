@@ -36,6 +36,9 @@ const uint32_t MAX_FRAMES_IN_FLIGHT = 2;
 
 class PTApplication
 {
+public:
+    bool debug_mode = false;
+
 private:
     int width;
     int height;
@@ -64,6 +67,7 @@ private:
 
     PTRenderPass* demo_render_pass;
     PTPipeline* demo_pipeline;
+    PTPipeline* debug_pipeline;
     PTShader* demo_shader;
 
     PTBuffer* vertex_buffer;

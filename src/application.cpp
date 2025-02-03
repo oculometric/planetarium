@@ -103,8 +103,9 @@ void PTApplication::initVulkan()
     attachment.format = swapchain->getImageFormat();
     demo_render_pass = new PTRenderPass(device, { attachment }, true);
     debugLog("    done.");
-    debugLog("    constructing pipeline...");
+    debugLog("    constructing pipelines...");
     demo_pipeline = new PTPipeline(demo_shader, demo_render_pass, device, swapchain);
+    debug_pipeline = new PTPipeline(demo_shader, demo_render_pass, device, swapchain, VK_TRUE, VK_TRUE, VK_COMPARE_OP_LESS, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_POLYGON_MODE_LINE);
     debugLog("    done.");
 
     createCommandPoolAndBuffers();
@@ -199,8 +200,10 @@ void PTApplication::mainLoop()
         render_pass_begin_info.clearValueCount = static_cast<uint32_t>(clear_values.size());
         render_pass_begin_info.pClearValues = clear_values.data();
 
+        PTPipeline* pipeline = debug_mode ? debug_pipeline : demo_pipeline;
+
         vkCmdBeginRenderPass(command_buffers[frame_index], &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
-        vkCmdBindPipeline(command_buffers[frame_index], VK_PIPELINE_BIND_POINT_GRAPHICS, demo_pipeline->getPipeline());
+        vkCmdBindPipeline(command_buffers[frame_index], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->getPipeline());
 
         VkViewport viewport{};
         viewport.x = 0.0f;
@@ -220,7 +223,7 @@ void PTApplication::mainLoop()
         VkDeviceSize offsets[] = { 0 };
         vkCmdBindVertexBuffers(command_buffers[frame_index], 0, 1, vertex_buffers, offsets);
         vkCmdBindIndexBuffer(command_buffers[frame_index], index_buffer->getBuffer(), 0, VK_INDEX_TYPE_UINT16);
-        vkCmdBindDescriptorSets(command_buffers[frame_index], VK_PIPELINE_BIND_POINT_GRAPHICS, demo_pipeline->getLayout(), 0, 1, &descriptor_sets[frame_index], 0, nullptr);
+        vkCmdBindDescriptorSets(command_buffers[frame_index], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->getLayout(), 0, 1, &descriptor_sets[frame_index], 0, nullptr);
         vkCmdDrawIndexed(command_buffers[frame_index], static_cast<uint32_t>(demo_mesh.indices.size()), 1, 0, 0, 0);
         vkCmdEndRenderPass(command_buffers[frame_index]);
 
@@ -446,6 +449,7 @@ void PTApplication::initLogicalDevice(const vector<VkDeviceQueueCreateInfo>& que
 {
     // TODO: specify physical device features
     VkPhysicalDeviceFeatures features{ };
+    features.fillModeNonSolid = VK_TRUE;
 
     debugLog("    creating logical device...");
     VkDeviceCreateInfo device_create_info{ };
@@ -790,6 +794,8 @@ int PTApplication::evaluatePhysicalDevice(PTPhysicalDevice d)
         score += 10;
     if (device_features.fillModeNonSolid == VK_TRUE)
         score += 10;
+    else
+        return 0;
 
     return score;
 }

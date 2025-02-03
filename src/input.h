@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <GLFW/glfw3.h>
+#include <map>
 
 // TODO: make this platform-independent (or at least, reimplement it for all platforms)
 
@@ -61,7 +62,13 @@ enum PTInputAxis
     LOOK_AXIS_Y = 4
 };
 
-// TODO: make the keyboard controls for this configurable?
+struct PTKeyState
+{
+    int key;
+    int action; // TODO: implement a system for detecting if key down on this frame
+    int modifiers;
+};
+
 class PTInputManager
 {
 private:
@@ -78,12 +85,16 @@ private:
 
     uint32_t button_states = 0;
 
+    std::map<int, PTKeyState> key_states;
+
 public:
     void pollControllers();
     void handleKeyboardEvent(int key, int action, int mods);
     
     bool getButtonState(PTInputButton button);
     int16_t getAxisState(PTInputAxis axis);
+
+    PTKeyState getKeyState(int key);
 
     PTInputManager();
 

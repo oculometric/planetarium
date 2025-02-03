@@ -1,7 +1,9 @@
 #include "scene.h"
 
 #include <iostream>
+
 #include "application.h"
+#include "debug.h"
 
 using namespace std;
 
@@ -19,8 +21,10 @@ PTScene::PTScene(PTApplication* application)
 
 void PTScene::update(float delta_time)
 {
-    //cout << "x move value: " << owner->getInputManager()->getAxisState(PTInputAxis::MOVE_AXIS_X) << endl;
     PTInputManager* manager = owner->getInputManager();
+
+    PTApplication::get()->debug_mode = manager->getKeyState('D').action == 1;
+
     OLVector4f local_movement = OLVector4f
     {
         (float)manager->getAxisState(PTInputAxis::MOVE_AXIS_X) / (float)INT16_MAX,
@@ -32,15 +36,16 @@ void PTScene::update(float delta_time)
     OLVector4f world_movement = camera.getLocalRotation() * local_movement;
 
     camera.local_position += OLVector3f{ world_movement.x, world_movement.y, world_movement.z };
-    // TODO: convert these to labels in debug
-    //cout << "camera position: " << camera.local_position << endl;
+    debugSetSceneProperty("camera pos", to_string(camera.local_position));
     
     camera.local_rotation -= (OLVector3f{ (float)manager->getAxisState(PTInputAxis::LOOK_AXIS_Y), 0, (float)manager->getAxisState(PTInputAxis::LOOK_AXIS_X) } / INT16_MAX) * delta_time * 90.0f;
-    //cout << "camera rotation: " << camera.local_rotation << endl;
+    debugSetSceneProperty("camera rot", to_string(camera.local_rotation));
 
     camera.horizontal_fov += ((float)manager->getButtonState(PTInputButton::RIGHT_MINOR) - (float)manager->getButtonState(PTInputButton::LEFT_MINOR)) * delta_time * 30.0f;
     camera.horizontal_fov = max(min(camera.horizontal_fov, 120.0f), 10.0f);
-    //cout << "camera fov: " << camera.horizontal_fov << endl;
+    debugSetSceneProperty("camera fov", to_string(camera.horizontal_fov));
+    debugSetSceneProperty("camera asp", to_string(camera.aspect_ratio));
+    
 }
 
 OLMatrix4f PTScene::getCameraMatrix()

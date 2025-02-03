@@ -2,16 +2,17 @@
 
 ## Vulkan Stuff
 
-- [ ] implement proper shader config and reflection, and checking this when creating render passes
 - [ ] specify required device features (non-solid fill for wireframe, etc)
 - [ ] make mesh/vertex stuff its own file, handle vertex buffer creation/destruction
 - [ ] replace oculib
+- [ ] implement proper shader config and reflection, and checking this when creating render passes
 - [ ] make sure everything which gets `destroy`ed in application (framebuffers, etc) is treated as a **pointer** when converting to PTSomething (i.e. so `delete` order can be controlled by application)
 - [ ] resource manager system for things like PTPipeline, PTShader, etc, which tracks dependencies and counts references
 
 ## Engine Stuff
 
 - [ ] fix camera aspect ratio stuff
+- [ ] object transform
 - [ ] scene tree system
 - [ ] UI system (use STUI to generate charbufs, then pass it into a shader maybe????)
 - [ ] object and vertex picking
@@ -29,6 +30,7 @@
 
 ## Misc
 
+- [ ] fix invalid free pointer on exit via window close button
 
 ## Completed
 - [x] make physical device stuff its own file (finding swapchain info, supported features, etc)
@@ -46,4 +48,3 @@
 - [x] improve shader module stuff
 - [x] handle image management in its own file
 - [x] fix swapchain resize being called constantly after resize
-- [x] fix invalid free pointer on exit via window close button
