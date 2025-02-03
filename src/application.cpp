@@ -912,11 +912,10 @@ void PTApplication::updateUniformBuffers(uint32_t frame_index)
     current_scene->getCameraMatrix().getColumnMajor(transform.world_to_clip);
     OLMatrix4f().getColumnMajor(transform.model_to_world);
 
-    // debugLog("world to clip matrix:");
-    // debugLog(current_scene->getCameraMatrix().row_0());
-    // debugLog(current_scene->getCameraMatrix().row_1());
-    // debugLog(current_scene->getCameraMatrix().row_2());
-    // debugLog(current_scene->getCameraMatrix().row_3());
+    debugSetSceneProperty("w2c r0", to_string(current_scene->getCameraMatrix().row_0()));
+    debugSetSceneProperty("w2c r1", to_string(current_scene->getCameraMatrix().row_1()));
+    debugSetSceneProperty("w2c r2", to_string(current_scene->getCameraMatrix().row_2()));
+    debugSetSceneProperty("w2c r3", to_string(current_scene->getCameraMatrix().row_3()));
 
     // cout << "blank matrix:" << endl;
     // cout << OLMatrix4f().row_0() << endl;;

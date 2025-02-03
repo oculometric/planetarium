@@ -10,8 +10,8 @@ HorizontalBox
         child = VerticalBox
         (children = {
             HorizontalBox (children = { Label (text = "frametiming:"), Label : "frame_label" (alignment = 1)}),
-            BorderedBox (name = "scene properties", child = SizeLimiter (max_size = [-1, 12], child = VerticalBox : "scene_props_box" ())),
-            BorderedBox (name = "object properties", child = SizeLimiter (max_size = [-1, 12], child = VerticalBox : "object_props_box" ())),
+            BorderedBox : "scene_box" (name = "scene properties", child = SizeLimiter (max_size = [-1, 12])),
+            BorderedBox : "object_box" (name = "object properties", child = SizeLimiter (max_size = [-1, 12])),
             Label (text = "you can do it!")
         })
     ),
