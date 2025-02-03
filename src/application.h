@@ -61,8 +61,9 @@ const uint32_t MAX_FRAMES_IN_FLIGHT = 2;
 class PTApplication
 {
 private:
-    unsigned int width;
-    unsigned int height;
+    int width;
+    int height;
+    bool window_resized = false;
 
     GLFWwindow* window;
     VkInstance instance;
@@ -155,6 +156,7 @@ private:
     void createSyncObjects();
 
     void resizeSwapchain();
+    static void windowResizeCallback(GLFWwindow* window, int new_width, int new_height);
 
     void updateUniformBuffers(uint32_t frame_index);
     void loadTextureToImage(string texture_file);

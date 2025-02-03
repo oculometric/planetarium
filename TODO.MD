@@ -2,8 +2,8 @@
 
 ## Vulkan Stuff
 
-- [ ] add explicit window resize callback
 - [ ] make renderpass and subpass stuff its own file, handle creation/destruction
+- [ ] fix swapchain resize being called constantly after resize
 - [ ] make pipeline sutff its own file, properly handle creation and destruction
 - [ ] specify required device features (non-solid fill for wireframe, etc)
 - [ ] implement proper shader config and reflection, and checking this when creating render passes
@@ -15,7 +15,6 @@
 ## Engine Stuff
 
 - [ ] fix camera aspect ratio stuff
-- [ ] develop a debugging utility class
 - [ ] scene tree system
 - [ ] UI system (use STUI to generate charbufs, then pass it into a shader maybe????)
 - [ ] object and vertex picking
@@ -31,6 +30,10 @@
 - [ ] stylised post-processing
 - [ ] spaceship terminal interface/look
 
+## Misc
+
+- [ ] fix invalid free pointer on exit via window close button
+
 ## Completed
 - [x] make physical device stuff its own file (finding swapchain info, supported features, etc)
 - [x] make swapchain stuff (swapchain, swapchain format, extent, images, imageviews, framebuffers) its own file, and handle creation/destruction, maybe recreation (as opposed to just destroy whole thing and recreate)
@@ -40,3 +43,5 @@
 - [x] integrate STUI for terminal stuff
 - [x] make buffer creation/handling its own file (buffer class which gets subclassed?)
 - [x] make a property list STUI component (i.e. so we don't need a list of horizontal boxes with two labels in each)
+- [x] develop a debugging utility class
+- [x] add explicit window resize callback

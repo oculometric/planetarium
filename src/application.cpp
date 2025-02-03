@@ -55,6 +55,7 @@ void PTApplication::initWindow()
     glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
     window = glfwCreateWindow(width, height, "planetarium", nullptr, nullptr);
+    glfwSetFramebufferSizeCallback(window, windowResizeCallback);
 
     debugLog("done.");
 }
@@ -140,7 +141,7 @@ void PTApplication::mainLoop()
 
         frame_time_running_mean_us = (frame_time_running_mean_us + (chrono::duration_cast<chrono::microseconds>(frame_time).count())) / 2;
 
-        debugFrametiming(chrono::duration_cast<chrono::nanoseconds>(frame_time).count() / 1000000.0f, frame_total_number);        
+        debugFrametiming(frame_time_running_mean_us / 1000.0f, frame_total_number);        
         last_frame_start = now;
 
         current_scene->update(frame_time.count());
@@ -154,6 +155,12 @@ void PTApplication::mainLoop()
         VkResult result = vkAcquireNextImageKHR(device, swapchain->getSwapchain(), UINT64_MAX, image_available_semaphores[frame_index], VK_NULL_HANDLE, &image_index);
 
         if (result == VK_ERROR_OUT_OF_DATE_KHR)
+        {
+            debugLog("swapchain out of date!!");
+            resizeSwapchain();
+            continue;
+        }
+        else if (window_resized)
         {
             resizeSwapchain();
             continue;
@@ -227,7 +234,14 @@ void PTApplication::mainLoop()
 
         result = vkQueuePresentKHR(queues[PTQueueFamily::PRESENT], &present_info);
         if (result == VK_ERROR_OUT_OF_DATE_KHR)
+        {
+            debugLog("swapchain out of date!!");
             resizeSwapchain();
+        }
+        else if (window_resized)
+        {
+            resizeSwapchain();
+        }
         else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
             throw runtime_error("unable to present swapchain image");
 
@@ -864,11 +878,24 @@ void PTApplication::resizeSwapchain()
 
     delete swapchain;
 
+    glfwGetFramebufferSize(window, &width, &height);
+    while (width == 0 || height == 0)
+    {
+        glfwGetFramebufferSize(window, &width, &height);
+        glfwWaitEvents();
+    }
     swapchain = new PTSwapchain(width, height, physical_device, device, surface);
     
     createFramebuffers(demo_render_pass);
 
+    window_resized = false;
+
     debugLog("done.");
+}
+
+void PTApplication::windowResizeCallback(GLFWwindow* window, int new_width, int new_height)
+{
+    get()->window_resized = true;
 }
 
 VkCommandBuffer PTApplication::beginTransientCommands()

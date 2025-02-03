@@ -5,6 +5,7 @@
 #include <stui_script.h>
 #include <thread>
 #include <format>
+#include <chrono>
 
 #include "debug_ui.h"
 
@@ -168,7 +169,13 @@ void debugDeinit()
 void debugLog(string text)
 {
     if (mgr == nullptr) return;
-    mgr->appendToLog(text);
+    auto now = chrono::system_clock::now().time_since_epoch();
+	auto hours = chrono::duration_cast<chrono::hours>(now);
+	auto minutes = chrono::duration_cast<chrono::minutes>(now - hours);
+	auto seconds = chrono::duration_cast<chrono::seconds>(now - hours - minutes);
+	auto millis = chrono::duration_cast<chrono::milliseconds>(now - hours - minutes - seconds);
+    string str = format("[{:2}:{:2}:{:2}.{:3}]: {}", (int)(hours.count() % 24), (int)minutes.count(), (int)seconds.count(), (int)millis.count(), text);
+    mgr->appendToLog(str);
 }
 
 void debugFrametiming(float delta_time, int frame_number)
