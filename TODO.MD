@@ -3,6 +3,7 @@
 ## Vulkan Stuff
 
 - [ ] add explicit window resize callback
+- [ ] make buffer creation/handling its own file (buffer class which gets subclassed?)
 - [ ] make renderpass and subpass stuff its own file, handle creation/destruction
 - [ ] make pipeline sutff its own file, properly handle creation and destruction
 - [ ] specify required device features (non-solid fill for wireframe, etc)
