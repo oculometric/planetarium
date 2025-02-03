@@ -3,7 +3,6 @@
 ## Vulkan Stuff
 
 - [ ] add explicit window resize callback
-- [ ] make buffer creation/handling its own file (buffer class which gets subclassed?)
 - [ ] make renderpass and subpass stuff its own file, handle creation/destruction
 - [ ] make pipeline sutff its own file, properly handle creation and destruction
 - [ ] specify required device features (non-solid fill for wireframe, etc)
@@ -15,6 +14,7 @@
 
 ## Engine Stuff
 
+- [ ] make a property list STUI component (i.e. so we don't need a list of horizontal boxes with two labels in each)
 - [ ] fix camera aspect ratio stuff
 - [ ] develop a debugging utility class
 - [ ] scene tree system
@@ -39,3 +39,4 @@
 - [x] fix instantly crashing on frame 2 or whatever
 - [x] make input file respect new debug system
 - [x] integrate STUI for terminal stuff
+- [x] make buffer creation/handling its own file (buffer class which gets subclassed?)

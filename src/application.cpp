@@ -12,6 +12,8 @@
 #include "scene.h"
 #include "debug.h"
 
+static PTApplication* main_application = nullptr;
+
 PTApplication::PTApplication(unsigned int _width, unsigned int _height)
 {
     width = _width;
@@ -20,6 +22,7 @@ PTApplication::PTApplication(unsigned int _width, unsigned int _height)
 
 void PTApplication::start()
 {
+    main_application = this;
     demo_mesh = OLMesh("suzanne.obj");
     initWindow();
     initVulkan();
@@ -35,6 +38,11 @@ void PTApplication::start()
 PTInputManager* PTApplication::getInputManager()
 {
     return input_manager;
+}
+
+PTApplication* PTApplication::get()
+{
+    return main_application;
 }
 
 void PTApplication::initWindow()
@@ -180,10 +188,10 @@ void PTApplication::mainLoop()
         vkCmdBeginRenderPass(command_buffers[frame_index], &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
         vkCmdBindPipeline(command_buffers[frame_index], VK_PIPELINE_BIND_POINT_GRAPHICS, demo_pipeline.pipeline);
 
-        VkBuffer vertex_buffers[] = { vertex_buffer };
+        VkBuffer vertex_buffers[] = { vertex_buffer->getBuffer() };
         VkDeviceSize offsets[] = { 0 };
         vkCmdBindVertexBuffers(command_buffers[frame_index], 0, 1, vertex_buffers, offsets);
-        vkCmdBindIndexBuffer(command_buffers[frame_index], index_buffer, 0, VK_INDEX_TYPE_UINT16);
+        vkCmdBindIndexBuffer(command_buffers[frame_index], index_buffer->getBuffer(), 0, VK_INDEX_TYPE_UINT16);
         vkCmdBindDescriptorSets(command_buffers[frame_index], VK_PIPELINE_BIND_POINT_GRAPHICS, demo_pipeline.layout, 0, 1, &descriptor_sets[frame_index], 0, nullptr);
         vkCmdDrawIndexed(command_buffers[frame_index], static_cast<uint32_t>(demo_mesh.indices.size()), 1, 0, 0, 0);
         vkCmdEndRenderPass(command_buffers[frame_index]);
@@ -249,10 +257,7 @@ void PTApplication::deinitVulkan()
         vkDestroyFramebuffer(device, framebuffer, nullptr);
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-    {
-        vkDestroyBuffer(device, uniform_buffers[i], nullptr);
-        vkFreeMemory(device, uniform_buffers_memory[i], nullptr);
-    }
+        delete uniform_buffers[i];
 
     vkDestroyDescriptorPool(device, descriptor_pool, nullptr);
 
@@ -265,11 +270,8 @@ void PTApplication::deinitVulkan()
 
     delete swapchain;
 
-    vkDestroyBuffer(device, index_buffer, nullptr);
-    vkFreeMemory(device, index_buffer_memory, nullptr);
-
-    vkDestroyBuffer(device, vertex_buffer, nullptr);
-    vkFreeMemory(device, vertex_buffer_memory, nullptr);
+    delete index_buffer;
+    delete vertex_buffer;
 
     vkDestroyImageView(device, depth_image_view, nullptr);
     vkDestroyImage(device, depth_image, nullptr);
@@ -717,53 +719,38 @@ void PTApplication::createVertexBuffer()
 {
     // vertex buffer creation (via staging buffer)
     VkDeviceSize size = sizeof(OLVertex) * demo_mesh.vertices.size();
+    PTBuffer* staging_buffer = new PTBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, device, physical_device);
     
-    VkBuffer staging_buffer;
-    VkDeviceMemory staging_buffer_memory;
-    createBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, staging_buffer, staging_buffer_memory);
-
-    void* vertex_data;
-    vkMapMemory(device, staging_buffer_memory, 0, size, 0, &vertex_data);
+    void* vertex_data = staging_buffer->map();
     memcpy(vertex_data, demo_mesh.vertices.data(), (size_t)size);
-    vkUnmapMemory(device, staging_buffer_memory);
+    staging_buffer->unmap();
+    vertex_buffer = new PTBuffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, device, physical_device);
+    staging_buffer->copyTo(vertex_buffer, size);
 
-    createBuffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertex_buffer, vertex_buffer_memory);
-
-    copyBuffer(staging_buffer, vertex_buffer, size);
-
-    vkDestroyBuffer(device, staging_buffer, nullptr);
-    vkFreeMemory(device, staging_buffer_memory, nullptr);
+    delete staging_buffer;
     
     // index buffer creation (via staging buffer)
     size = sizeof(uint16_t) * demo_mesh.indices.size();
+    staging_buffer = new PTBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, device, physical_device);
     
-    createBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, staging_buffer, staging_buffer_memory);
-
-    void* index_data;
-    vkMapMemory(device, staging_buffer_memory, 0, size, 0, &index_data);
+    void* index_data = staging_buffer->map();
     memcpy(index_data, demo_mesh.indices.data(), (size_t)size);
-    vkUnmapMemory(device, staging_buffer_memory);
+    staging_buffer->unmap();
+    index_buffer = new PTBuffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, device, physical_device);
+    staging_buffer->copyTo(index_buffer, size);
 
-    createBuffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, index_buffer, index_buffer_memory);
-
-    copyBuffer(staging_buffer, index_buffer, size);
-
-    vkDestroyBuffer(device, staging_buffer, nullptr);
-    vkFreeMemory(device, staging_buffer_memory, nullptr);
+    delete staging_buffer;
 }
 
 void PTApplication::createUniformBuffers()
 {
     VkDeviceSize transform_buffer_size = sizeof(TransformMatrices);
 
-    uniform_buffers.resize(MAX_FRAMES_IN_FLIGHT);
-    uniform_buffers_memory.resize(MAX_FRAMES_IN_FLIGHT);
-    uniform_buffers_mapped.resize(MAX_FRAMES_IN_FLIGHT);
-
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
-        createBuffer(transform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniform_buffers[i], uniform_buffers_memory[i]);
-        vkMapMemory(device, uniform_buffers_memory[i], 0, transform_buffer_size, 0, &uniform_buffers_mapped[i]);
+        PTBuffer* buf = new PTBuffer(transform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, device, physical_device);
+        buf->map();
+        uniform_buffers.push_back(buf);
     }
 }
 
@@ -824,7 +811,7 @@ void PTApplication::createDescriptorPoolAndSets()
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
         VkDescriptorBufferInfo buffer_info{ };
-        buffer_info.buffer = uniform_buffers[i];
+        buffer_info.buffer = uniform_buffers[i]->getBuffer();
         buffer_info.offset = 0;
         buffer_info.range = sizeof(TransformMatrices);
 
@@ -937,7 +924,7 @@ void PTApplication::updateUniformBuffers(uint32_t frame_index)
     // cout << OLMatrix4f().row_2() << endl;;
     // cout << OLMatrix4f().row_3() << endl;;
 
-    memcpy(uniform_buffers_mapped[frame_index], &transform, sizeof(TransformMatrices));
+    memcpy(uniform_buffers[frame_index]->getMappedMemory(), &transform, sizeof(TransformMatrices));
 }
 
 void PTApplication::loadTextureToImage(string texture_file)
@@ -946,14 +933,13 @@ void PTApplication::loadTextureToImage(string texture_file)
     OLImage texture(texture_file);
     VkDeviceSize image_size = texture.getSize().x * texture.getSize().y * 4;
 
-    VkBuffer staging_buffer;
-    VkDeviceMemory staging_memory;
-    createBuffer(image_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, staging_buffer, staging_memory);
+    PTBuffer* buf = new PTBuffer(image_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, device, physical_device);
+    VkBuffer staging_buffer = buf->getBuffer();
+    VkDeviceMemory staging_memory = buf->getDeviceMemory();
     
-    void* data;
-    vkMapMemory(device, staging_memory, 0, image_size, 0, &data);
+    void* data = buf->map();
     memcpy(data, texture.getData(), static_cast<size_t>(image_size));
-    vkUnmapMemory(device, staging_memory);
+    buf->unmap();
 
     VkImage texture_image;
     VkDeviceMemory texture_image_memory;
@@ -964,8 +950,7 @@ void PTApplication::loadTextureToImage(string texture_file)
     copyBufferToImage(staging_buffer, texture_image, texture.getSize().x, texture.getSize().y);
     transitionImageLayout(texture_image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-    vkDestroyBuffer(device, staging_buffer, nullptr);
-    vkFreeMemory(device, staging_memory, nullptr);
+    delete buf;
     // TODO: when you use this, remember to delete the image and its associated device memory!
 }
 
@@ -1075,7 +1060,7 @@ void PTApplication::createImage(uint32_t image_width, uint32_t image_height, VkF
     VkMemoryAllocateInfo allocate_info{ };
     allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocate_info.allocationSize = memory_requirements.size;
-    allocate_info.memoryTypeIndex = findMemoryType(memory_requirements.memoryTypeBits, properties);
+    allocate_info.memoryTypeIndex = PTBuffer::findMemoryType(memory_requirements.memoryTypeBits, properties, physical_device);
 
     if (vkAllocateMemory(device, &allocate_info, nullptr, &image_memory) != VK_SUCCESS)
         throw runtime_error("unable to allocate image memory");
@@ -1101,45 +1086,6 @@ VkImageView PTApplication::createImageView(VkImage image, VkFormat format, VkIma
         throw runtime_error("unable to create texture image view");
 
     return image_view;
-}
-
-void PTApplication::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage_flags, VkMemoryPropertyFlags memory_flags, VkBuffer& buffer, VkDeviceMemory& buffer_memory)
-{
-    VkBufferCreateInfo buffer_create_info{ };
-    buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    buffer_create_info.size = size;
-    buffer_create_info.usage = usage_flags;
-    buffer_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-    if (vkCreateBuffer(device, &buffer_create_info, nullptr, &buffer) != VK_SUCCESS)
-        throw runtime_error("unable to construct buffer");
-    
-    VkMemoryRequirements memory_requirements;
-    vkGetBufferMemoryRequirements(device, buffer, &memory_requirements);
-
-    VkMemoryAllocateInfo allocate_info{ };
-    allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    allocate_info.allocationSize = memory_requirements.size;
-    allocate_info.memoryTypeIndex = findMemoryType(memory_requirements.memoryTypeBits, memory_flags);
-
-    if (vkAllocateMemory(device, &allocate_info, nullptr, &buffer_memory) != VK_SUCCESS)
-        throw runtime_error("unable to allocate buffer memory");
-
-    vkBindBufferMemory(device, buffer, buffer_memory, 0);
-}
-
-void PTApplication::copyBuffer(VkBuffer source, VkBuffer destination, VkDeviceSize size)
-{
-    VkCommandBuffer copy_command_buffer = beginTransientCommands();
-
-    VkBufferCopy copy_command{ };
-    copy_command.dstOffset = 0;
-    copy_command.srcOffset = 0;
-    copy_command.size = size;
-
-    vkCmdCopyBuffer(copy_command_buffer, source, destination, 1, &copy_command);
-
-    endTransientCommands(copy_command_buffer);
 }
 
 int PTApplication::evaluatePhysicalDevice(PTPhysicalDevice d)
@@ -1191,15 +1137,4 @@ int PTApplication::evaluatePhysicalDevice(PTPhysicalDevice d)
         score += 10;
 
     return score;
-}
-
-uint32_t PTApplication::findMemoryType(uint32_t type_bits, VkMemoryPropertyFlags properties)
-{
-    VkPhysicalDeviceMemoryProperties memory_properties;
-    vkGetPhysicalDeviceMemoryProperties(physical_device.getDevice(), &memory_properties);
-
-    for (uint32_t i = 0; i < memory_properties.memoryTypeCount; i++)
-        if ((type_bits & (1 << i)) && (memory_properties.memoryTypes[i].propertyFlags & properties) == properties) return i;
-
-    throw runtime_error("unable to find suitable memory type");
 }

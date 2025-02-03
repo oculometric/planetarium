@@ -59,7 +59,8 @@
         "chrono": "cpp",
         "ratio": "cpp",
         "iomanip": "cpp",
-        "sstream": "cpp"
+        "sstream": "cpp",
+        "buffer": "cpp"
     },
     "C_Cpp.default.compilerPath": "/usr/bin/g++"
 }

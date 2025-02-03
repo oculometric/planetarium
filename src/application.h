@@ -14,6 +14,7 @@
 #include "pipeline.h"
 #include "physical_device.h"
 #include "swapchain.h"
+#include "buffer.h"
 
 #include "../lib/oculib/mesh.h"
 
@@ -89,14 +90,10 @@ private:
     PTPipeline demo_pipeline;
     PTShader* demo_shader;
 
-    VkBuffer vertex_buffer;
-    VkDeviceMemory vertex_buffer_memory;
-    VkBuffer index_buffer;
-    VkDeviceMemory index_buffer_memory;
+    PTBuffer* vertex_buffer;
+    PTBuffer* index_buffer;
 
-    vector<VkBuffer> uniform_buffers;
-    vector<VkDeviceMemory> uniform_buffers_memory;
-    vector<void*> uniform_buffers_mapped;
+    vector<PTBuffer*> uniform_buffers;
 
     VkImage depth_image;
     VkDeviceMemory depth_image_memory;
@@ -126,6 +123,11 @@ public:
 
     PTInputManager* getInputManager();
 
+    static PTApplication* get();
+
+    VkCommandBuffer beginTransientCommands();
+    void endTransientCommands(VkCommandBuffer transient_command_buffer);
+
 private:
     void initWindow();
     void initVulkan();
@@ -154,16 +156,11 @@ private:
 
     void resizeSwapchain();
 
-    VkCommandBuffer beginTransientCommands();
-    void endTransientCommands(VkCommandBuffer transient_command_buffer);
     void updateUniformBuffers(uint32_t frame_index);
     void loadTextureToImage(string texture_file);
     void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout);
     void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
     void createImage(uint32_t image_width, uint32_t image_height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& image_memory);
     VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspect_flags);
-    void createBuffer(VkDeviceSize size, VkBufferUsageFlags usage_flags, VkMemoryPropertyFlags memory_flags, VkBuffer& buffer, VkDeviceMemory& buffer_memory);
-    void copyBuffer(VkBuffer source, VkBuffer destination, VkDeviceSize size);
     int evaluatePhysicalDevice(PTPhysicalDevice d);
-    uint32_t findMemoryType(uint32_t type_bits, VkMemoryPropertyFlags properties);
 };

@@ -1,19 +1,39 @@
 #pragma once
 
-#include<vulkan/vulkan.h>
+#include <vulkan/vulkan.h>
+
+#include "physical_device.h"
 
 class PTBuffer
 {
 private:
+    VkDevice device;
+
     VkBuffer buffer;
-    // memory block
-    // mapped memory
-    // size
+    VkDeviceSize size;
+    VkMemoryPropertyFlags flags;
+    VkDeviceMemory device_memory;
+    void* mapped_memory = nullptr;
     
 public:
-    // map/unmap memory, get mapped address
-    // get size
-    // get buffer
-    // creation and destruction
-    // copying from one to another?
+    PTBuffer() = delete;
+    PTBuffer(const PTBuffer& other) = delete;
+    PTBuffer(const PTBuffer&& other) = delete;
+    PTBuffer operator=(const PTBuffer& other) = delete;
+    PTBuffer operator=(const PTBuffer&& other) = delete;
+
+    PTBuffer(VkDeviceSize buffer_size, VkBufferUsageFlags usage_flags, VkMemoryPropertyFlags memory_flags, VkDevice _device, PTPhysicalDevice physical_device);
+
+    inline VkDeviceSize getSize() { return size; }
+    inline VkBuffer getBuffer() { return buffer; }
+    inline VkMemoryPropertyFlags getFlags() { return flags; }
+    inline VkDeviceMemory getDeviceMemory() { return device_memory; }
+    void* map(VkMemoryMapFlags mapping_flags = 0);
+    inline void* getMappedMemory() { return mapped_memory; }
+    void unmap();
+    void copyTo(PTBuffer* destination, VkDeviceSize length, VkDeviceSize source_offset = 0, VkDeviceSize destination_offset = 0);
+
+    static uint32_t findMemoryType(uint32_t type_bits, VkMemoryPropertyFlags properties, PTPhysicalDevice physical_device);
+
+    ~PTBuffer();
 };
