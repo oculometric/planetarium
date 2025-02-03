@@ -13,7 +13,7 @@ enum PTQueueFamily
 class PTPhysicalDevice
 {
 private:
-    VkPhysicalDevice device = nullptr;
+    VkPhysicalDevice device = VK_NULL_HANDLE;
     VkPhysicalDeviceProperties properties = { };
     VkPhysicalDeviceFeatures features = { };
     std::map<PTQueueFamily, uint32_t> queue_families;

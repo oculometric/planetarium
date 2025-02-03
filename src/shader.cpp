@@ -2,12 +2,16 @@
 
 #include <fstream>
 
+using namespace std;
+
 PTShader::PTShader(VkDevice _device, const string shader_path_stub)
 {
     vector<char> vert, frag;
     device = _device;
     if (readFromFile(shader_path_stub, vert, frag))
         createShaderModules(vert, frag);
+    
+    createDescriptorSetLayout();
 }
 
 vector<VkPipelineShaderStageCreateInfo> PTShader::getStageCreateInfo() const
@@ -34,6 +38,7 @@ vector<VkPipelineShaderStageCreateInfo> PTShader::getStageCreateInfo() const
 
 PTShader::~PTShader()
 {
+    vkDestroyDescriptorSetLayout(device, descriptor_set_layout, nullptr);
     destroyShaderModules();
 }
 
@@ -87,6 +92,26 @@ void PTShader::createShaderModules(const vector<char>& vertex_code, const vector
 
     if (vkCreateShaderModule(device, &frag_create_info, nullptr, &fragment_shader) != VK_SUCCESS)
         throw std::runtime_error("unable to create fragment shader module");
+}
+
+void PTShader::createDescriptorSetLayout()
+{
+    // TODO: make this conform according to the actual shaders! i.e. for each uniform buffer binding, generate a descriptor set layout binding
+    VkDescriptorSetLayoutBinding transform_binding{ };
+    transform_binding.binding = 0;
+    transform_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    transform_binding.descriptorCount = 1;
+    transform_binding.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS;
+
+    vector<VkDescriptorSetLayoutBinding> bindings = { transform_binding };
+
+    VkDescriptorSetLayoutCreateInfo layout_create_info{ };
+    layout_create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layout_create_info.bindingCount = static_cast<uint32_t>(bindings.size());
+    layout_create_info.pBindings = bindings.data();
+
+    if (vkCreateDescriptorSetLayout(device, &layout_create_info, nullptr, &descriptor_set_layout) != VK_SUCCESS)
+        throw runtime_error("unable to create descriptor set layout");
 }
 
 void PTShader::destroyShaderModules()

@@ -10,7 +10,7 @@ inline uint32_t clamp(uint32_t x, uint32_t mini, uint32_t maxi)
     return (y < mini) ? mini : y;
 }
 
-PTSwapchain::PTSwapchain(int window_x, int window_y, const PTPhysicalDevice& physical_device, VkDevice device, VkSurfaceKHR surface)
+PTSwapchain::PTSwapchain(VkDevice device, VkSurfaceKHR surface, const PTPhysicalDevice& physical_device, int window_x, int window_y)
 {
     // decide on surface format
     VkSurfaceFormatKHR selected_surface_format = physical_device.getSwapchainFormats()[0];

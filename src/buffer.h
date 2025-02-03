@@ -22,7 +22,7 @@ public:
     PTBuffer operator=(const PTBuffer& other) = delete;
     PTBuffer operator=(const PTBuffer&& other) = delete;
 
-    PTBuffer(VkDeviceSize buffer_size, VkBufferUsageFlags usage_flags, VkMemoryPropertyFlags memory_flags, VkDevice _device, PTPhysicalDevice physical_device);
+    PTBuffer(VkDevice _device, PTPhysicalDevice physical_device, VkDeviceSize buffer_size, VkBufferUsageFlags usage_flags, VkMemoryPropertyFlags memory_flags);
 
     inline VkDeviceSize getSize() { return size; }
     inline VkBuffer getBuffer() { return buffer; }

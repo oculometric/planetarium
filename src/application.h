@@ -15,6 +15,7 @@
 #include "physical_device.h"
 #include "swapchain.h"
 #include "buffer.h"
+#include "render_pass.h"
 
 #include "../lib/oculib/mesh.h"
 
@@ -60,9 +61,8 @@ private:
     vector<VkSemaphore> render_finished_semaphores;
     vector<VkFence> in_flight_fences;
 
-    VkRenderPass demo_render_pass;
-    VkDescriptorSetLayout demo_descriptor_set_layout;
-    PTPipeline demo_pipeline;
+    PTRenderPass* demo_render_pass;
+    PTPipeline* demo_pipeline;
     PTShader* demo_shader;
 
     PTBuffer* vertex_buffer;
@@ -118,9 +118,6 @@ private:
     vector<VkDeviceQueueCreateInfo> constructQueues();
     void initLogicalDevice(const vector<VkDeviceQueueCreateInfo>& queue_create_infos, const vector<const char*>& layers);
     void collectQueues();
-    void createDescriptorSetLayout();
-    VkRenderPass createRenderPass();
-    PTPipeline constructPipeline(const PTShader& shader, const VkRenderPass render_pass);
     void createFramebuffers(const VkRenderPass render_pass);
     void createCommandPoolAndBuffers();
     void createDepthResources();

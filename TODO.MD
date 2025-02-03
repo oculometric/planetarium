@@ -2,15 +2,14 @@
 
 ## Vulkan Stuff
 
-- [ ] make renderpass and subpass stuff its own file, handle creation/destruction
-- [ ] fix swapchain resize being called constantly after resize
-- [ ] make pipeline sutff its own file, properly handle creation and destruction
-- [ ] specify required device features (non-solid fill for wireframe, etc)
+- [ ] handle image management in its own file
 - [ ] implement proper shader config and reflection, and checking this when creating render passes
-- [ ] improve shader module stuff
+- [ ] specify required device features (non-solid fill for wireframe, etc)
+- [ ] fix swapchain resize being called constantly after resize
 - [ ] make mesh/vertex stuff its own file, handle vertex buffer creation/destruction
 - [ ] replace oculib
 - [ ] make sure everything which gets `destroy`ed in application (framebuffers, etc) is treated as a **pointer** when converting to PTSomething (i.e. so `delete` order can be controlled by application)
+- [ ] resource manager system for things like PTPipeline, PTShader, etc, which tracks dependencies and counts references
 
 ## Engine Stuff
 
@@ -45,3 +44,6 @@
 - [x] make a property list STUI component (i.e. so we don't need a list of horizontal boxes with two labels in each)
 - [x] develop a debugging utility class
 - [x] add explicit window resize callback
+- [x] make pipeline sutff its own file, properly handle creation and destruction
+- [x] make renderpass and subpass stuff its own file, handle creation/destruction
+- [x] improve shader module stuff

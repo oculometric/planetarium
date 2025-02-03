@@ -8,9 +8,9 @@
 class PTSwapchain
 {
 private:
-    VkDevice target_device;
+    VkDevice target_device = VK_NULL_HANDLE;
 
-    VkSwapchainKHR swapchain;
+    VkSwapchainKHR swapchain = VK_NULL_HANDLE;
     VkSurfaceFormatKHR surface_format;
     VkFormat image_format;
     uint32_t image_count;
@@ -25,7 +25,7 @@ public:
     PTSwapchain operator=(const PTSwapchain& other) = delete;
     PTSwapchain operator=(const PTSwapchain&& other) = delete;
 
-    PTSwapchain(int window_x, int window_y, const PTPhysicalDevice& physical_device, VkDevice device, VkSurfaceKHR surface);
+    PTSwapchain(VkDevice device, VkSurfaceKHR surface, const PTPhysicalDevice& physical_device, int window_x, int window_y);
 
     inline VkSwapchainKHR getSwapchain() { return swapchain; }
     inline VkSurfaceFormatKHR getSurfaceFormat() { return surface_format; }

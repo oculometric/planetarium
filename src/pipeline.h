@@ -5,16 +5,16 @@
 
 #include "shader.h"
 #include "render_pass.h"
+#include "swapchain.h"
 
 // TODO: move more stuff into the pipeline class. make all of this more object-orientated
 class PTPipeline
 {
 private:
-    VkDevice device;
+    VkDevice device = VK_NULL_HANDLE;
 
-    VkPipeline pipeline;
-    VkPipelineLayout layout;
-    VkDescriptorSetLayout descriptor_set_layout;
+    VkPipeline pipeline = VK_NULL_HANDLE;
+    VkPipelineLayout layout = VK_NULL_HANDLE;
     std::vector<VkDynamicState> dynamic_states;
 
     PTShader* shader = nullptr;
@@ -39,27 +39,24 @@ public:
     PTPipeline operator=(const PTPipeline& other) = delete;
     PTPipeline operator=(const PTPipeline&& other) = delete;
 
-    // TODO: add a list of dynamic states to create to this
-    PTPipeline(PTShader* _shader, PTRenderPass* _render_pass, VkBool32 _depth_write, VkBool32 _depth_test, VkCompareOp _depth_op, VkCullModeFlags _culling, VkFrontFace _winding_order, VkPolygonMode _polygon_mode, VkDevice _device, PTSwapchain* _swapchain);
+    PTPipeline(PTShader* _shader, PTRenderPass* _render_pass, VkDevice _device, PTSwapchain* _swapchain, VkBool32 _depth_write = VK_TRUE, VkBool32 _depth_test = VK_TRUE, VkCompareOp _depth_op = VK_COMPARE_OP_LESS, VkCullModeFlags _culling = VK_CULL_MODE_BACK_BIT, VkFrontFace _winding_order = VK_FRONT_FACE_COUNTER_CLOCKWISE, VkPolygonMode _polygon_mode = VK_POLYGON_MODE_FILL, std::vector<VkDynamicState> _dynamic_states = { });
 
-    inline VkPipeline getPipeline() { return pipeline; }
-    inline VkPipelineLayout getLayout() { return layout; }
-    inline VkDescriptorSetLayout getDescriptorSetLayout() { return descriptor_set_layout; }
-    inline std::vector<VkDynamicState> getAllDynamicStates() { return dynamic_states; }
-    inline VkDynamicState getDynamicState(uint32_t index) { return dynamic_states[index]; }
-    inline PTShader* getShader() { return shader; }
-    inline PTRenderPass* getRenderPass() { return render_pass; }
-    inline VkViewport getViewport() { return viewport; }
-    inline VkRect2D getScissor() { return scissor; }
-    inline VkBool32 getDepthWriteEnabled() { return depth_write; }
-    inline VkBool32 getDepthTestEnabled() { return depth_test; }
-    inline VkCompareOp getDepthCompareOp() { return depth_op; }
-    inline VkCullModeFlags getCullingMode() { return culling; }
-    inline VkFrontFace getWindingOrder() { return winding_order; }
-    inline VkPolygonMode getPolygonMode() { return polygon_mode; }
+    inline VkPipeline getPipeline() const { return pipeline; }
+    inline VkPipelineLayout getLayout() const { return layout; }
+    inline std::vector<VkDynamicState> getAllDynamicStates() const { return dynamic_states; }
+    inline VkDynamicState getDynamicState(uint32_t index) const { return dynamic_states[index]; }
+    inline PTShader* getShader() const { return shader; }
+    inline PTRenderPass* getRenderPass() const { return render_pass; }
+    inline VkViewport getViewport() const { return viewport; }
+    inline VkRect2D getScissor() const { return scissor; }
+    inline VkBool32 getDepthWriteEnabled() const { return depth_write; }
+    inline VkBool32 getDepthTestEnabled() const { return depth_test; }
+    inline VkCompareOp getDepthCompareOp() const { return depth_op; }
+    inline VkCullModeFlags getCullingMode() const { return culling; }
+    inline VkFrontFace getWindingOrder() const { return winding_order; }
+    inline VkPolygonMode getPolygonMode() const { return polygon_mode; }
 
     // TODO: setters for these, which recreate the pipeline resources
-
 
     ~PTPipeline();
 };

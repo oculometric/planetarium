@@ -6,7 +6,7 @@
 
 using namespace std;
 
-PTBuffer::PTBuffer(VkDeviceSize buffer_size, VkBufferUsageFlags usage_flags, VkMemoryPropertyFlags memory_flags, VkDevice _device, PTPhysicalDevice physical_device)
+PTBuffer::PTBuffer(VkDevice _device, PTPhysicalDevice physical_device, VkDeviceSize buffer_size, VkBufferUsageFlags usage_flags, VkMemoryPropertyFlags memory_flags)
 {
     size = buffer_size;
     flags = memory_flags;

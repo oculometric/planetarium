@@ -91,21 +91,27 @@ void PTApplication::initVulkan()
     int height;
     glfwGetFramebufferSize(window, &width, &height);
     debugLog("    creating swapchain...");
-    swapchain = new PTSwapchain(width, height, physical_device, device, surface);
+    swapchain = new PTSwapchain(device, surface, physical_device, width, height);
     debugLog("    done.");
 
-    createDescriptorSetLayout();
-
     // initialise a basic pipeline
+    debugLog("    loading demo shader...");
     demo_shader = new PTShader(device, "demo");
-    demo_render_pass = createRenderPass();
-    demo_pipeline = constructPipeline(*demo_shader, demo_render_pass);
+    debugLog("    done.");
+    debugLog("    creating demo render pass...");
+    PTRenderPassAttachment attachment;
+    attachment.format = swapchain->getImageFormat();
+    demo_render_pass = new PTRenderPass(device, { attachment }, true);
+    debugLog("    done.");
+    debugLog("    constructing pipeline...");
+    demo_pipeline = new PTPipeline(demo_shader, demo_render_pass, device, swapchain);
+    debugLog("    done.");
 
     createCommandPoolAndBuffers();
 
     createDepthResources();
 
-    createFramebuffers(demo_render_pass);
+    createFramebuffers(demo_render_pass->getRenderPass());
 
     createVertexBuffer();
 
@@ -157,7 +163,7 @@ void PTApplication::mainLoop()
 
         if (result == VK_ERROR_OUT_OF_DATE_KHR)
         {
-            debugLog("swapchain out of date!!");
+            debugLog("swapchain out of date during acquire image!");
             resizeSwapchain();
             continue;
         }
@@ -183,7 +189,7 @@ void PTApplication::mainLoop()
 
         VkRenderPassBeginInfo render_pass_begin_info{ };
         render_pass_begin_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        render_pass_begin_info.renderPass = demo_render_pass;
+        render_pass_begin_info.renderPass = demo_render_pass->getRenderPass();
         render_pass_begin_info.framebuffer = framebuffers[image_index];
         render_pass_begin_info.renderArea.offset = { 0, 0 };
         render_pass_begin_info.renderArea.extent = swapchain->getExtent();
@@ -194,13 +200,27 @@ void PTApplication::mainLoop()
         render_pass_begin_info.pClearValues = clear_values.data();
 
         vkCmdBeginRenderPass(command_buffers[frame_index], &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
-        vkCmdBindPipeline(command_buffers[frame_index], VK_PIPELINE_BIND_POINT_GRAPHICS, demo_pipeline.pipeline);
+        vkCmdBindPipeline(command_buffers[frame_index], VK_PIPELINE_BIND_POINT_GRAPHICS, demo_pipeline->getPipeline());
+
+        VkViewport viewport{};
+        viewport.x = 0.0f;
+        viewport.y = 0.0f;
+        viewport.width = static_cast<float>(swapchain->getExtent().width);
+        viewport.height = static_cast<float>(swapchain->getExtent().height);
+        viewport.minDepth = 0.0f;
+        viewport.maxDepth = 1.0f;
+        vkCmdSetViewport(command_buffers[frame_index], 0, 1, &viewport);
+
+        VkRect2D scissor{};
+        scissor.offset = {0, 0};
+        scissor.extent = swapchain->getExtent();
+        vkCmdSetScissor(command_buffers[frame_index], 0, 1, &scissor);
 
         VkBuffer vertex_buffers[] = { vertex_buffer->getBuffer() };
         VkDeviceSize offsets[] = { 0 };
         vkCmdBindVertexBuffers(command_buffers[frame_index], 0, 1, vertex_buffers, offsets);
         vkCmdBindIndexBuffer(command_buffers[frame_index], index_buffer->getBuffer(), 0, VK_INDEX_TYPE_UINT16);
-        vkCmdBindDescriptorSets(command_buffers[frame_index], VK_PIPELINE_BIND_POINT_GRAPHICS, demo_pipeline.layout, 0, 1, &descriptor_sets[frame_index], 0, nullptr);
+        vkCmdBindDescriptorSets(command_buffers[frame_index], VK_PIPELINE_BIND_POINT_GRAPHICS, demo_pipeline->getLayout(), 0, 1, &descriptor_sets[frame_index], 0, nullptr);
         vkCmdDrawIndexed(command_buffers[frame_index], static_cast<uint32_t>(demo_mesh.indices.size()), 1, 0, 0, 0);
         vkCmdEndRenderPass(command_buffers[frame_index]);
 
@@ -236,7 +256,7 @@ void PTApplication::mainLoop()
         result = vkQueuePresentKHR(queues[PTQueueFamily::PRESENT], &present_info);
         if (result == VK_ERROR_OUT_OF_DATE_KHR)
         {
-            debugLog("swapchain out of date!!");
+            debugLog("swapchain out of date during present~");
             resizeSwapchain();
         }
         else if (window_resized)
@@ -276,12 +296,10 @@ void PTApplication::deinitVulkan()
 
     vkDestroyDescriptorPool(device, descriptor_pool, nullptr);
 
-    vkDestroyDescriptorSetLayout(device, demo_descriptor_set_layout, nullptr);
 
-    vkDestroyPipeline(device, demo_pipeline.pipeline, nullptr);
-    vkDestroyPipelineLayout(device, demo_pipeline.layout, nullptr);
+    delete demo_pipeline;
     delete demo_shader;
-    vkDestroyRenderPass(device, demo_render_pass, nullptr);
+    delete demo_render_pass;
 
     delete swapchain;
 
@@ -468,241 +486,6 @@ void PTApplication::collectQueues()
     }
 }
 
-void PTApplication::createDescriptorSetLayout()
-{
-    VkDescriptorSetLayoutBinding transform_binding{ };
-    transform_binding.binding = 0;
-    transform_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    transform_binding.descriptorCount = 1;
-    transform_binding.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS;
-
-    VkDescriptorSetLayoutCreateInfo layout_create_info{ };
-    layout_create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layout_create_info.bindingCount = 1;
-    layout_create_info.pBindings = &transform_binding;
-
-    if (vkCreateDescriptorSetLayout(device, &layout_create_info, nullptr, &demo_descriptor_set_layout) != VK_SUCCESS)
-        throw runtime_error("unable to create descriptor set layout");
-    
-
-}
-
-VkRenderPass PTApplication::createRenderPass()
-{
-    debugLog("    creating render pass...");
-
-    VkAttachmentDescription colour_attachment{ };
-    colour_attachment.format = swapchain->getImageFormat();
-    colour_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-    colour_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    colour_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    colour_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    colour_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    colour_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    colour_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-    VkAttachmentReference colour_attachment_ref{ };
-    colour_attachment_ref.attachment = 0;
-    colour_attachment_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-    VkAttachmentDescription depth_attachment{ };
-    depth_attachment.format = VK_FORMAT_D32_SFLOAT;
-    depth_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-    depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    depth_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    depth_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    depth_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    depth_attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-    VkAttachmentReference depth_attachment_ref{ };
-    depth_attachment_ref.attachment = 1;
-    depth_attachment_ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-    VkSubpassDescription subpass{ };
-    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    subpass.colorAttachmentCount = 1;
-    subpass.pColorAttachments = &colour_attachment_ref;
-    subpass.pDepthStencilAttachment = &depth_attachment_ref;
-
-    VkSubpassDependency dependency{ };
-    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-    dependency.dstSubpass = 0;
-    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-    dependency.srcAccessMask = 0;
-    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-
-    array<VkAttachmentDescription, 2> attachments = { colour_attachment, depth_attachment };
-    VkRenderPassCreateInfo render_pass_create_info{ };
-    render_pass_create_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    render_pass_create_info.attachmentCount = static_cast<uint32_t>(attachments.size());
-    render_pass_create_info.pAttachments = attachments.data();
-    render_pass_create_info.subpassCount = 1;
-    render_pass_create_info.pSubpasses = &subpass;
-    render_pass_create_info.dependencyCount = 1;
-    render_pass_create_info.pDependencies = &dependency;
-
-    VkRenderPass render_pass;
-
-    if (vkCreateRenderPass(device, &render_pass_create_info, nullptr, &render_pass) != VK_SUCCESS)
-        throw std::runtime_error("unable to create render pass");
-
-    debugLog("    done.");
-
-    return render_pass;
-}
-
-PTPipeline PTApplication::constructPipeline(const PTShader& shader, const VkRenderPass render_pass)
-{
-    debugLog("    constructing pipeline...");
-    // TODO: move all this code into the pipeline class?
-
-    // TODO: convert to param
-    std::vector<VkDynamicState> dynamic_states = { };
-    VkPipelineDynamicStateCreateInfo dynamic_state_create_info{ };
-    dynamic_state_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-    dynamic_state_create_info.dynamicStateCount = static_cast<uint32_t>(dynamic_states.size());
-    dynamic_state_create_info.pDynamicStates = dynamic_states.data();
-
-    auto binding_description = PTMesh::getVertexBindingDescription();
-    auto attribute_descriptions = PTMesh::getVertexAttributeDescriptions();
-
-    VkPipelineVertexInputStateCreateInfo vertex_input_create_info{ };
-    vertex_input_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertex_input_create_info.vertexBindingDescriptionCount = 1;
-    vertex_input_create_info.pVertexBindingDescriptions = &binding_description;
-    vertex_input_create_info.vertexAttributeDescriptionCount = static_cast<uint32_t>(attribute_descriptions.size());
-    vertex_input_create_info.pVertexAttributeDescriptions = attribute_descriptions.data();
-
-    VkPipelineDepthStencilStateCreateInfo depth_create_info{ };
-    depth_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-    depth_create_info.depthWriteEnable = VK_TRUE;
-    depth_create_info.depthTestEnable = VK_TRUE;
-    depth_create_info.depthCompareOp = VK_COMPARE_OP_LESS;
-    depth_create_info.depthBoundsTestEnable = VK_FALSE;
-    depth_create_info.stencilTestEnable = VK_FALSE;
-
-    // TODO: needs options to switch to line mode
-    VkPipelineInputAssemblyStateCreateInfo input_assembly_create_info{ };
-    input_assembly_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    input_assembly_create_info.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    input_assembly_create_info.primitiveRestartEnable = VK_FALSE;
-
-    VkViewport viewport{ };
-    viewport.x = 0.0f;
-    viewport.y = 0.0f;
-    viewport.width = (float)swapchain->getExtent().width;
-    viewport.height = (float)swapchain->getExtent().height;
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
-
-    VkRect2D scissor{ };
-    scissor.offset = { 0, 0 };
-    scissor.extent = swapchain->getExtent();
-
-    // TODO: this could be converted to a dynamic state
-    VkPipelineViewportStateCreateInfo viewport_state_create_info{ };
-    viewport_state_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-    viewport_state_create_info.viewportCount = 1;
-    viewport_state_create_info.pViewports = &viewport;
-    viewport_state_create_info.scissorCount = 1;
-    viewport_state_create_info.pScissors = &scissor;
-
-    // TODO: enable line rendering, requires GPU feature
-    VkPipelineRasterizationStateCreateInfo rasteriser_create_info{ };
-    rasteriser_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-    rasteriser_create_info.depthClampEnable = VK_FALSE;
-    rasteriser_create_info.rasterizerDiscardEnable = VK_FALSE;
-    rasteriser_create_info.polygonMode = VK_POLYGON_MODE_FILL;
-    rasteriser_create_info.lineWidth = 1.0f;
-    rasteriser_create_info.cullMode = VK_CULL_MODE_BACK_BIT;
-    rasteriser_create_info.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-    rasteriser_create_info.depthBiasEnable = VK_FALSE;
-    rasteriser_create_info.depthBiasConstantFactor = 0.0f;
-    rasteriser_create_info.depthBiasClamp = 0.0f;
-    rasteriser_create_info.depthBiasSlopeFactor = 0.0f;
-
-    VkPipelineMultisampleStateCreateInfo multisampling_create_info{ };
-    multisampling_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-    multisampling_create_info.sampleShadingEnable = VK_FALSE;
-    multisampling_create_info.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-    multisampling_create_info.minSampleShading = 1.0f;
-    multisampling_create_info.pSampleMask = nullptr;
-    multisampling_create_info.alphaToCoverageEnable = VK_FALSE;
-    multisampling_create_info.alphaToOneEnable = VK_FALSE;
-
-    VkPipelineColorBlendAttachmentState colour_blend_attachment{ };
-    colour_blend_attachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-    colour_blend_attachment.blendEnable = VK_TRUE;
-    colour_blend_attachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-    colour_blend_attachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-    colour_blend_attachment.colorBlendOp = VK_BLEND_OP_ADD;
-    colour_blend_attachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-    colour_blend_attachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-    colour_blend_attachment.alphaBlendOp = VK_BLEND_OP_ADD;
-
-    VkPipelineColorBlendStateCreateInfo colour_blend_create_info{ };
-    colour_blend_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-    colour_blend_create_info.logicOpEnable = VK_FALSE;
-    colour_blend_create_info.logicOp = VK_LOGIC_OP_COPY;
-    colour_blend_create_info.attachmentCount = 1;
-    colour_blend_create_info.pAttachments = &colour_blend_attachment;
-    colour_blend_create_info.blendConstants[0] = 0.0f;
-    colour_blend_create_info.blendConstants[1] = 0.0f;
-    colour_blend_create_info.blendConstants[2] = 0.0f;
-    colour_blend_create_info.blendConstants[3] = 0.0f;
-
-    VkPipelineLayoutCreateInfo pipeline_layout_create_info{ };
-    pipeline_layout_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipeline_layout_create_info.setLayoutCount = 1;
-    // TODO: convert this to a parameter
-    pipeline_layout_create_info.pSetLayouts = &demo_descriptor_set_layout;
-    pipeline_layout_create_info.pushConstantRangeCount = 0;
-    pipeline_layout_create_info.pPushConstantRanges = nullptr;
-
-    cout << "        creating pipeline layout... ";
-
-    PTPipeline pipeline;
-
-    if (vkCreatePipelineLayout(device, &pipeline_layout_create_info, nullptr, &(pipeline.layout)) != VK_SUCCESS)
-        throw runtime_error("unable to create pipeline layout");
-
-    debugLog("done.");
-
-    debugLog("        creating graphics pipeline... ");
-
-    vector<VkPipelineShaderStageCreateInfo> shader_stages = shader.getStageCreateInfo();
-
-    VkGraphicsPipelineCreateInfo pipeline_create_info{ };
-    pipeline_create_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    pipeline_create_info.stageCount = 2;
-    pipeline_create_info.pStages = shader_stages.data();
-    pipeline_create_info.pVertexInputState = &vertex_input_create_info;
-    pipeline_create_info.pInputAssemblyState = &input_assembly_create_info;
-    pipeline_create_info.pViewportState = &viewport_state_create_info;
-    pipeline_create_info.pRasterizationState = &rasteriser_create_info;
-    pipeline_create_info.pMultisampleState = &multisampling_create_info;
-    pipeline_create_info.pColorBlendState = &colour_blend_create_info;
-    pipeline_create_info.pDepthStencilState = &depth_create_info;
-    pipeline_create_info.pDynamicState = &dynamic_state_create_info;
-    pipeline_create_info.layout = pipeline.layout;
-    pipeline_create_info.renderPass = render_pass;
-    pipeline_create_info.subpass = 0;
-    pipeline_create_info.basePipelineHandle = VK_NULL_HANDLE;
-    pipeline_create_info.basePipelineIndex = -1;
-
-
-    if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipeline_create_info, nullptr, &(pipeline.pipeline)) != VK_SUCCESS)
-        throw std::runtime_error("unable to create to create graphics pipeline");
-    
-    debugLog("done.");
-
-    debugLog("    done.");
-
-    return pipeline;
-}
-
 void PTApplication::createFramebuffers(const VkRenderPass render_pass)
 {
     debugLog("    creating framebuffers...");
@@ -734,24 +517,24 @@ void PTApplication::createVertexBuffer()
 {
     // vertex buffer creation (via staging buffer)
     VkDeviceSize size = sizeof(OLVertex) * demo_mesh.vertices.size();
-    PTBuffer* staging_buffer = new PTBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, device, physical_device);
+    PTBuffer* staging_buffer = new PTBuffer(device, physical_device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     
     void* vertex_data = staging_buffer->map();
     memcpy(vertex_data, demo_mesh.vertices.data(), (size_t)size);
     staging_buffer->unmap();
-    vertex_buffer = new PTBuffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, device, physical_device);
+    vertex_buffer = new PTBuffer(device, physical_device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     staging_buffer->copyTo(vertex_buffer, size);
 
     delete staging_buffer;
     
     // index buffer creation (via staging buffer)
     size = sizeof(uint16_t) * demo_mesh.indices.size();
-    staging_buffer = new PTBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, device, physical_device);
+    staging_buffer = new PTBuffer(device, physical_device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     
     void* index_data = staging_buffer->map();
     memcpy(index_data, demo_mesh.indices.data(), (size_t)size);
     staging_buffer->unmap();
-    index_buffer = new PTBuffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, device, physical_device);
+    index_buffer = new PTBuffer(device, physical_device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     staging_buffer->copyTo(index_buffer, size);
 
     delete staging_buffer;
@@ -763,7 +546,7 @@ void PTApplication::createUniformBuffers()
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
-        PTBuffer* buf = new PTBuffer(transform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, device, physical_device);
+        PTBuffer* buf = new PTBuffer(device, physical_device, transform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
         buf->map();
         uniform_buffers.push_back(buf);
     }
@@ -812,7 +595,7 @@ void PTApplication::createDescriptorPoolAndSets()
     if (vkCreateDescriptorPool(device, &pool_create_info, nullptr, &descriptor_pool) != VK_SUCCESS)
         throw runtime_error("unable to create descriptor pool");
 
-    vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, demo_descriptor_set_layout);
+    vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, demo_shader->getDescriptorSetLayout());
     VkDescriptorSetAllocateInfo set_allocation_info{ };
     set_allocation_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     set_allocation_info.descriptorPool = descriptor_pool;
@@ -885,9 +668,11 @@ void PTApplication::resizeSwapchain()
         glfwGetFramebufferSize(window, &width, &height);
         glfwWaitEvents();
     }
-    swapchain = new PTSwapchain(width, height, physical_device, device, surface);
-    
-    createFramebuffers(demo_render_pass);
+    debugLog("    new size: " + to_string(width) + ", " + to_string(height));
+    swapchain = new PTSwapchain(device, surface, physical_device, width, height);
+    // TODO: should we be telling the swapchain about the new viewport size??
+
+    createFramebuffers(demo_render_pass->getRenderPass());
 
     window_resized = false;
 
@@ -960,7 +745,7 @@ void PTApplication::loadTextureToImage(string texture_file)
     OLImage texture(texture_file);
     VkDeviceSize image_size = texture.getSize().x * texture.getSize().y * 4;
 
-    PTBuffer* buf = new PTBuffer(image_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, device, physical_device);
+    PTBuffer* buf = new PTBuffer(device, physical_device, image_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     VkBuffer staging_buffer = buf->getBuffer();
     VkDeviceMemory staging_memory = buf->getDeviceMemory();
     
