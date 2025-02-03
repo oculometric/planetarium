@@ -11,6 +11,7 @@
 
 #include "scene.h"
 #include "debug.h"
+#include "mesh.h"
 
 static PTApplication* main_application = nullptr;
 
@@ -564,8 +565,8 @@ PTPipeline PTApplication::constructPipeline(const PTShader& shader, const VkRend
     dynamic_state_create_info.dynamicStateCount = static_cast<uint32_t>(dynamic_states.size());
     dynamic_state_create_info.pDynamicStates = dynamic_states.data();
 
-    auto binding_description = getVertexBindingDescription();
-    auto attribute_descriptions = getVertexAttributeDescriptions();
+    auto binding_description = PTMesh::getVertexBindingDescription();
+    auto attribute_descriptions = PTMesh::getVertexAttributeDescriptions();
 
     VkPipelineVertexInputStateCreateInfo vertex_input_create_info{ };
     vertex_input_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;

@@ -29,32 +29,6 @@ struct TransformMatrices
     float world_to_clip[16];
 };
 
-inline VkVertexInputBindingDescription getVertexBindingDescription()
-{
-    VkVertexInputBindingDescription description{ };
-    description.binding = 0;
-    description.stride = sizeof(OLVertex);
-    description.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-    return description;
-}
-
-inline array<VkVertexInputAttributeDescription, 2> getVertexAttributeDescriptions()
-{
-    array<VkVertexInputAttributeDescription, 2> descriptions{ };
-
-    descriptions[0].binding = 0;
-    descriptions[0].location = 0;
-    descriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-    descriptions[0].offset = offsetof(OLVertex, position);
-
-    descriptions[1].binding = 0;
-    descriptions[1].location = 1;
-    descriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-    descriptions[1].offset = offsetof(OLVertex, colour);
-
-    return descriptions;
-}
 
 const uint32_t MAX_FRAMES_IN_FLIGHT = 2;
 
