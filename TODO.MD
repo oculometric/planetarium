@@ -2,10 +2,9 @@
 
 ## Vulkan Stuff
 
-- [ ] handle image management in its own file
+- [ ] fix swapchain resize being called constantly after resize
 - [ ] implement proper shader config and reflection, and checking this when creating render passes
 - [ ] specify required device features (non-solid fill for wireframe, etc)
-- [ ] fix swapchain resize being called constantly after resize
 - [ ] make mesh/vertex stuff its own file, handle vertex buffer creation/destruction
 - [ ] replace oculib
 - [ ] make sure everything which gets `destroy`ed in application (framebuffers, etc) is treated as a **pointer** when converting to PTSomething (i.e. so `delete` order can be controlled by application)
@@ -47,3 +46,4 @@
 - [x] make pipeline sutff its own file, properly handle creation and destruction
 - [x] make renderpass and subpass stuff its own file, handle creation/destruction
 - [x] improve shader module stuff
+- [x] handle image management in its own file

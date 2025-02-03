@@ -16,6 +16,7 @@
 #include "swapchain.h"
 #include "buffer.h"
 #include "render_pass.h"
+#include "image.h"
 
 #include "../lib/oculib/mesh.h"
 
@@ -70,8 +71,7 @@ private:
 
     vector<PTBuffer*> uniform_buffers;
 
-    VkImage depth_image;
-    VkDeviceMemory depth_image_memory;
+    PTImage* depth_image;
     VkImageView depth_image_view;
 
     static constexpr char* required_device_extensions[1] =
@@ -130,10 +130,5 @@ private:
     static void windowResizeCallback(GLFWwindow* window, int new_width, int new_height);
 
     void updateUniformBuffers(uint32_t frame_index);
-    void loadTextureToImage(string texture_file);
-    void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout);
-    void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
-    void createImage(uint32_t image_width, uint32_t image_height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& image_memory);
-    VkImageView createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspect_flags);
     int evaluatePhysicalDevice(PTPhysicalDevice d);
 };

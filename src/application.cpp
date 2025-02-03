@@ -307,8 +307,7 @@ void PTApplication::deinitVulkan()
     delete vertex_buffer;
 
     vkDestroyImageView(device, depth_image_view, nullptr);
-    vkDestroyImage(device, depth_image, nullptr);
-    vkFreeMemory(device, depth_image_memory, nullptr);
+    delete depth_image;
 
     vkDestroyDevice(device, nullptr);
 
@@ -576,8 +575,8 @@ void PTApplication::createCommandPoolAndBuffers()
 
 void PTApplication::createDepthResources()
 {
-    createImage(swapchain->getExtent().width, swapchain->getExtent().height, VK_FORMAT_D32_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, depth_image, depth_image_memory);
-    depth_image_view = createImageView(depth_image, VK_FORMAT_D32_SFLOAT, VK_IMAGE_ASPECT_DEPTH_BIT);
+    depth_image = new PTImage(device, physical_device, swapchain->getExtent(), VK_FORMAT_D32_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    depth_image_view = depth_image->createImageView(VK_IMAGE_ASPECT_DEPTH_BIT);
 }
 
 void PTApplication::createDescriptorPoolAndSets()
@@ -737,167 +736,6 @@ void PTApplication::updateUniformBuffers(uint32_t frame_index)
     // cout << OLMatrix4f().row_3() << endl;;
 
     memcpy(uniform_buffers[frame_index]->getMappedMemory(), &transform, sizeof(TransformMatrices));
-}
-
-void PTApplication::loadTextureToImage(string texture_file)
-{
-    // TODO: load an image to a memory buffer from the file
-    OLImage texture(texture_file);
-    VkDeviceSize image_size = texture.getSize().x * texture.getSize().y * 4;
-
-    PTBuffer* buf = new PTBuffer(device, physical_device, image_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-    VkBuffer staging_buffer = buf->getBuffer();
-    VkDeviceMemory staging_memory = buf->getDeviceMemory();
-    
-    void* data = buf->map();
-    memcpy(data, texture.getData(), static_cast<size_t>(image_size));
-    buf->unmap();
-
-    VkImage texture_image;
-    VkDeviceMemory texture_image_memory;
-
-    createImage(texture.getSize().x, texture.getSize().y, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, texture_image, texture_image_memory);
-
-    transitionImageLayout(texture_image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-    copyBufferToImage(staging_buffer, texture_image, texture.getSize().x, texture.getSize().y);
-    transitionImageLayout(texture_image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
-    delete buf;
-    // TODO: when you use this, remember to delete the image and its associated device memory!
-}
-
-void PTApplication::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height)
-{
-    VkCommandBuffer command_buffer = beginTransientCommands();
-
-    VkBufferImageCopy copy_region{ };
-    copy_region.bufferOffset = 0;
-    copy_region.bufferRowLength = 0;
-    copy_region.bufferImageHeight = 0;
-
-    copy_region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    copy_region.imageSubresource.mipLevel = 0;
-    copy_region.imageSubresource.baseArrayLayer = 0;
-    copy_region.imageSubresource.layerCount = 1;
-
-    copy_region.imageOffset = VkOffset3D{0, 0, 0};
-    copy_region.imageExtent =
-    {
-        width,
-        height,
-        1
-    };
-
-    vkCmdCopyBufferToImage(command_buffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
-
-    endTransientCommands(command_buffer);
-}
-
-void PTApplication::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout)
-{
-    VkCommandBuffer command_buffer = beginTransientCommands();
-
-    VkImageMemoryBarrier image_barrier{ };
-    image_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    image_barrier.image = image;
-    image_barrier.oldLayout = old_layout;
-    image_barrier.newLayout = new_layout;
-    image_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    image_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    image_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    image_barrier.subresourceRange.baseMipLevel = 0;
-    image_barrier.subresourceRange.levelCount = 1;
-    image_barrier.subresourceRange.baseArrayLayer = 0;
-    image_barrier.subresourceRange.layerCount = 1;
-    
-    VkPipelineStageFlags source_stage;
-    VkPipelineStageFlags destination_stage;
-
-    if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED && new_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
-    {
-        image_barrier.srcAccessMask = 0;
-        image_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-
-        source_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        destination_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-    }
-    else if (old_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-    {
-        image_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        image_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-        source_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-        destination_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-    }
-    else
-        throw invalid_argument("unsupported layout transition");
-
-    vkCmdPipelineBarrier
-    (
-        command_buffer,
-        source_stage, destination_stage,
-        0,
-        0, nullptr,
-        0, nullptr,
-        1, &image_barrier
-    );
-
-    endTransientCommands(command_buffer);
-}
-
-void PTApplication::createImage(uint32_t image_width, uint32_t image_height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& image_memory)
-{
-    VkImageCreateInfo image_create_info{ };
-    image_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    image_create_info.imageType = VK_IMAGE_TYPE_2D;
-    image_create_info.extent.width = image_width;
-    image_create_info.extent.height = image_height;
-    image_create_info.extent.depth = 1;
-    image_create_info.mipLevels = 1;
-    image_create_info.arrayLayers = 1;
-    image_create_info.format = format;
-    image_create_info.tiling = tiling;
-    image_create_info.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    image_create_info.usage = usage;
-    image_create_info.flags = 0;
-    image_create_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    image_create_info.samples = VK_SAMPLE_COUNT_1_BIT;
-
-    if (vkCreateImage(device, &image_create_info, nullptr, &image) != VK_SUCCESS)
-        throw runtime_error("unable to create image");
-    
-    VkMemoryRequirements memory_requirements{ };
-    vkGetImageMemoryRequirements(device, image, &memory_requirements);
-
-    VkMemoryAllocateInfo allocate_info{ };
-    allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-    allocate_info.allocationSize = memory_requirements.size;
-    allocate_info.memoryTypeIndex = PTBuffer::findMemoryType(memory_requirements.memoryTypeBits, properties, physical_device);
-
-    if (vkAllocateMemory(device, &allocate_info, nullptr, &image_memory) != VK_SUCCESS)
-        throw runtime_error("unable to allocate image memory");
-
-    vkBindImageMemory(device, image, image_memory, 0);
-}
-
-VkImageView PTApplication::createImageView(VkImage image, VkFormat format, VkImageAspectFlags aspect_flags)
-{
-    VkImageViewCreateInfo view_create_info{ };
-    view_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    view_create_info.image = image;
-    view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    view_create_info.format = format;
-    view_create_info.subresourceRange.aspectMask = aspect_flags;
-    view_create_info.subresourceRange.baseMipLevel = 0;
-    view_create_info.subresourceRange.levelCount = 1;
-    view_create_info.subresourceRange.baseArrayLayer = 0;
-    view_create_info.subresourceRange.layerCount = 1;
-
-    VkImageView image_view;
-    if (vkCreateImageView(device, &view_create_info, nullptr, &image_view) != VK_SUCCESS)
-        throw runtime_error("unable to create texture image view");
-
-    return image_view;
 }
 
 int PTApplication::evaluatePhysicalDevice(PTPhysicalDevice d)
