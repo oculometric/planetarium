@@ -655,11 +655,15 @@ void PTApplication::resizeSwapchain()
 {
     debugLog("resizing swapchain + framebuffer...");
     vkDeviceWaitIdle(device);
+    debugLog(to_string(swapchain->getExtent().width) + " " + to_string(swapchain->getExtent().height));
 
     for (auto framebuffer : framebuffers)
         vkDestroyFramebuffer(device, framebuffer, nullptr);
 
     delete swapchain;
+
+    vkDestroyImageView(device, depth_image_view, nullptr);
+    delete depth_image;
 
     glfwGetFramebufferSize(window, &width, &height);
     while (width == 0 || height == 0)
@@ -669,8 +673,9 @@ void PTApplication::resizeSwapchain()
     }
     debugLog("    new size: " + to_string(width) + ", " + to_string(height));
     swapchain = new PTSwapchain(device, surface, physical_device, width, height);
-    // TODO: should we be telling the swapchain about the new viewport size??
+    debugLog(to_string(swapchain->getExtent().width) + " " + to_string(swapchain->getExtent().height));
 
+    createDepthResources();
     createFramebuffers(demo_render_pass->getRenderPass());
 
     window_resized = false;

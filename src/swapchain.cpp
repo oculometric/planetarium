@@ -10,7 +10,7 @@ inline uint32_t clamp(uint32_t x, uint32_t mini, uint32_t maxi)
     return (y < mini) ? mini : y;
 }
 
-PTSwapchain::PTSwapchain(VkDevice device, VkSurfaceKHR surface, const PTPhysicalDevice& physical_device, int window_x, int window_y)
+PTSwapchain::PTSwapchain(VkDevice device, VkSurfaceKHR surface, PTPhysicalDevice& physical_device, int window_x, int window_y)
 {
     // decide on surface format
     VkSurfaceFormatKHR selected_surface_format = physical_device.getSwapchainFormats()[0];
@@ -26,6 +26,7 @@ PTSwapchain::PTSwapchain(VkDevice device, VkSurfaceKHR surface, const PTPhysical
     // decide on present mode
     VkPresentModeKHR selected_surface_present_mode = VK_PRESENT_MODE_FIFO_KHR;
 
+    physical_device.refreshInfo(surface);
     VkSurfaceCapabilitiesKHR capabilities = physical_device.getSwapchainCapabilities();
     // decide on extent
     VkExtent2D selected_extent;

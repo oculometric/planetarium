@@ -2,7 +2,6 @@
 
 ## Vulkan Stuff
 
-- [ ] fix swapchain resize being called constantly after resize
 - [ ] implement proper shader config and reflection, and checking this when creating render passes
 - [ ] specify required device features (non-solid fill for wireframe, etc)
 - [ ] make mesh/vertex stuff its own file, handle vertex buffer creation/destruction
@@ -30,7 +29,6 @@
 
 ## Misc
 
-- [ ] fix invalid free pointer on exit via window close button
 
 ## Completed
 - [x] make physical device stuff its own file (finding swapchain info, supported features, etc)
@@ -47,3 +45,5 @@
 - [x] make renderpass and subpass stuff its own file, handle creation/destruction
 - [x] improve shader module stuff
 - [x] handle image management in its own file
+- [x] fix swapchain resize being called constantly after resize
+- [x] fix invalid free pointer on exit via window close button

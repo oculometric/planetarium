@@ -25,7 +25,7 @@ public:
     PTSwapchain operator=(const PTSwapchain& other) = delete;
     PTSwapchain operator=(const PTSwapchain&& other) = delete;
 
-    PTSwapchain(VkDevice device, VkSurfaceKHR surface, const PTPhysicalDevice& physical_device, int window_x, int window_y);
+    PTSwapchain(VkDevice device, VkSurfaceKHR surface, PTPhysicalDevice& physical_device, int window_x, int window_y);
 
     inline VkSwapchainKHR getSwapchain() { return swapchain; }
     inline VkSurfaceFormatKHR getSurfaceFormat() { return surface_format; }
