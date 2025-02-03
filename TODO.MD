@@ -2,7 +2,6 @@
 
 ## Vulkan Stuff
 
-- [ ] specify required device features (non-solid fill for wireframe, etc)
 - [ ] make mesh/vertex stuff its own file, handle vertex buffer creation/destruction
 - [ ] replace oculib
 - [ ] implement proper shader config and reflection, and checking this when creating render passes
@@ -48,3 +47,4 @@
 - [x] improve shader module stuff
 - [x] handle image management in its own file
 - [x] fix swapchain resize being called constantly after resize
+- [x] specify required device features (non-solid fill for wireframe, etc)
