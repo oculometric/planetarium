@@ -4,9 +4,11 @@
 
 - [ ] make mesh/vertex stuff its own file, handle vertex buffer creation/destruction
 - [ ] replace oculib
-- [ ] implement proper shader config and reflection, and checking this when creating render passes
-- [ ] make sure everything which gets `destroy`ed in application (framebuffers, etc) is treated as a **pointer** when converting to PTSomething (i.e. so `delete` order can be controlled by application)
 - [ ] resource manager system for things like PTPipeline, PTShader, etc, which tracks dependencies and counts references
+- [ ] implement proper shader config and reflection, and checking this when creating render passes
+- [ ] implement debug messenger in application to capture vulkan messages
+- [ ] make sure everything which gets `destroy`ed in application (framebuffers, etc) is treated as a **pointer** when converting to PTSomething (i.e. so `delete` order can be controlled by application)
+- [ ] fix semaphore issue on windows
 
 ## Engine Stuff
 

@@ -80,10 +80,14 @@ private:
 
     static constexpr char* required_device_extensions[1] =
     {
-        VK_KHR_SWAPCHAIN_EXTENSION_NAME
+        (char*)VK_KHR_SWAPCHAIN_EXTENSION_NAME
     };
 
+#ifdef _WIN32
+    chrono::steady_clock::time_point last_frame_start;
+#else
     chrono::system_clock::time_point last_frame_start;
+#endif
     uint32_t frame_time_running_mean_us;
 
     PTInputManager* input_manager;

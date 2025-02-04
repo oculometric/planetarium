@@ -2,10 +2,13 @@
 
 #include <fcntl.h>
 #include <string>
+#ifdef _WIN32
+#else
 #include <unistd.h>
 #include <linux/joystick.h>
-#include <iostream>
 #include <pthread.h>
+#endif
+#include <iostream>
 
 #include "debug.h"
 
@@ -18,7 +21,10 @@ PTController::PTController()
 
 PTController::PTController(uint8_t index)
 {
+#ifdef _WIN32
+#else
     device_handle = open((string("/dev/input/js") + to_string(index)).c_str(), O_RDONLY | O_NONBLOCK);
+#endif
 }
 
 PTControllerEvent PTController::poll()
@@ -27,6 +33,8 @@ PTControllerEvent PTController::poll()
 
     if (!isValid()) return event;
 
+#ifdef _WIN32
+#else
     js_event raw_event{ };
 
     ssize_t bytes_read = read(device_handle, &raw_event, sizeof(raw_event));
@@ -45,7 +53,7 @@ PTControllerEvent PTController::poll()
     default:
         event.type = (PTControllerEventType)((int)(raw_event.type) << 8); break;
     }
-
+#endif
     return event;
 }
 

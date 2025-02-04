@@ -260,6 +260,7 @@ void PTApplication::mainLoop()
         if (result == VK_ERROR_OUT_OF_DATE_KHR)
         {
             debugLog("swapchain out of date during present~");
+            // TODO: need to signal the image_available semaphore regardless
             resizeSwapchain();
         }
         else if (window_resized)
@@ -659,7 +660,7 @@ void PTApplication::resizeSwapchain()
 {
     debugLog("resizing swapchain + framebuffer...");
     vkDeviceWaitIdle(device);
-    debugLog(to_string(swapchain->getExtent().width) + " " + to_string(swapchain->getExtent().height));
+    debugLog("    old size: " + to_string(swapchain->getExtent().width) + ", " + to_string(swapchain->getExtent().height));
 
     for (auto framebuffer : framebuffers)
         vkDestroyFramebuffer(device, framebuffer, nullptr);
@@ -677,7 +678,6 @@ void PTApplication::resizeSwapchain()
     }
     debugLog("    new size: " + to_string(width) + ", " + to_string(height));
     swapchain = new PTSwapchain(device, surface, physical_device, width, height);
-    debugLog(to_string(swapchain->getExtent().width) + " " + to_string(swapchain->getExtent().height));
 
     createDepthResources();
     createFramebuffers(demo_render_pass->getRenderPass());

@@ -2,3 +2,5 @@ bin
 .VSCodeCounter
 *.spv
 /.vs
+/planetarium/x64
+/x64
