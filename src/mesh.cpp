@@ -4,8 +4,6 @@
 #include <fstream>
 #include <stdexcept>
 
-#include "../lib/oculib/vector3.h"
-#include "../lib/oculib/vector2.h"
 #include "../lib/oculib/matrix3.h"
 
 using namespace std;
@@ -20,9 +18,9 @@ VkVertexInputBindingDescription PTMesh::getVertexBindingDescription()
     return description;
 }
 
-array<VkVertexInputAttributeDescription, 2> PTMesh::getVertexAttributeDescriptions()
+array<VkVertexInputAttributeDescription, 5> PTMesh::getVertexAttributeDescriptions()
 {
-    array<VkVertexInputAttributeDescription, 2> descriptions{ };
+    array<VkVertexInputAttributeDescription, 5> descriptions{ };
 
     descriptions[0].binding = 0;
     descriptions[0].location = 0;
@@ -33,6 +31,21 @@ array<VkVertexInputAttributeDescription, 2> PTMesh::getVertexAttributeDescriptio
     descriptions[1].location = 1;
     descriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
     descriptions[1].offset = offsetof(PTVertex, colour);
+
+    descriptions[2].binding = 0;
+    descriptions[2].location = 2;
+    descriptions[2].format = VK_FORMAT_R32G32B32_SFLOAT;
+    descriptions[2].offset = offsetof(PTVertex, normal);
+
+    descriptions[3].binding = 0;
+    descriptions[3].location = 3;
+    descriptions[3].format = VK_FORMAT_R32G32B32_SFLOAT;
+    descriptions[3].offset = offsetof(PTVertex, tangent);
+
+    descriptions[4].binding = 0;
+    descriptions[4].location = 4;
+    descriptions[4].format = VK_FORMAT_R32G32_SFLOAT;
+    descriptions[4].offset = offsetof(PTVertex, uv);
 
     return descriptions;
 }
@@ -228,10 +241,9 @@ void PTMesh::readFileToBuffers(std::string file_name, std::vector<PTVertex>& ver
         {
             PTVertex new_vert;
             new_vert.position = tmp_co[fc.co];
-            // TODO: uncomment this when implementing normals, tangents, uvs
-            //new_vert.normal = tmp_vn[fc.vn];
-            // if (tmp_uv.size() > fc.uv)
-            //     new_vert.uv = tmp_uv[fc.uv];
+            new_vert.normal = tmp_vn[fc.vn];
+            if (tmp_uv.size() > fc.uv)
+                new_vert.uv = tmp_uv[fc.uv];
 
             uint16_t new_index = static_cast<uint16_t>(vertices.size());
             fc_normal_uses[fc.co].push_back(PTFaceCornerReference{ fc.vn, fc.uv, new_index });
@@ -241,29 +253,27 @@ void PTMesh::readFileToBuffers(std::string file_name, std::vector<PTVertex>& ver
         }
     }
 
-    // TODO: uncomment this when implementing normals, tangents, uvs
-    // // compute tangents
-    // vector<bool> touched = vector<bool>(vertices.size(), false);
-    // for (uint32_t tri = 0; tri < indices.size() / 3; tri++)
-    // {
-    //     uint16_t v0 = indices[(tri * 3) + 0]; PTVertex f0 = vertices[v0];
-    //     uint16_t v1 = indices[(tri * 3) + 1]; PTVertex f1 = vertices[v1];
-    //     uint16_t v2 = indices[(tri * 3) + 2]; PTVertex f2 = vertices[v2];
+    // compute tangents
+    vector<bool> touched = vector<bool>(vertices.size(), false);
+    for (uint32_t tri = 0; tri < indices.size() / 3; tri++)
+    {
+        uint16_t v0 = indices[(tri * 3) + 0]; PTVertex f0 = vertices[v0];
+        uint16_t v1 = indices[(tri * 3) + 1]; PTVertex f1 = vertices[v1];
+        uint16_t v2 = indices[(tri * 3) + 2]; PTVertex f2 = vertices[v2];
         
-    //     if (!touched[v0]) vertices[v0].tangent = computeTangent(f0.position, f1.position, f2.position, f0.uv, f1.uv, f2.uv).first;
-    //     if (!touched[v1]) vertices[v1].tangent = computeTangent(f1.position, f0.position, f2.position, f1.uv, f0.uv, f2.uv).first;
-    //     if (!touched[v2]) vertices[v2].tangent = computeTangent(f2.position, f0.position, f1.position, f2.uv, f0.uv, f1.uv).first;
+        if (!touched[v0]) vertices[v0].tangent = computeTangent(f0.position, f1.position, f2.position, f0.uv, f1.uv, f2.uv).first;
+        if (!touched[v1]) vertices[v1].tangent = computeTangent(f1.position, f0.position, f2.position, f1.uv, f0.uv, f2.uv).first;
+        if (!touched[v2]) vertices[v2].tangent = computeTangent(f2.position, f0.position, f1.position, f2.uv, f0.uv, f1.uv).first;
 
-    //     touched[v0] = true; touched[v1] = true; touched[v2] = true;
-    // }
+        touched[v0] = true; touched[v1] = true; touched[v2] = true;
+    }
 
     // transform from Z back Y up space into Z up Y forward space
     for (PTVertex& fv : vertices)
     {
         fv.position = OLVector3f(fv.position.x, -fv.position.z, fv.position.y);
-        // TODO: uncomment this when implementing normals, tangents, uvs
-        // fv.normal = OLVector3f(fv.normal.x, -fv.normal.z, fv.normal.y);
-        // fv.tangent = OLVector3f(fv.tangent.x, -fv.tangent.z, fv.tangent.y);
+        fv.normal = OLVector3f(fv.normal.x, -fv.normal.z, fv.normal.y);
+        fv.tangent = OLVector3f(fv.tangent.x, -fv.tangent.z, fv.tangent.y);
     }
 }
 

@@ -2,7 +2,6 @@
 
 ## Vulkan Stuff
 
-- [ ] make mesh/vertex stuff its own file, handle vertex buffer creation/destruction
 - [ ] replace oculib
 - [ ] resource manager system for things like PTPipeline, PTShader, etc, which tracks dependencies and counts references
 - [ ] implement proper shader config and reflection, and checking this when creating render passes
@@ -52,3 +51,4 @@
 - [x] handle image management in its own file
 - [x] fix swapchain resize being called constantly after resize
 - [x] specify required device features (non-solid fill for wireframe, etc)
+- [x] make mesh/vertex stuff its own file, handle vertex buffer creation/destruction

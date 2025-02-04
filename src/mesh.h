@@ -8,11 +8,15 @@
 #include "physical_device.h"
 #include "buffer.h"
 #include "../lib/oculib/vector3.h"
+#include "../lib/oculib/vector2.h"
 
 struct PTVertex
-{ // TODO: add normal, tangent, uv
+{
     OLVector3f position;
     OLVector3f colour;
+    OLVector3f normal;
+    OLVector3f tangent;
+    OLVector2f uv;
 };
 
 class PTMesh
@@ -41,7 +45,7 @@ public:
     // TODO: functions to update the contents of the buffers
 
     static VkVertexInputBindingDescription getVertexBindingDescription();
-    static std::array<VkVertexInputAttributeDescription, 2> getVertexAttributeDescriptions();
+    static std::array<VkVertexInputAttributeDescription, 5> getVertexAttributeDescriptions();
 
     ~PTMesh();
 

@@ -1,8 +1,12 @@
 #version 450
 
-layout(location = 0) out vec4 out_colour;
 layout(location = 0) in vec3 frag_colour;
 layout(location = 1) in vec3 frag_position;
+layout(location = 2) in vec3 frag_normal;
+layout(location = 3) in vec3 frag_tangent;
+layout(location = 4) in vec2 frag_uv;
+
+layout(location = 0) out vec4 out_colour;
 
 const mat4 bayer =
 {
