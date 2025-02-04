@@ -26,6 +26,7 @@
 - [ ] planet art shaders
 - [ ] stylised post-processing
 - [ ] spaceship terminal interface/look
+- [ ] google earth replacement
 
 ## Misc
 
