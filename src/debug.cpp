@@ -247,7 +247,7 @@ void PTDebugManager::renderLoop()
     {
         bool dirty = main_page->checkInput();
 
-        //main_page->render();
+        main_page->render();
 
         main_page->framerate(24);
     }
