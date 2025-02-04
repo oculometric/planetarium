@@ -61,12 +61,12 @@ PTMesh::~PTMesh()
     delete vertex_buffer;
 }
 
-struct FFaceCorner { uint16_t co; uint16_t uv; uint16_t vn; };
+struct PTFaceCorner { uint16_t co; uint16_t uv; uint16_t vn; };
 
 // splits a formatted OBJ face corner into its component indices
-static inline FFaceCorner splitOBJFaceCorner(string str)
+static inline PTFaceCorner splitOBJFaceCorner(string str)
 {
-    FFaceCorner fci = { 0,0,0 };
+    PTFaceCorner fci = { 0,0,0 };
     size_t first_break_ind = str.find('/');
     if (first_break_ind == string::npos) return fci;
     fci.co = static_cast<uint16_t>(stoi(str.substr(0, first_break_ind)) - 1);
@@ -78,7 +78,7 @@ static inline FFaceCorner splitOBJFaceCorner(string str)
     return fci;
 }
 
-struct FFaceCornerReference
+struct PTFaceCornerReference
 {
     uint16_t normal_index;
     uint16_t uv_index;
@@ -140,7 +140,7 @@ void PTMesh::readFileToBuffers(std::string file_name, std::vector<PTVertex>& ver
 
     // vectors to load data into
     vector<OLVector3f> tmp_co;
-    vector<FFaceCorner> tmp_fc;
+    vector<PTFaceCorner> tmp_fc;
     vector<OLVector2f> tmp_uv;
     vector<OLVector3f> tmp_vn;
 
@@ -191,18 +191,26 @@ void PTMesh::readFileToBuffers(std::string file_name, std::vector<PTVertex>& ver
         file.ignore(SIZE_MAX, '\n');
     }
 
+    // swap the first and last face corner of each triangle, to flip the face order
+    for (uint32_t i = 0; i < tmp_fc.size() - 2; i += 3)
+    {
+        PTFaceCorner fc_i = tmp_fc[i];
+        tmp_fc[i] = tmp_fc[i+2];
+        tmp_fc[i+2] = fc_i;
+    }
+
     // for each coordinate, stores a list of all the times it has been used by a face corner, and what the normal/uv index was for that face corner
     // this allows us to tell when we should split a vertex (i.e. if it has already been used by another face corner but which had a different normal and/or a different uv)
-    vector<vector<FFaceCornerReference>> fc_normal_uses(tmp_co.size(), vector<FFaceCornerReference>());
+    vector<vector<PTFaceCornerReference>> fc_normal_uses(tmp_co.size(), vector<PTFaceCornerReference>());
 
     vertices.clear();
     indices.clear();
 
-    for (FFaceCorner fc : tmp_fc)
+    for (PTFaceCorner fc : tmp_fc)
     {
         bool found_matching_vertex = false;
         uint16_t match = 0;
-        for (FFaceCornerReference existing : fc_normal_uses[fc.co])
+        for (PTFaceCornerReference existing : fc_normal_uses[fc.co])
         {
             if (existing.normal_index == fc.vn && existing.uv_index == fc.uv)
             {
@@ -226,7 +234,7 @@ void PTMesh::readFileToBuffers(std::string file_name, std::vector<PTVertex>& ver
             //     new_vert.uv = tmp_uv[fc.uv];
 
             uint16_t new_index = static_cast<uint16_t>(vertices.size());
-            fc_normal_uses[fc.co].push_back(FFaceCornerReference{ fc.vn, fc.uv, new_index });
+            fc_normal_uses[fc.co].push_back(PTFaceCornerReference{ fc.vn, fc.uv, new_index });
 
             indices.push_back(new_index);
             vertices.push_back(new_vert);
