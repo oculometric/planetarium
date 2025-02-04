@@ -61,7 +61,10 @@
         "iomanip": "cpp",
         "sstream": "cpp",
         "buffer": "cpp",
-        "thread": "cpp"
+        "thread": "cpp",
+        "netfwd": "cpp",
+        "semaphore": "cpp",
+        "stop_token": "cpp"
     },
     "C_Cpp.default.compilerPath": "/usr/bin/g++"
 }

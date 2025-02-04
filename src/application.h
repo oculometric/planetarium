@@ -17,8 +17,7 @@
 #include "buffer.h"
 #include "render_pass.h"
 #include "image.h"
-
-#include "../lib/oculib/mesh.h"
+#include "mesh.h"
 
 using namespace std;
 
@@ -70,9 +69,6 @@ private:
     PTPipeline* debug_pipeline;
     PTShader* demo_shader;
 
-    PTBuffer* vertex_buffer;
-    PTBuffer* index_buffer;
-
     vector<PTBuffer*> uniform_buffers;
 
     PTImage* depth_image;
@@ -92,7 +88,7 @@ private:
 
     PTInputManager* input_manager;
     PTScene* current_scene;
-    OLMesh demo_mesh;
+    PTMesh* demo_mesh;
 public:
     PTApplication(unsigned int _width, unsigned int _height);
 
@@ -129,7 +125,6 @@ private:
     void createFramebuffers(const VkRenderPass render_pass);
     void createCommandPoolAndBuffers();
     void createDepthResources();
-    void createVertexBuffer();
     void createUniformBuffers();
     void createDescriptorPoolAndSets();
     void createSyncObjects();

@@ -24,10 +24,11 @@ PTApplication::PTApplication(unsigned int _width, unsigned int _height)
 void PTApplication::start()
 {
     main_application = this;
-    demo_mesh = OLMesh("suzanne.obj");
     initWindow();
     initVulkan();
     initController();
+
+    demo_mesh = new PTMesh(device, physical_device, "suzanne.obj");
 
     mainLoop();
 
@@ -113,8 +114,6 @@ void PTApplication::initVulkan()
     createDepthResources();
 
     createFramebuffers(demo_render_pass->getRenderPass());
-
-    createVertexBuffer();
 
     createUniformBuffers();
 
@@ -219,12 +218,12 @@ void PTApplication::mainLoop()
         scissor.extent = swapchain->getExtent();
         vkCmdSetScissor(command_buffers[frame_index], 0, 1, &scissor);
 
-        VkBuffer vertex_buffers[] = { vertex_buffer->getBuffer() };
+        VkBuffer vertex_buffers[] = { demo_mesh->getVertexBuffer() };
         VkDeviceSize offsets[] = { 0 };
         vkCmdBindVertexBuffers(command_buffers[frame_index], 0, 1, vertex_buffers, offsets);
-        vkCmdBindIndexBuffer(command_buffers[frame_index], index_buffer->getBuffer(), 0, VK_INDEX_TYPE_UINT16);
+        vkCmdBindIndexBuffer(command_buffers[frame_index], demo_mesh->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT16);
         vkCmdBindDescriptorSets(command_buffers[frame_index], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->getLayout(), 0, 1, &descriptor_sets[frame_index], 0, nullptr);
-        vkCmdDrawIndexed(command_buffers[frame_index], static_cast<uint32_t>(demo_mesh.indices.size()), 1, 0, 0, 0);
+        vkCmdDrawIndexed(command_buffers[frame_index], static_cast<uint32_t>(demo_mesh->getIndexCount()), 1, 0, 0, 0);
         vkCmdEndRenderPass(command_buffers[frame_index]);
 
         if (vkEndCommandBuffer(command_buffers[frame_index]) != VK_SUCCESS)
@@ -307,8 +306,7 @@ void PTApplication::deinitVulkan()
 
     delete swapchain;
 
-    delete index_buffer;
-    delete vertex_buffer;
+    delete demo_mesh;
 
     vkDestroyImageView(device, depth_image_view, nullptr);
     delete depth_image;
@@ -515,33 +513,6 @@ void PTApplication::createFramebuffers(const VkRenderPass render_pass)
 
     debugLog("        created " + to_string(framebuffers.size()) + " framebuffer objects");
     debugLog("    done.");
-}
-
-void PTApplication::createVertexBuffer()
-{
-    // vertex buffer creation (via staging buffer)
-    VkDeviceSize size = sizeof(OLVertex) * demo_mesh.vertices.size();
-    PTBuffer* staging_buffer = new PTBuffer(device, physical_device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-    
-    void* vertex_data = staging_buffer->map();
-    memcpy(vertex_data, demo_mesh.vertices.data(), (size_t)size);
-    staging_buffer->unmap();
-    vertex_buffer = new PTBuffer(device, physical_device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-    staging_buffer->copyTo(vertex_buffer, size);
-
-    delete staging_buffer;
-    
-    // index buffer creation (via staging buffer)
-    size = sizeof(uint16_t) * demo_mesh.indices.size();
-    staging_buffer = new PTBuffer(device, physical_device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-    
-    void* index_data = staging_buffer->map();
-    memcpy(index_data, demo_mesh.indices.data(), (size_t)size);
-    staging_buffer->unmap();
-    index_buffer = new PTBuffer(device, physical_device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-    staging_buffer->copyTo(index_buffer, size);
-
-    delete staging_buffer;
 }
 
 void PTApplication::createUniformBuffers()

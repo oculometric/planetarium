@@ -9,6 +9,7 @@
 - [ ] implement debug messenger in application to capture vulkan messages
 - [ ] make sure everything which gets `destroy`ed in application (framebuffers, etc) is treated as a **pointer** when converting to PTSomething (i.e. so `delete` order can be controlled by application)
 - [ ] fix semaphore issue on windows
+- [ ] fix vulkan warnings on exit
 
 ## Engine Stuff
 
