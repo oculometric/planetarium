@@ -299,7 +299,7 @@ void PTApplication::deinitVulkan()
 
     vkDestroyDescriptorPool(device, descriptor_pool, nullptr);
 
-
+    delete debug_pipeline;
     delete demo_pipeline;
     delete demo_shader;
     delete demo_render_pass;

@@ -2,13 +2,12 @@
 
 ## Vulkan Stuff
 
-- [ ] replace oculib
-- [ ] resource manager system for things like PTPipeline, PTShader, etc, which tracks dependencies and counts references
-- [ ] implement proper shader config and reflection, and checking this when creating render passes
 - [ ] implement debug messenger in application to capture vulkan messages
+- [ ] resource manager system for things like PTPipeline, PTShader, etc, which tracks dependencies and counts references
+- [ ] replace oculib
+- [ ] implement proper shader config and reflection, and checking this when creating render passes
 - [ ] make sure everything which gets `destroy`ed in application (framebuffers, etc) is treated as a **pointer** when converting to PTSomething (i.e. so `delete` order can be controlled by application)
 - [ ] fix semaphore issue on windows
-- [ ] fix vulkan warnings on exit
 
 ## Engine Stuff
 
@@ -52,3 +51,4 @@
 - [x] fix swapchain resize being called constantly after resize
 - [x] specify required device features (non-solid fill for wireframe, etc)
 - [x] make mesh/vertex stuff its own file, handle vertex buffer creation/destruction
+- [x] fix vulkan warnings on exit
