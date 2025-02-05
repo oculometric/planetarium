@@ -146,7 +146,24 @@ PTSwapchain* PTResourceManager::createSwapchain(VkDevice device, PTPhysicalDevic
 
 PTResourceManager::~PTResourceManager()
 {
-    // TODO: force recompute reference counts
+    if (resources.empty())
+    {
+        debugLog("well done for cleaning up!");
+        return;
+    }
+
+    for (auto current_pair : resources)
+    {
+        PTResource* current = current_pair.second;
+        current->reference_counter = 0;
+        for (auto target_pair : resources)
+        {
+            if (target_pair.second == current)
+                continue;
+            if (target_pair.second->dependencies.contains(current))
+                current->reference_counter++;
+        }
+    }
 
     while (!resources.empty())
     {
@@ -161,9 +178,14 @@ PTResourceManager::~PTResourceManager()
             delete (*iter).second;
         }
         else
-        {
-            debugLog("error: unable to unload resources!");
-            return;//throw runtime_error("unable to unload resources!");
-        }
+            break;
     }
+
+    if (!resources.empty())
+    {
+        debugLog("WARNING: cycle detected in resource dependency graph! unloads of the last " + to_string(resources.size()) + " resources may be out of order");
+        for (auto pair : resources)
+            delete pair.second;
+    }
+    resources.clear();
 }

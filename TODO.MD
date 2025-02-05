@@ -2,14 +2,13 @@
 
 ## Vulkan Stuff
 
-- [ ] implement reference-recounter in resource manager
-- [ ] replace oculib (3)
+- [ ] replace oculib (2)
 - [ ] implement proper shader config and reflection, and checking this when creating render passes
 - [ ] fix semaphore issue on windows
 
 ## Engine Stuff
 
-- [ ] fix camera aspect ratio & matrix stuff (2)
+- [ ] fix camera aspect ratio & matrix stuff (1)
 - [ ] object transform
 - [ ] scene tree system
 - [ ] UI system (use STUI to generate charbufs, then pass it into a shader maybe????)
@@ -54,3 +53,4 @@
 - [x] fix invalid free pointer on exit via window close button
 - [x] resource manager system for things like PTPipeline, PTShader, etc, which tracks dependencies and counts references (1)
 - [x] make sure everything which gets `destroy`ed in application (framebuffers, etc) is treated as a **pointer** when converting to PTSomething (i.e. so `delete` order can be controlled by application)
+- [x] implement reference-recounter in resource manager (1)
