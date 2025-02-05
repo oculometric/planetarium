@@ -4,11 +4,7 @@ OBJ_DIR			:= bin/obj/
 SHR_DIR			:= shr/
 
 CC				:= g++
-<<<<<<< Updated upstream
-CC_FLAGS		:= -std=c++20 -g -O0 -Iinc -Istui/inc -Wall
-=======
 CC_FLAGS		:= -std=c++20 -g -O0 -Iinc -Iinc/graphics -Iinc/math -Iinc/scenegraph -Istui/inc -Wall
->>>>>>> Stashed changes
 CC_INCLUDE		:= 
 
 LD				:= g++
