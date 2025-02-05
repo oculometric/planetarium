@@ -8,13 +8,8 @@
 #include "resource.h"
 #include "physical_device.h"
 #include "buffer.h"
-<<<<<<<< Updated upstream:inc/mesh.h
-#include "math/vector3.h"
-#include "math/vector2.h"
-========
 #include "vector3.h"
 #include "vector2.h"
->>>>>>>> Stashed changes:inc/graphics/mesh.h
 
 struct PTVertex
 {
