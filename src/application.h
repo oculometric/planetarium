@@ -9,7 +9,6 @@
 #include <chrono>
 
 #include "input.h"
-#include "defs.h"
 #include "shader.h"
 #include "pipeline.h"
 #include "physical_device.h"
@@ -28,6 +27,8 @@ struct TransformMatrices
 };
 
 const uint32_t MAX_FRAMES_IN_FLIGHT = 2;
+
+class PTScene;
 
 class PTApplication
 {

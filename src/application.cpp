@@ -169,7 +169,7 @@ void PTApplication::initController()
 
 void PTApplication::mainLoop()
 {
-    current_scene = new PTScene(this);
+    current_scene = new PTScene();
 
     int frame_total_number = 0;
     uint32_t frame_index = 0;

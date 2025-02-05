@@ -7,9 +7,8 @@
 
 using namespace std;
 
-PTScene::PTScene(PTApplication* application)
+PTScene::PTScene()
 {
-    owner = application;
     camera.local_position = OLVector3f{ 0, 0, 1 };
     camera.local_rotation = OLVector3f{ 0, 0, 0 };
     camera.local_scale = OLVector3f{ 1, 1, 1 };
@@ -21,7 +20,7 @@ PTScene::PTScene(PTApplication* application)
 
 void PTScene::update(float delta_time)
 {
-    PTInputManager* manager = owner->getInputManager();
+    PTInputManager* manager = PTApplication::get()->getInputManager();
 
     PTApplication::get()->debug_mode = manager->getKeyState('D').action == 1;
 

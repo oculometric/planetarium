@@ -1,16 +1,14 @@
 #pragma once
 
 #include "../lib/oculib/camera.h"
-#include "defs.h"
 
 class PTScene
 {
 private:
     OLCamera camera;
-    PTApplication* owner;
 
 public:
-    PTScene(PTApplication* application);
+    PTScene();
     
     PTScene(PTScene& other) = delete;
     PTScene(PTScene&& other) = delete;
