@@ -5,6 +5,7 @@
 #include <vector>
 #include <string>
 
+#include "resource.h"
 #include "physical_device.h"
 #include "buffer.h"
 #include "../lib/oculib/vector3.h"
@@ -19,8 +20,9 @@ struct PTVertex
     OLVector2f uv;
 };
 
-class PTMesh
+class PTMesh : public PTResource
 {
+    friend class PTResourceManager;
 private:
     VkDevice device = VK_NULL_HANDLE;
 
@@ -28,15 +30,17 @@ private:
     PTBuffer* index_buffer = nullptr;
     uint32_t index_count = 0;
 
+    PTMesh(VkDevice _device, const PTPhysicalDevice& physical_device, std::string file_name);
+    PTMesh(VkDevice _device, const PTPhysicalDevice& physical_device, std::vector<PTVertex> vertices, std::vector<uint16_t> indices);
+
+    ~PTMesh();
+
 public:
     PTMesh() = delete;
     PTMesh(const PTMesh& other) = delete;
     PTMesh(const PTMesh&& other) = delete;
     PTMesh operator=(const PTMesh& other) = delete;
     PTMesh operator=(const PTMesh&& other) = delete;
-
-    PTMesh(VkDevice _device, const PTPhysicalDevice& physical_device, std::string file_name);
-    PTMesh(VkDevice _device, const PTPhysicalDevice& physical_device, std::vector<PTVertex> vertices, std::vector<uint16_t> indices);
 
     inline VkBuffer getVertexBuffer() const { return vertex_buffer->getBuffer(); }
     inline VkBuffer getIndexBuffer() const { return index_buffer->getBuffer(); }
@@ -46,8 +50,6 @@ public:
 
     static VkVertexInputBindingDescription getVertexBindingDescription();
     static std::array<VkVertexInputAttributeDescription, 5> getVertexAttributeDescriptions();
-
-    ~PTMesh();
 
 private:
     // TODO: proper file reading (replace oculib)

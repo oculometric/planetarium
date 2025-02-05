@@ -3,6 +3,8 @@
 #include <vulkan/vulkan.h>
 #include <vector>
 
+#include "resource.h"
+
 struct PTRenderPassAttachment
 {
     VkFormat format = VK_FORMAT_B8G8R8A8_SRGB;
@@ -21,13 +23,18 @@ struct PTRenderPassAttachment
     };
 };
 
-class PTRenderPass
+class PTRenderPass : public PTResource
 {
+    friend class PTResourceManager;
 private:
     VkDevice device = VK_NULL_HANDLE;
 
     VkRenderPass render_pass = VK_NULL_HANDLE;
     std::vector<PTRenderPassAttachment> attachments;
+
+    PTRenderPass(VkDevice _device, std::vector<PTRenderPassAttachment> _attachments = { }, bool enable_depth = true);
+
+    ~PTRenderPass();
 
 public:
     PTRenderPass() = delete;
@@ -36,10 +43,6 @@ public:
     PTRenderPass operator=(PTRenderPass& other) = delete;
     PTRenderPass operator=(PTRenderPass&& other) = delete;
 
-    PTRenderPass(VkDevice _device, std::vector<PTRenderPassAttachment> _attachments = { }, bool enable_depth = true);
-
     inline VkRenderPass getRenderPass() const { return render_pass; }
     inline std::vector<PTRenderPassAttachment> getAttachments() const { return attachments; }
-
-    ~PTRenderPass();
 };

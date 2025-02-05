@@ -3,13 +3,15 @@
 #include <vulkan/vulkan.h>
 #include <vector>
 
+#include "resource.h"
 #include "shader.h"
 #include "render_pass.h"
 #include "swapchain.h"
 
 // TODO: move more stuff into the pipeline class. make all of this more object-orientated
-class PTPipeline
+class PTPipeline : public PTResource
 {
+    friend class PTResourceManager;
 private:
     VkDevice device = VK_NULL_HANDLE;
 
@@ -23,6 +25,7 @@ private:
     VkViewport viewport;
     VkRect2D scissor;
 
+    // TODO: setters for these, which recreate the pipeline resources
     VkBool32 depth_write;
     VkBool32 depth_test;
     VkCompareOp depth_op;
@@ -32,14 +35,16 @@ private:
 
     VkPolygonMode polygon_mode;
 
+    PTPipeline(VkDevice _device, PTShader* _shader, PTRenderPass* _render_pass, PTSwapchain* _swapchain, VkBool32 _depth_write, VkBool32 _depth_test, VkCompareOp _depth_op, VkCullModeFlags _culling, VkFrontFace _winding_order, VkPolygonMode _polygon_mode, std::vector<VkDynamicState> _dynamic_states);
+
+    ~PTPipeline();
+
 public:
     PTPipeline() = delete;
     PTPipeline(const PTPipeline& other) = delete;
     PTPipeline(const PTPipeline&& other) = delete;
     PTPipeline operator=(const PTPipeline& other) = delete;
     PTPipeline operator=(const PTPipeline&& other) = delete;
-
-    PTPipeline(PTShader* _shader, PTRenderPass* _render_pass, VkDevice _device, PTSwapchain* _swapchain, VkBool32 _depth_write = VK_TRUE, VkBool32 _depth_test = VK_TRUE, VkCompareOp _depth_op = VK_COMPARE_OP_LESS, VkCullModeFlags _culling = VK_CULL_MODE_BACK_BIT, VkFrontFace _winding_order = VK_FRONT_FACE_COUNTER_CLOCKWISE, VkPolygonMode _polygon_mode = VK_POLYGON_MODE_FILL, std::vector<VkDynamicState> _dynamic_states = { });
 
     inline VkPipeline getPipeline() const { return pipeline; }
     inline VkPipelineLayout getLayout() const { return layout; }
@@ -56,7 +61,4 @@ public:
     inline VkFrontFace getWindingOrder() const { return winding_order; }
     inline VkPolygonMode getPolygonMode() const { return polygon_mode; }
 
-    // TODO: setters for these, which recreate the pipeline resources
-
-    ~PTPipeline();
 };

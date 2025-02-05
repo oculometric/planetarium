@@ -5,6 +5,7 @@
 #include <stdexcept>
 
 #include "../lib/oculib/matrix3.h"
+#include "resource_manager.h"
 
 using namespace std;
 
@@ -70,8 +71,9 @@ PTMesh::PTMesh(VkDevice _device, const PTPhysicalDevice& physical_device, std::v
 
 PTMesh::~PTMesh()
 {
-    delete index_buffer;
-    delete vertex_buffer;
+    // TODO: tell the resource manager to release them as well, after removing them as dependencies
+    removeDependency(index_buffer);
+    removeDependency(vertex_buffer);
 }
 
 struct PTFaceCorner { uint16_t co; uint16_t uv; uint16_t vn; };
@@ -281,27 +283,30 @@ void PTMesh::createVertexBuffers(const PTPhysicalDevice& physical_device, std::v
 {
     // vertex buffer creation (via staging buffer)
     VkDeviceSize size = sizeof(PTVertex) * vertices.size();
-    PTBuffer* staging_buffer = new PTBuffer(device, physical_device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    PTBuffer* staging_buffer = PTResourceManager::get()->createBuffer(device, physical_device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     
     void* vertex_data = staging_buffer->map();
     memcpy(vertex_data, vertices.data(), (size_t)size);
     staging_buffer->unmap();
-    vertex_buffer = new PTBuffer(device, physical_device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    vertex_buffer = PTResourceManager::get()->createBuffer(device, physical_device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     staging_buffer->copyTo(vertex_buffer, size);
 
-    delete staging_buffer;
+    staging_buffer->removeReferencer();
     
     // index buffer creation (via staging buffer)
     size = sizeof(uint16_t) * indices.size();
-    staging_buffer = new PTBuffer(device, physical_device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    staging_buffer = PTResourceManager::get()->createBuffer(device, physical_device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     
     void* index_data = staging_buffer->map();
     memcpy(index_data, indices.data(), (size_t)size);
     staging_buffer->unmap();
-    index_buffer = new PTBuffer(device, physical_device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    index_buffer = PTResourceManager::get()->createBuffer(device, physical_device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     staging_buffer->copyTo(index_buffer, size);
 
     index_count = indices.size();
 
-    delete staging_buffer;
+    addDependency(vertex_buffer, false);
+    addDependency(index_buffer, false);
+
+    staging_buffer->removeReferencer();
 }

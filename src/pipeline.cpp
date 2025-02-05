@@ -4,12 +4,15 @@
 
 using namespace std;
 
-PTPipeline::PTPipeline(PTShader* _shader, PTRenderPass* _render_pass, VkDevice _device, PTSwapchain* _swapchain, VkBool32 _depth_write, VkBool32 _depth_test, VkCompareOp _depth_op, VkCullModeFlags _culling, VkFrontFace _winding_order, VkPolygonMode _polygon_mode, vector<VkDynamicState> _dynamic_states)
+PTPipeline::PTPipeline(VkDevice _device, PTShader* _shader, PTRenderPass* _render_pass, PTSwapchain* _swapchain, VkBool32 _depth_write, VkBool32 _depth_test, VkCompareOp _depth_op, VkCullModeFlags _culling, VkFrontFace _winding_order, VkPolygonMode _polygon_mode, vector<VkDynamicState> _dynamic_states)
 {
     device = _device;
     
     shader = _shader;
     render_pass = _render_pass;
+
+    addDependency(shader);
+    addDependency(render_pass);
     
     depth_write = _depth_write;
     depth_test = _depth_test;
@@ -147,4 +150,8 @@ PTPipeline::~PTPipeline()
 {
     vkDestroyPipeline(device, pipeline, nullptr);
     vkDestroyPipelineLayout(device, layout, nullptr);
+
+    // TODO: tell the resource manager to release them as well, after removing them as dependencies
+    removeDependency(shader);
+    removeDependency(render_pass);
 }

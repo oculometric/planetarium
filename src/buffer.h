@@ -2,10 +2,12 @@
 
 #include <vulkan/vulkan.h>
 
+#include "resource.h"
 #include "physical_device.h"
 
-class PTBuffer
+class PTBuffer : public PTResource
 {
+    friend class PTResourceManager;
 private:
     VkDevice device;
 
@@ -15,14 +17,16 @@ private:
     VkDeviceMemory device_memory;
     void* mapped_memory = nullptr;
     
+    PTBuffer(VkDevice _device, PTPhysicalDevice physical_device, VkDeviceSize buffer_size, VkBufferUsageFlags usage_flags, VkMemoryPropertyFlags memory_flags);
+    
+    ~PTBuffer();
+
 public:
     PTBuffer() = delete;
     PTBuffer(const PTBuffer& other) = delete;
     PTBuffer(const PTBuffer&& other) = delete;
     PTBuffer operator=(const PTBuffer& other) = delete;
     PTBuffer operator=(const PTBuffer&& other) = delete;
-
-    PTBuffer(VkDevice _device, PTPhysicalDevice physical_device, VkDeviceSize buffer_size, VkBufferUsageFlags usage_flags, VkMemoryPropertyFlags memory_flags);
 
     inline VkDeviceSize getSize() { return size; }
     inline VkBuffer getBuffer() { return buffer; }
@@ -35,5 +39,4 @@ public:
 
     static uint32_t findMemoryType(uint32_t type_bits, VkMemoryPropertyFlags properties, PTPhysicalDevice physical_device);
 
-    ~PTBuffer();
 };

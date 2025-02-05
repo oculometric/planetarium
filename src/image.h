@@ -3,10 +3,12 @@
 #include <vulkan/vulkan.h>
 #include <string>
 
+#include "resource.h"
 #include "physical_device.h"
 
-class PTImage
+class PTImage : public PTResource
 {
+    friend class PTResourceManager;
 private:
     VkDevice device = VK_NULL_HANDLE;
 
@@ -17,15 +19,18 @@ private:
     VkImageTiling tiling;
     VkImageUsageFlags usage;
     VkImageLayout layout;
+
+    PTImage(VkDevice _device, PTPhysicalDevice physical_device, VkExtent2D _size, VkFormat _format, VkImageTiling _tiling, VkImageUsageFlags _usage, VkMemoryPropertyFlags properties);
+    PTImage(VkDevice _device, PTPhysicalDevice physical_device, std::string texture_file);
+
+    ~PTImage();
+
 public:
     PTImage() = delete;
     PTImage(const PTImage& other) = delete;
     PTImage(const PTImage&& other) = delete;
     PTImage operator=(const PTImage& other) = delete;
     PTImage operator=(const PTImage&& other) = delete;
-
-    PTImage(VkDevice _device, PTPhysicalDevice physical_device, VkExtent2D _size, VkFormat _format, VkImageTiling _tiling, VkImageUsageFlags _usage, VkMemoryPropertyFlags properties);
-    PTImage(VkDevice _device, PTPhysicalDevice physical_device, std::string texture_file);
 
     inline VkImage getImage() const { return image; }
     inline VkDeviceMemory getImageMemory() const { return image_memory; }
@@ -38,8 +43,6 @@ public:
     VkImageView createImageView(VkImageAspectFlags aspect_flags);
     void transitionImageLayout(VkImageLayout new_layout);
     void copyBufferToImage(VkBuffer buffer);
-
-    ~PTImage();
 
 private:
     void createImage(PTPhysicalDevice physical_device, VkExtent2D _size, VkFormat _format, VkImageTiling _tiling, VkImageUsageFlags _usage, VkMemoryPropertyFlags properties);

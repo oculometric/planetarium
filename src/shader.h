@@ -4,8 +4,11 @@
 #include <vector>
 #include <string>
 
-class PTShader
+#include "resource.h"
+
+class PTShader : public PTResource
 {
+    friend class PTResourceManager;
 private:
     VkDevice device = VK_NULL_HANDLE;
 
@@ -13,9 +16,12 @@ private:
     VkShaderModule fragment_shader = VK_NULL_HANDLE;
 
     VkDescriptorSetLayout descriptor_set_layout = VK_NULL_HANDLE;
-public:
+
     PTShader(VkDevice _device, std::string shader_path_stub);
 
+    ~PTShader();
+    
+public:
     PTShader() = delete;
     PTShader(PTShader& other) = delete;
     PTShader(PTShader&& other) = delete;
@@ -25,7 +31,6 @@ public:
     std::vector<VkPipelineShaderStageCreateInfo> getStageCreateInfo() const;
     inline VkDescriptorSetLayout getDescriptorSetLayout() const { return descriptor_set_layout; }
 
-    ~PTShader();
 private:
     bool readFromFile(std::string shader_path_stub, std::vector<char>& vertex_code, std::vector<char>& fragment_code);
     void createShaderModules(const std::vector<char>& vertex_code, const std::vector<char>& fragment_code);

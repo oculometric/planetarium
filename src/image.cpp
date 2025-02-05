@@ -5,6 +5,7 @@
 
 #include "buffer.h"
 #include "application.h"
+#include "resource_manager.h"
 
 using namespace std;
 
@@ -22,7 +23,7 @@ PTImage::PTImage(VkDevice _device, PTPhysicalDevice physical_device, string text
     //OLImage texture(texture_file);
     VkDeviceSize image_size = 0;//texture.getSize().x * texture.getSize().y * 4;
 
-    PTBuffer* staging_buffer = new PTBuffer(device, physical_device, image_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    PTBuffer* staging_buffer = PTResourceManager::get()->createBuffer(device, physical_device, image_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     
     void* data = staging_buffer->map();
     memcpy(data, nullptr /*texture.getData()*/, static_cast<size_t>(image_size));
@@ -34,7 +35,7 @@ PTImage::PTImage(VkDevice _device, PTPhysicalDevice physical_device, string text
     copyBufferToImage(staging_buffer->getBuffer());
     transitionImageLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-    delete staging_buffer;
+    PTResourceManager::get()->releaseResource(staging_buffer);
 }
 
 VkImageView PTImage::createImageView(VkImageAspectFlags aspect_flags)
