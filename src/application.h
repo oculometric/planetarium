@@ -109,6 +109,7 @@ public:
 
     VkCommandBuffer beginTransientCommands();
     void endTransientCommands(VkCommandBuffer transient_command_buffer);
+    inline float getAspectRatio() const { return (float)swapchain->getExtent().width / (float)swapchain->getExtent().height; }
 
 private:
     void initWindow();
@@ -132,6 +133,7 @@ private:
     void createDescriptorPoolAndSets();
     void createSyncObjects();
 
+    void drawFrame(uint32_t frame_index);
     void resizeSwapchain();
     static void windowResizeCallback(GLFWwindow* window, int new_width, int new_height);
 

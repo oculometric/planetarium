@@ -44,8 +44,9 @@ void PTScene::update(float delta_time)
     camera.horizontal_fov += ((float)manager->getButtonState(PTInputButton::RIGHT_MINOR) - (float)manager->getButtonState(PTInputButton::LEFT_MINOR)) * delta_time * 30.0f;
     camera.horizontal_fov = max(min(camera.horizontal_fov, 120.0f), 10.0f);
     debugSetSceneProperty("camera fov", to_string(camera.horizontal_fov));
+
+    camera.aspect_ratio = PTApplication::get()->getAspectRatio();
     debugSetSceneProperty("camera asp", to_string(camera.aspect_ratio));
-    
 }
 
 OLMatrix4f PTScene::getCameraMatrix()
