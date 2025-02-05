@@ -389,7 +389,6 @@ vector<VkDeviceQueueCreateInfo> PTApplication::constructQueues()
 
 void PTApplication::initLogicalDevice(const vector<VkDeviceQueueCreateInfo>& queue_create_infos, const vector<const char*>& layers)
 {
-    // TODO: specify physical device features
     VkPhysicalDeviceFeatures features{ };
     features.fillModeNonSolid = VK_TRUE;
 
@@ -678,7 +677,7 @@ void PTApplication::drawFrame(uint32_t frame_index)
         if (result == VK_ERROR_OUT_OF_DATE_KHR)
         {
             debugLog("swapchain out of date during present~");
-            // TODO: need to signal the image_available semaphore regardless
+            // FIXME: need to signal the image_available semaphore regardless
             resizeSwapchain();
         }
         else if (window_resized)

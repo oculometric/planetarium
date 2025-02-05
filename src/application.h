@@ -21,15 +21,11 @@
 
 using namespace std;
 
-// TODO: streamline this by separating functionality into smaller classes which handle specific parts of functionality (e.g. handling the window, handling the devices, handling resources, providing helper functions)
-// TODO: create a resource management system to handle creating/destroying resources and their associated device memory
-
 struct TransformMatrices
 {
     float model_to_world[16];
     float world_to_clip[16];
 };
-
 
 const uint32_t MAX_FRAMES_IN_FLIGHT = 2;
 

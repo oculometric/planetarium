@@ -8,7 +8,6 @@
 #include "render_pass.h"
 #include "swapchain.h"
 
-// TODO: move more stuff into the pipeline class. make all of this more object-orientated
 class PTPipeline : public PTResource
 {
     friend class PTResourceManager;

@@ -74,7 +74,6 @@ PTPipeline::PTPipeline(VkDevice _device, PTShader* _shader, PTRenderPass* _rende
     viewport_state_create_info.scissorCount = 1;
     viewport_state_create_info.pScissors = &scissor;
 
-    // TODO: enable line rendering, requires GPU feature
     VkPipelineRasterizationStateCreateInfo rasteriser_create_info{ };
     rasteriser_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     rasteriser_create_info.depthClampEnable = VK_FALSE;
@@ -151,7 +150,6 @@ PTPipeline::~PTPipeline()
     vkDestroyPipeline(device, pipeline, nullptr);
     vkDestroyPipelineLayout(device, layout, nullptr);
 
-    // TODO: tell the resource manager to release them as well, after removing them as dependencies
     removeDependency(shader);
     removeDependency(render_pass);
 }

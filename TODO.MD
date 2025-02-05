@@ -27,7 +27,8 @@
 
 ## Misc
 
-- [ ] make Makefile respect header files [https://www.reddit.com/r/C_Programming/comments/xwhmup/is_there_a_good_way_to_automatically_handle/]
+- [ ] clean up todos (0)
+- [ ] make Makefile respect header files [https://www.reddit.com/r/C_Programming/comments/xwhmup/is_there_a_good_way_to_automatically_handle/] (0)
 
 ## Completed
 - [x] make physical device stuff its own file (finding swapchain info, supported features, etc)

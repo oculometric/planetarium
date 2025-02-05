@@ -71,7 +71,6 @@ PTMesh::PTMesh(VkDevice _device, const PTPhysicalDevice& physical_device, std::v
 
 PTMesh::~PTMesh()
 {
-    // TODO: tell the resource manager to release them as well, after removing them as dependencies
     removeDependency(index_buffer);
     removeDependency(vertex_buffer);
 }
