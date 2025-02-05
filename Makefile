@@ -4,7 +4,11 @@ OBJ_DIR			:= bin/obj/
 SHR_DIR			:= shr/
 
 CC				:= g++
+<<<<<<< Updated upstream
 CC_FLAGS		:= -std=c++20 -g -O0 -Iinc -Istui/inc -Wall
+=======
+CC_FLAGS		:= -std=c++20 -g -O0 -Iinc -Iinc/graphics -Iinc/math -Iinc/scenegraph -Istui/inc -Wall
+>>>>>>> Stashed changes
 CC_INCLUDE		:= 
 
 LD				:= g++
@@ -16,7 +20,7 @@ SC_FLAGS		:=
 
 DEP_FLAGS		:= -MMD -MP
 
-CC_FILES_IN		:= $(wildcard $(SRC_DIR)*.cpp)
+CC_FILES_IN		:= $(wildcard $(SRC_DIR)*.cpp) $(wildcard $(SRC_DIR)*/*.cpp)
 CC_FILES_OUT	:= $(patsubst $(SRC_DIR)%.cpp, $(OBJ_DIR)%.o, $(CC_FILES_IN))
 CC_FILES_DEP	:= $(patsubst $(SRC_DIR)%.cpp, $(OBJ_DIR)%.d, $(CC_FILES_IN))
 
@@ -31,7 +35,7 @@ EXE_OUT			:= $(BIN_DIR)planetarium
 all: execute
 
 $(OBJ_DIR)%.o: $(SRC_DIR)%.cpp
-	@mkdir -p $(OBJ_DIR)
+	@mkdir -p $(dir $@)
 	@echo "Compiling" $< to $@
 	@$(CC) $(CC_FLAGS) $(CC_INCLUDE) $(DEP_FLAGS) -c $< -o $@
 

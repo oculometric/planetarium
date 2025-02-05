@@ -4,9 +4,15 @@
 
 #include "application.h"
 #include "debug.h"
+<<<<<<< Updated upstream:src/scene.cpp
 #include "math/vector3.h"
 #include "math/vector4.h"
 #include "math/matrix4.h"
+=======
+#include "vector3.h"
+#include "vector4.h"
+#include "matrix4.h"
+>>>>>>> Stashed changes:src/scenegraph/scene.cpp
 
 using namespace std;
 

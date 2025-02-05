@@ -4,7 +4,11 @@
 #include <fstream>
 #include <stdexcept>
 
+<<<<<<< Updated upstream:src/mesh.cpp
 #include "math/matrix3.h"
+=======
+#include "matrix3.h"
+>>>>>>> Stashed changes:src/graphics/mesh.cpp
 #include "resource_manager.h"
 
 using namespace std;
