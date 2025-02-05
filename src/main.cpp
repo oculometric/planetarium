@@ -13,14 +13,13 @@ int main(int argc, char* argv[])
     try
     {
         app.start();
+        debugDeinit();
     }
     catch (const std::exception& e)
     {
         debugLog("FATAL ERROR: " + string(e.what()));
         debugDeinit();
-        //std::cerr << e.what() << std::endl;
         return EXIT_FAILURE;
     }
-    debugDeinit();
     return EXIT_SUCCESS;
 };

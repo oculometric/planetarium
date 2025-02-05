@@ -45,6 +45,9 @@ private:
 
     GLFWwindow* window;
     VkInstance instance;
+#ifndef NDEBUG
+    VkDebugUtilsMessengerEXT debug_messenger;
+#endif
     VkSurfaceKHR surface;
 
     PTPhysicalDevice physical_device;
@@ -134,4 +137,7 @@ private:
 
     void updateUniformBuffers(uint32_t frame_index);
     int evaluatePhysicalDevice(PTPhysicalDevice d);
+    std::vector<const char*> getRequiredExtensions();
+    VkResult createDebugUtilsMessenger(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger);
+    void destroyDebugUtilsMessenger(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator);
 };

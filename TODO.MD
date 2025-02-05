@@ -2,7 +2,6 @@
 
 ## Vulkan Stuff
 
-- [ ] implement debug messenger in application to capture vulkan messages
 - [ ] resource manager system for things like PTPipeline, PTShader, etc, which tracks dependencies and counts references
 - [ ] replace oculib
 - [ ] implement proper shader config and reflection, and checking this when creating render passes
@@ -31,7 +30,7 @@
 
 ## Misc
 
-- [ ] fix invalid free pointer on exit via window close button
+- [ ] make Makefile respect header files [https://www.reddit.com/r/C_Programming/comments/xwhmup/is_there_a_good_way_to_automatically_handle/]
 
 ## Completed
 - [x] make physical device stuff its own file (finding swapchain info, supported features, etc)
@@ -52,3 +51,5 @@
 - [x] specify required device features (non-solid fill for wireframe, etc)
 - [x] make mesh/vertex stuff its own file, handle vertex buffer creation/destruction
 - [x] fix vulkan warnings on exit
+- [x] implement debug messenger in application to capture vulkan messages
+- [x] fix invalid free pointer on exit via window close button

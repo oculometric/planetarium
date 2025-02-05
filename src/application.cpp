@@ -15,6 +15,39 @@
 
 static PTApplication* main_application = nullptr;
 
+#ifndef NDEBUG
+static VKAPI_ATTR VkBool32 VKAPI_CALL vulkanDebugMessengerCallback(
+    VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
+    VkDebugUtilsMessageTypeFlagsEXT message_type,
+    const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
+    void* user_data)
+{
+    string severity;
+    switch (message_severity)
+    {
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT: return VK_FALSE;
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT: severity = "INFO"; break;
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT: severity = "WARNING"; break;
+        case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT: severity = "ERROR"; break;
+        default: return VK_FALSE;
+    }
+
+    string type;
+    switch(message_type)
+    {
+        case VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT: type = "GENERAL"; break;
+        case VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT: type = "VALIDATION"; break;
+        case VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT: type = "PERFORMANCE"; break;
+        case VK_DEBUG_UTILS_MESSAGE_TYPE_DEVICE_ADDRESS_BINDING_BIT_EXT: type = "DEVICE ADDRESS BINDING"; break;
+        default: return VK_FALSE;
+    }
+
+    debugLog("(" + severity + ":" + type + "): " + string(callback_data->pMessage));
+
+    return VK_FALSE;
+}
+#endif
+
 PTApplication::PTApplication(unsigned int _width, unsigned int _height)
 {
     width = _width;
@@ -69,8 +102,6 @@ void PTApplication::initVulkan()
     // initialise vulkan app instance
     vector<const char*> layers;
     initVulkanInstance(layers);
-
-    // TODO: setup debug messenger
 
     // create surface (target to render to)
     initSurface();
@@ -296,6 +327,7 @@ void PTApplication::deinitVulkan()
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         delete uniform_buffers[i];
+    uniform_buffers.clear();
 
     vkDestroyDescriptorPool(device, descriptor_pool, nullptr);
 
@@ -314,6 +346,10 @@ void PTApplication::deinitVulkan()
     vkDestroyDevice(device, nullptr);
 
     vkDestroySurfaceKHR(instance, surface, nullptr);
+
+#ifndef NDEBUG
+    destroyDebugUtilsMessenger(instance, debug_messenger, nullptr);
+#endif
 
     vkDestroyInstance(instance, nullptr);
 }
@@ -364,22 +400,21 @@ void PTApplication::initVulkanInstance(vector<const char*>& layers)
     VkInstanceCreateInfo create_info{ };
     create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     create_info.pApplicationInfo = &app_info;
-    uint32_t glfw_extension_count = 0;
-    const char** glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extension_count);
-    create_info.enabledExtensionCount = glfw_extension_count;
-    create_info.ppEnabledExtensionNames = glfw_extensions;
+    vector<const char*> extensions = getRequiredExtensions();
+    create_info.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+    create_info.ppEnabledExtensionNames = extensions.data();
 #ifdef NDEBUG
     create_info.enabledLayerCount = 0;
     create_info.ppEnabledLayerNames = nullptr;
 #else
     layers.clear();
     layers.push_back(target_debug_layer);
-    create_info.enabledLayerCount = layers.size();
+    create_info.enabledLayerCount = static_cast<uint32_t>(layers.size());
     create_info.ppEnabledLayerNames = layers.data();
 #endif
     debugLog("    extensions enabled:");
-    for (size_t i = 0; i < glfw_extension_count; i++)
-        debugLog("       " + string(glfw_extensions[i]));
+    for (const char* ext : extensions)
+        debugLog("       " + string(ext));
 
     debugLog("    creating VK instance...");
     VkResult result = vkCreateInstance(&create_info, nullptr, &instance);
@@ -388,6 +423,19 @@ void PTApplication::initVulkanInstance(vector<const char*>& layers)
         debugLog("    VK instance creation failed: " + string(/*string_VkResult(result) <<*/));
         throw runtime_error("unable to create VK instance");
     }
+
+#ifndef NDEBUG
+    debugLog("    creating debug messenger...");
+    VkDebugUtilsMessengerCreateInfoEXT debug_messenger_create_info{ };
+    debug_messenger_create_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+    debug_messenger_create_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+    debug_messenger_create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+    debug_messenger_create_info.pfnUserCallback = vulkanDebugMessengerCallback;
+    debug_messenger_create_info.pUserData = nullptr;
+
+    if (createDebugUtilsMessenger(instance, &debug_messenger_create_info, nullptr, &debug_messenger) != VK_SUCCESS)
+        throw runtime_error("unable to set up debug messenger!");
+#endif
     debugLog("    done.");
 }
 
@@ -769,4 +817,34 @@ int PTApplication::evaluatePhysicalDevice(PTPhysicalDevice d)
         return 0;
 
     return score;
+}
+
+vector<const char*> PTApplication::getRequiredExtensions()
+{
+    uint32_t glfw_extension_count = 0;
+    const char** glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extension_count);
+
+    vector<const char*> extensions(glfw_extensions, glfw_extensions + glfw_extension_count);
+
+#ifndef NDEBUG
+    extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+#endif
+
+    return extensions;
+}
+
+VkResult PTApplication::createDebugUtilsMessenger(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger)
+{
+    auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+    if (func != nullptr)
+        return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
+    else
+        return VK_ERROR_EXTENSION_NOT_PRESENT;
+}
+
+void PTApplication::destroyDebugUtilsMessenger(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator)
+{
+    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+    if (func != nullptr)
+        func(instance, debugMessenger, pAllocator);
 }

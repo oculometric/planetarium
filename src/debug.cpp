@@ -163,6 +163,7 @@ void debugDeinit()
     {
         mgr->showExitButton();
         delete mgr;
+        mgr = nullptr;
     }
 }
 
