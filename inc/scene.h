@@ -1,11 +1,11 @@
 #pragma once
 
-#include "../lib/oculib/camera.h"
+#include "camera.h"
 
 class PTScene
 {
 private:
-    OLCamera camera;
+    PTCamera camera;
 
 public:
     PTScene();
@@ -17,7 +17,7 @@ public:
 
     virtual void update(float delta_time);
 
-    OLMatrix4f getCameraMatrix();
+    PTMatrix4f getCameraMatrix();
 
 private:
 };

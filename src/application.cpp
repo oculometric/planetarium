@@ -7,7 +7,6 @@
 #include <set>
 #include <algorithm>
 #include <cstdlib>
-#include "../lib/oculib/image.h"
 
 #include "scene.h"
 #include "debug.h"
@@ -763,18 +762,18 @@ void PTApplication::updateUniformBuffers(uint32_t frame_index)
 {
     TransformMatrices transform;
     current_scene->getCameraMatrix().getColumnMajor(transform.world_to_clip);
-    OLMatrix4f().getColumnMajor(transform.model_to_world);
+    PTMatrix4f().getColumnMajor(transform.model_to_world);
 
-    debugSetSceneProperty("w2c r0", to_string(current_scene->getCameraMatrix().row_0()));
-    debugSetSceneProperty("w2c r1", to_string(current_scene->getCameraMatrix().row_1()));
-    debugSetSceneProperty("w2c r2", to_string(current_scene->getCameraMatrix().row_2()));
-    debugSetSceneProperty("w2c r3", to_string(current_scene->getCameraMatrix().row_3()));
+    debugSetSceneProperty("w2c r0", to_string(current_scene->getCameraMatrix().row0()));
+    debugSetSceneProperty("w2c r1", to_string(current_scene->getCameraMatrix().row1()));
+    debugSetSceneProperty("w2c r2", to_string(current_scene->getCameraMatrix().row2()));
+    debugSetSceneProperty("w2c r3", to_string(current_scene->getCameraMatrix().row3()));
 
     // cout << "blank matrix:" << endl;
-    // cout << OLMatrix4f().row_0() << endl;;
-    // cout << OLMatrix4f().row_1() << endl;;
-    // cout << OLMatrix4f().row_2() << endl;;
-    // cout << OLMatrix4f().row_3() << endl;;
+    // cout << OLMatrix4f().row0() << endl;;
+    // cout << OLMatrix4f().row1() << endl;;
+    // cout << OLMatrix4f().row2() << endl;;
+    // cout << OLMatrix4f().row3() << endl;;
 
     memcpy(uniform_buffers[frame_index]->getMappedMemory(), &transform, sizeof(TransformMatrices));
 }

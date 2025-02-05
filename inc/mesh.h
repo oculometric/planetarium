@@ -8,16 +8,16 @@
 #include "resource.h"
 #include "physical_device.h"
 #include "buffer.h"
-#include "../lib/oculib/vector3.h"
-#include "../lib/oculib/vector2.h"
+#include "math/vector3.h"
+#include "math/vector2.h"
 
 struct PTVertex
 {
-    OLVector3f position;
-    OLVector3f colour;
-    OLVector3f normal;
-    OLVector3f tangent;
-    OLVector2f uv;
+    PTVector3f position;
+    PTVector3f colour;
+    PTVector3f normal;
+    PTVector3f tangent;
+    PTVector2f uv;
 };
 
 class PTMesh : public PTResource

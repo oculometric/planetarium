@@ -4,7 +4,7 @@
 #include <fstream>
 #include <stdexcept>
 
-#include "../lib/oculib/matrix3.h"
+#include "math/matrix3.h"
 #include "resource_manager.h"
 
 using namespace std;
@@ -99,25 +99,25 @@ struct PTFaceCornerReference
     uint16_t transferred_vert_index;
 };
 
-static pair<OLVector3f, OLVector3f> computeTangent(OLVector3f co_a, OLVector3f co_b, OLVector3f co_c, OLVector2f uv_a, OLVector2f uv_b, OLVector2f uv_c)
+static pair<PTVector3f, PTVector3f> computeTangent(PTVector3f co_a, PTVector3f co_b, PTVector3f co_c, PTVector2f uv_a, PTVector2f uv_b, PTVector2f uv_c)
 {
     // vector from the target vertex to the second vertex
-    OLVector3f ab = OLVector3f(co_b.x - co_a.x, co_b.y - co_a.y, co_b.z - co_a.z); ab = OLVector3f(ab.x, ab.y, ab.z);
+    PTVector3f ab = PTVector3f(co_b.x - co_a.x, co_b.y - co_a.y, co_b.z - co_a.z); ab = PTVector3f(ab.x, ab.y, ab.z);
     // vector from the target vertex to the third vertex
-    OLVector3f ac = OLVector3f(co_c.x - co_a.x, co_c.y - co_a.y, co_c.z - co_a.z); ac = OLVector3f(ac.x, ac.y, ac.z);
+    PTVector3f ac = PTVector3f(co_c.x - co_a.x, co_c.y - co_a.y, co_c.z - co_a.z); ac = PTVector3f(ac.x, ac.y, ac.z);
     // delta uv between target and second
-    OLVector2f uv_ab = OLVector2f(uv_b.x - uv_a.x, uv_b.y - uv_a.y); uv_ab = OLVector2f(uv_ab.x, uv_ab.y);
+    PTVector2f uv_ab = PTVector2f(uv_b.x - uv_a.x, uv_b.y - uv_a.y); uv_ab = PTVector2f(uv_ab.x, uv_ab.y);
     // delta uv between target and third
-    OLVector2f uv_ac = OLVector2f(uv_c.x - uv_a.x, uv_c.y - uv_a.y); uv_ac = OLVector2f(uv_ac.x, uv_ac.y);
+    PTVector2f uv_ac = PTVector2f(uv_c.x - uv_a.x, uv_c.y - uv_a.y); uv_ac = PTVector2f(uv_ac.x, uv_ac.y);
     // matrix representing UVs
-    OLMatrix3f uv_mat = OLMatrix3f
+    PTMatrix3f uv_mat = PTMatrix3f
     (
         uv_ab.x, uv_ac.x, 0,
         uv_ab.y, uv_ac.y, 0,
         0,       0,       1
     );
     // matrix representing vectors between vertices
-    OLMatrix3f vec_mat = OLMatrix3f
+    PTMatrix3f vec_mat = PTMatrix3f
     (
         ab.x, ac.x, 0,
         ab.y, ac.y, 0,
@@ -139,7 +139,7 @@ static pair<OLVector3f, OLVector3f> computeTangent(OLVector3f co_a, OLVector3f c
 
     vec_mat =  vec_mat * ~uv_mat;
 
-    pair<OLVector3f, OLVector3f> ret;
+    pair<PTVector3f, PTVector3f> ret;
     ret.first = norm(vec_mat.col0());                 // extract tangent
 
     return ret;
@@ -153,15 +153,15 @@ void PTMesh::readFileToBuffers(std::string file_name, std::vector<PTVertex>& ver
         throw runtime_error("unable to open file " + file_name);
 
     // vectors to load data into
-    vector<OLVector3f> tmp_co;
+    vector<PTVector3f> tmp_co;
     vector<PTFaceCorner> tmp_fc;
-    vector<OLVector2f> tmp_uv;
-    vector<OLVector3f> tmp_vn;
+    vector<PTVector2f> tmp_uv;
+    vector<PTVector3f> tmp_vn;
 
     // temporary locations for reading data to
     string tmps;
-    OLVector3f tmp3;
-    OLVector2f tmp2;
+    PTVector3f tmp3;
+    PTVector2f tmp2;
 
     // repeat for every line in the file
     while (!file.eof())
@@ -272,9 +272,9 @@ void PTMesh::readFileToBuffers(std::string file_name, std::vector<PTVertex>& ver
     // transform from Z back Y up space into Z up Y forward space
     for (PTVertex& fv : vertices)
     {
-        fv.position = OLVector3f(fv.position.x, -fv.position.z, fv.position.y);
-        fv.normal = OLVector3f(fv.normal.x, -fv.normal.z, fv.normal.y);
-        fv.tangent = OLVector3f(fv.tangent.x, -fv.tangent.z, fv.tangent.y);
+        fv.position = PTVector3f(fv.position.x, -fv.position.z, fv.position.y);
+        fv.normal = PTVector3f(fv.normal.x, -fv.normal.z, fv.normal.y);
+        fv.tangent = PTVector3f(fv.tangent.x, -fv.tangent.z, fv.tangent.y);
     }
 }
 

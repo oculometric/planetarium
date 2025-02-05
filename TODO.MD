@@ -2,7 +2,6 @@
 
 ## Vulkan Stuff
 
-- [ ] replace oculib (1)
 - [ ] implement proper shader config and reflection, and checking this when creating render passes
 - [ ] fix semaphore issue on windows
 
@@ -53,5 +52,6 @@
 - [x] make sure everything which gets `destroy`ed in application (framebuffers, etc) is treated as a **pointer** when converting to PTSomething (i.e. so `delete` order can be controlled by application)
 - [x] implement reference-recounter in resource manager
 - [x] fix camera aspect ratio & matrix stuff
-- [x] clean up todos (0)
-- [x] make Makefile respect header files [https://www.reddit.com/r/C_Programming/comments/xwhmup/is_there_a_good_way_to_automatically_handle/] (0)
+- [x] clean up todos
+- [x] make Makefile respect header files [https://www.reddit.com/r/C_Programming/comments/xwhmup/is_there_a_good_way_to_automatically_handle/]
+- [x] replace oculib
