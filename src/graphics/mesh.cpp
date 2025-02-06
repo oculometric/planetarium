@@ -282,24 +282,24 @@ void PTMesh::createVertexBuffers(const PTPhysicalDevice& physical_device, std::v
 {
     // vertex buffer creation (via staging buffer)
     VkDeviceSize size = sizeof(PTVertex) * vertices.size();
-    PTBuffer* staging_buffer = PTResourceManager::get()->createBuffer(device, physical_device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    PTBuffer* staging_buffer = PTResourceManager::get()->createBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     
     void* vertex_data = staging_buffer->map();
     memcpy(vertex_data, vertices.data(), (size_t)size);
     staging_buffer->unmap();
-    vertex_buffer = PTResourceManager::get()->createBuffer(device, physical_device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    vertex_buffer = PTResourceManager::get()->createBuffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     staging_buffer->copyTo(vertex_buffer, size);
 
     staging_buffer->removeReferencer();
     
     // index buffer creation (via staging buffer)
     size = sizeof(uint16_t) * indices.size();
-    staging_buffer = PTResourceManager::get()->createBuffer(device, physical_device, size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    staging_buffer = PTResourceManager::get()->createBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     
     void* index_data = staging_buffer->map();
     memcpy(index_data, indices.data(), (size_t)size);
     staging_buffer->unmap();
-    index_buffer = PTResourceManager::get()->createBuffer(device, physical_device, size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    index_buffer = PTResourceManager::get()->createBuffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     staging_buffer->copyTo(index_buffer, size);
 
     index_count = indices.size();

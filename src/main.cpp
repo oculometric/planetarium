@@ -4,13 +4,10 @@
 #include "application.h"
 #include "debug.h"
 
-#include "deserialiser.h"
+using namespace std;
 
 int main(int argc, char* argv[])
 {
-    auto tokens = PTDeserialiser::tokenise(demo);
-
-    return 0;
     debugInit();
 
     debugLog("Hello, Universe!");

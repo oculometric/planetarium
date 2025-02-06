@@ -18,8 +18,6 @@
 #include "image.h"
 #include "mesh.h"
 
-using namespace std;
-
 struct TransformMatrices
 {
     float model_to_world[16];
@@ -51,25 +49,25 @@ private:
     VkDevice device;
 
     PTSwapchain* swapchain;
-    vector<VkFramebuffer> framebuffers;
+    std::vector<VkFramebuffer> framebuffers;
 
-    map<PTQueueFamily, VkQueue> queues;
+    std::map<PTQueueFamily, VkQueue> queues;
 
     VkCommandPool command_pool;
-    vector<VkCommandBuffer> command_buffers;
+    std::vector<VkCommandBuffer> command_buffers;
     VkDescriptorPool descriptor_pool;
-    vector<VkDescriptorSet> descriptor_sets;
+    std::vector<VkDescriptorSet> descriptor_sets;
     
-    vector<VkSemaphore> image_available_semaphores;
-    vector<VkSemaphore> render_finished_semaphores;
-    vector<VkFence> in_flight_fences;
+    std::vector<VkSemaphore> image_available_semaphores;
+    std::vector<VkSemaphore> render_finished_semaphores;
+    std::vector<VkFence> in_flight_fences;
 
     PTRenderPass* demo_render_pass;
     PTPipeline* demo_pipeline;
     PTPipeline* debug_pipeline;
     PTShader* demo_shader;
 
-    vector<PTBuffer*> uniform_buffers;
+    std::vector<PTBuffer*> uniform_buffers;
 
     PTImage* depth_image;
     VkImageView depth_image_view;
@@ -80,9 +78,9 @@ private:
     };
 
 #ifdef _WIN32
-    chrono::steady_clock::time_point last_frame_start;
+    std::chrono::steady_clock::time_point last_frame_start;
 #else
-    chrono::system_clock::time_point last_frame_start;
+    std::chrono::system_clock::time_point last_frame_start;
 #endif
     uint32_t frame_time_running_mean_us;
 
@@ -117,11 +115,11 @@ private:
     void deinitVulkan();
     void deinitWindow();
 
-    void initVulkanInstance(vector<const char*>& layers);
+    void initVulkanInstance(std::vector<const char*>& layers);
     void initSurface();
     PTPhysicalDevice selectPhysicalDevice();
-    vector<VkDeviceQueueCreateInfo> constructQueues();
-    void initLogicalDevice(const vector<VkDeviceQueueCreateInfo>& queue_create_infos, const vector<const char*>& layers);
+    std::vector<VkDeviceQueueCreateInfo> constructQueues();
+    void initLogicalDevice(const std::vector<VkDeviceQueueCreateInfo>& queue_create_infos, const std::vector<const char*>& layers);
     void collectQueues();
     void createFramebuffers(const VkRenderPass render_pass);
     void createCommandPoolAndBuffers();

@@ -23,7 +23,7 @@ PTImage::PTImage(VkDevice _device, PTPhysicalDevice physical_device, string text
     //OLImage texture(texture_file);
     VkDeviceSize image_size = 0;//texture.getSize().x * texture.getSize().y * 4;
 
-    PTBuffer* staging_buffer = PTResourceManager::get()->createBuffer(device, physical_device, image_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    PTBuffer* staging_buffer = PTResourceManager::get()->createBuffer(image_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
     
     void* data = staging_buffer->map();
     memcpy(data, nullptr /*texture.getData()*/, static_cast<size_t>(image_size));

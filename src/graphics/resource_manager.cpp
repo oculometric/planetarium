@@ -6,12 +6,12 @@ using namespace std;
 
 static PTResourceManager* resource_manager = nullptr;
 
-void PTResourceManager::init()
+void PTResourceManager::init(VkDevice _device, PTPhysicalDevice& _physical_device)
 {
     if (resource_manager != nullptr)
         return;
     
-    resource_manager = new PTResourceManager();
+    resource_manager = new PTResourceManager(_device, _physical_device);
 }
 
 void PTResourceManager::deinit()
@@ -27,7 +27,7 @@ PTResourceManager* PTResourceManager::get()
     return resource_manager;
 }
 
-PTBuffer* PTResourceManager::createBuffer(VkDevice device, PTPhysicalDevice physical_device, VkDeviceSize buffer_size, VkBufferUsageFlags usage_flags, VkMemoryPropertyFlags memory_flags)
+PTBuffer* PTResourceManager::createBuffer(VkDeviceSize buffer_size, VkBufferUsageFlags usage_flags, VkMemoryPropertyFlags memory_flags)
 {
     string identifier = "buffer-" + to_string((size_t)device) + '-' + to_string((size_t)physical_device.getDevice()) + '-' + to_string(buffer_size) + '-' + to_string(usage_flags) + '-' + to_string(memory_flags);
 
@@ -39,7 +39,7 @@ PTBuffer* PTResourceManager::createBuffer(VkDevice device, PTPhysicalDevice phys
     return buf;
 }
 
-PTImage* PTResourceManager::createImage(VkDevice device, PTPhysicalDevice physical_device, VkExtent2D size, VkFormat _format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties)
+PTImage* PTResourceManager::createImage(VkExtent2D size, VkFormat _format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties)
 {
     string identifier = "image-" + to_string((size_t)device) + '-' + to_string((size_t)physical_device.getDevice()) + '-' + to_string(size.width) + '-' + to_string(size.height) + '-' + to_string(_format) + '-' + to_string(tiling) + '-' + to_string(usage) + '-' + to_string(properties);
     
@@ -51,7 +51,7 @@ PTImage* PTResourceManager::createImage(VkDevice device, PTPhysicalDevice physic
     return img;
 }
 
-PTImage* PTResourceManager::createImage(VkDevice device, PTPhysicalDevice physical_device, std::string texture_file, bool force_duplicate)
+PTImage* PTResourceManager::createImage(std::string texture_file, bool force_duplicate)
 {
     string identifier = "image-" + to_string((size_t)device) + '-' + to_string((size_t)physical_device.getDevice()) + '-' + texture_file;
 
@@ -66,7 +66,7 @@ PTImage* PTResourceManager::createImage(VkDevice device, PTPhysicalDevice physic
     return img;
 }
 
-PTMesh* PTResourceManager::createMesh(VkDevice device, const PTPhysicalDevice& physical_device, std::string file_name, bool force_duplicate)
+PTMesh* PTResourceManager::createMesh(std::string file_name, bool force_duplicate)
 {
     string identifier = "mesh-" + to_string((size_t)device) + '-' + to_string((size_t)physical_device.getDevice()) + '-' + file_name;
 
@@ -81,7 +81,7 @@ PTMesh* PTResourceManager::createMesh(VkDevice device, const PTPhysicalDevice& p
     return me;
 }
 
-PTMesh* PTResourceManager::createMesh(VkDevice device, const PTPhysicalDevice& physical_device, std::vector<PTVertex> vertices, std::vector<uint16_t> indices)
+PTMesh* PTResourceManager::createMesh(std::vector<PTVertex> vertices, std::vector<uint16_t> indices)
 {
     string identifier = "mesh-" + to_string((size_t)device) + '-' + to_string((size_t)physical_device.getDevice()) + '-' + to_string(vertices.size()) + '-' + to_string(indices.size());
 
@@ -93,7 +93,7 @@ PTMesh* PTResourceManager::createMesh(VkDevice device, const PTPhysicalDevice& p
     return me;
 }
 
-PTPipeline* PTResourceManager::createPipeline(VkDevice device, PTShader* shader, PTRenderPass* render_pass, PTSwapchain* swapchain, VkBool32 depth_write, VkBool32 depth_test, VkCompareOp depth_op, VkCullModeFlags culling, VkFrontFace winding_order, VkPolygonMode polygon_mode, std::vector<VkDynamicState> dynamic_states)
+PTPipeline* PTResourceManager::createPipeline(PTShader* shader, PTRenderPass* render_pass, PTSwapchain* swapchain, VkBool32 depth_write, VkBool32 depth_test, VkCompareOp depth_op, VkCullModeFlags culling, VkFrontFace winding_order, VkPolygonMode polygon_mode, std::vector<VkDynamicState> dynamic_states)
 {
     string identifier = "pipeline-" + to_string((size_t)device) + '-' + to_string((size_t)shader) + '-' + to_string((size_t)render_pass) + '-' + to_string((size_t)swapchain) + '-' + to_string(depth_write) + '-' + to_string(depth_test) + '-' + to_string(depth_op) + '-' + to_string(culling) + '-' + to_string(winding_order) + '-' + to_string(polygon_mode) + '-' + to_string(dynamic_states.size());
     
@@ -105,7 +105,7 @@ PTPipeline* PTResourceManager::createPipeline(VkDevice device, PTShader* shader,
     return pipe;
 }
 
-PTRenderPass* PTResourceManager::createRenderPass(VkDevice device, std::vector<PTRenderPassAttachment> attachments, bool enable_depth)
+PTRenderPass* PTResourceManager::createRenderPass(std::vector<PTRenderPassAttachment> attachments, bool enable_depth)
 {
     string identifier = "renderpass-" + to_string((size_t)device) + '-' + to_string(attachments.size()) + '-' + to_string(enable_depth);
 
@@ -117,7 +117,7 @@ PTRenderPass* PTResourceManager::createRenderPass(VkDevice device, std::vector<P
     return rp;
 }
 
-PTShader* PTResourceManager::createShader(VkDevice device, std::string shader_path_stub, bool force_duplicate)
+PTShader* PTResourceManager::createShader(std::string shader_path_stub, bool force_duplicate)
 {
     string identifier = "shader-" + to_string((size_t)device) + '-' + shader_path_stub;
 
@@ -132,7 +132,7 @@ PTShader* PTResourceManager::createShader(VkDevice device, std::string shader_pa
     return sh;
 }
 
-PTSwapchain* PTResourceManager::createSwapchain(VkDevice device, PTPhysicalDevice& physical_device, VkSurfaceKHR surface, int window_x, int window_y)
+PTSwapchain* PTResourceManager::createSwapchain(VkSurfaceKHR surface, int window_x, int window_y)
 {
     string identifier = "swapchain-" + '-' + to_string((size_t)device) + '-' + to_string((size_t)physical_device.getDevice()) + '-' + to_string((size_t)surface) + '-' + to_string(window_x) + '-' + to_string(window_y);
 
@@ -142,6 +142,30 @@ PTSwapchain* PTResourceManager::createSwapchain(VkDevice device, PTPhysicalDevic
     sc->addReferencer();
 
     return sc;
+}
+
+PTResource* PTResourceManager::createGeneric(std::string type, std::vector<PTDeserialiser::Argument> args)
+{
+    if (type == "mesh")
+    {
+        if (args.size() < 1)
+            return nullptr;
+        if (args[0].type != PTDeserialiser::ArgType::STRING_ARG)
+            return nullptr;
+
+        return createMesh(args[0].s_val);
+    }
+    else if (type == "image")
+    {
+        if (args.size() < 1)
+            return nullptr;
+        if (args[0].type != PTDeserialiser::ArgType::STRING_ARG)
+            return nullptr;
+
+        return createImage(args[0].s_val);
+    }
+
+    return nullptr;
 }
 
 PTResourceManager::~PTResourceManager()

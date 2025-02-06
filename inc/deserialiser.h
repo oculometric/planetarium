@@ -2,41 +2,49 @@
 
 #include <vector>
 #include <string>
+#include <map>
 
 #include "vector4.h"
+#include "vector3.h"
+#include "vector2.h"
 
 /* example scene file: */
 
-const std::string demo = R"(Resource(mesh, "suzanne.obj") : 4a3b825f
-
+const std::string demo = R"(Resource(mesh, "suzanne.obj", 5, [1,2,3], {3, "text", -0.4}, "other") : 4a3b825f;)";
+/*
 // comment
 
 Node() : parent
 {
-	Mesh(data = @4a3b825f, position = [0.5, 1.0, 0.0]) : mesh,
-	DirectionalLight() : sun_lamp
-}
-)";
+	MeshNode(data = @4a3b825f, position = [0.5, 1.0, 0.0]) : mesh;
+	DirectionalLightNode() : sun_lamp;
+};
+)";*/
+
+class PTResource;
+class PTObject;
+class PTScene;
 
 class PTDeserialiser
 {
 public:
     enum TokenType
     {
-        TEXT,
         STRING,
         INT,
         FLOAT,
-        TAG,
         VECTOR2,
         VECTOR3,
         VECTOR4,
+        TAG,
+        TEXT,
         OPEN_ROUND,
         CLOSE_ROUND,
         OPEN_CURLY,
         CLOSE_CURLY,
         COLON,
         COMMA,
+        SEMICOLON,
         EQUALS,
         NEWLINE,
         COMMENT,
@@ -139,33 +147,58 @@ public:
         }
     };
 
+    enum ArgType
+    {
+        STRING_ARG,
+        INT_ARG,
+        FLOAT_ARG,
+        VECTOR2_ARG,
+        VECTOR3_ARG,
+        VECTOR4_ARG,
+        RESOURCE_ARG,
+        ARRAY_ARG
+    };
+
+    struct Argument
+    {
+        ArgType type;
+
+        std::string s_val;
+        std::vector<Argument> a_val;
+        union
+        {
+            int i_val;
+            float f_val;
+            PTVector2f v2_val;
+            PTVector3f v3_val;
+            PTVector4f v4_val = PTVector4f(0,0,0,0);
+            PTResource* r_val;
+        };
+
+        inline ~Argument()
+        {
+        }
+    };
+
 public:
 	static std::vector<Token> tokenise(const std::string& content);
+    static std::vector<Token> prune(const std::vector<Token>& tokens);
+    static std::pair<std::string, PTResource*> deserialiseResourceDescriptor(const std::vector<Token>& tokens, size_t& first_token, const std::map<std::string, PTResource*>& resources, const std::string& content);
+    static PTObject* deserialiseObject(const std::vector<Token>& tokens, size_t& first_token, const std::map<std::string, PTResource*>& resources, const std::string& content);
+    static PTScene* deserialiseScene(const std::vector<Token>& tokens, size_t& first_token, const std::string& content);
 
 private:
     static inline TokenType getType(const char c);
 
-    static inline bool isAlphabetic(const char c)
-    {
-        if (c >= 'a' && c <= 'z') return true;
-        if (c >= 'A' && c <= 'Z') return true;
+    static inline bool isAlphabetic(const char c);
 
-        return false;
-    }
-
-    static inline bool isSeparator(TokenType t)
-    {
-        switch (t)
-        {
-        case TEXT:
-        case STRING:
-        case INT:
-        case TAG:
-            return false;
-        default:
-            return true;
-        }
-    }
+    static inline bool isSeparator(TokenType t);
 
     static void reportError(const std::string err, size_t off, const std::string& str);
+
+    static size_t findClosingBracket(const std::vector<Token>& tokens, size_t open_index, bool allow_semicolons, const std::string& content);
+
+    static Argument compileArgument(const std::vector<Token>& tokens, const std::map<std::string, PTResource*>& resources, const std::string& content);
+
+    static TokenType decodeVectorToken(const std::string token, PTVector4f& vector_out, size_t offset, const std::string& content);
 };

@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <math.h>
 #include <iostream>
+#include <format>
 
 template<typename T>
 struct PTVector4
@@ -49,7 +50,7 @@ template<typename T>
 inline std::ostream& operator<<(std::ostream& stream, const PTVector4<T>& v) { return stream << '(' << v.x << ", " << v.y << ", " << v.z << ", " << v.w << ')'; }
 
 template<typename T>
-inline std::string to_string(const PTVector4<T>& v) { return format("({:.3f},{:.3f},{:.3f},{:.3f})", v.x, v.y, v.z, v.w); }
+inline std::string to_string(const PTVector4<T>& v) { return std::format("({:.3f},{:.3f},{:.3f},{:.3f})", v.x, v.y, v.z, v.w); }
 
 typedef PTVector4<float> PTVector4f;
 typedef PTVector4<int32_t> PTVector4i;

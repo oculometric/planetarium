@@ -27,6 +27,7 @@
 ## Misc
 
 - [ ] fix console log scroll to end
+- [ ] array handling for deserialiser argument parsing
 
 ## Completed
 - [x] make physical device stuff its own file (finding swapchain info, supported features, etc)

@@ -13,6 +13,8 @@
 #include "mesh.h"
 #include "resource_manager.h"
 
+using namespace std;
+
 static PTApplication* main_application = nullptr;
 
 #ifndef NDEBUG
@@ -57,14 +59,17 @@ PTApplication::PTApplication(unsigned int _width, unsigned int _height)
 void PTApplication::start()
 {
     main_application = this;
-    
-    PTResourceManager::init();
 
     initWindow();
     initVulkan();
     initController();
 
-    demo_mesh = PTResourceManager::get()->createMesh(device, physical_device, "suzanne.obj");
+    demo_mesh = PTResourceManager::get()->createMesh("suzanne.obj");
+
+    auto tokens = PTDeserialiser::prune(PTDeserialiser::tokenise(demo));
+    size_t start = 0;
+    std::map<std::string, PTResource*> resources;
+    auto res_desc = PTDeserialiser::deserialiseResourceDescriptor(tokens, start, resources, demo);
 
     mainLoop();
 
@@ -119,6 +124,8 @@ void PTApplication::initVulkan()
     // create logical device
     initLogicalDevice(queue_create_infos, layers);
 
+    PTResourceManager::init(device, physical_device);
+
     // grab queue handles
     collectQueues();
 
@@ -127,21 +134,21 @@ void PTApplication::initVulkan()
     int height;
     glfwGetFramebufferSize(window, &width, &height);
     debugLog("    creating swapchain...");
-    swapchain = PTResourceManager::get()->createSwapchain(device, physical_device, surface, width, height);
+    swapchain = PTResourceManager::get()->createSwapchain(surface, width, height);
     debugLog("    done.");
 
     // initialise a basic pipeline
     debugLog("    loading demo shader...");
-    demo_shader = PTResourceManager::get()->createShader(device, "demo");
+    demo_shader = PTResourceManager::get()->createShader("demo");
     debugLog("    done.");
     debugLog("    creating demo render pass...");
     PTRenderPassAttachment attachment;
     attachment.format = swapchain->getImageFormat();
-    demo_render_pass = PTResourceManager::get()->createRenderPass(device, { attachment }, true);
+    demo_render_pass = PTResourceManager::get()->createRenderPass({ attachment }, true);
     debugLog("    done.");
     debugLog("    constructing pipelines...");
-    demo_pipeline = PTResourceManager::get()->createPipeline(device, demo_shader, demo_render_pass, swapchain, VK_TRUE, VK_TRUE, VK_COMPARE_OP_LESS, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_POLYGON_MODE_FILL, { });
-    debug_pipeline = PTResourceManager::get()->createPipeline(device, demo_shader, demo_render_pass, swapchain, VK_TRUE, VK_TRUE, VK_COMPARE_OP_LESS, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_POLYGON_MODE_LINE, { });
+    demo_pipeline = PTResourceManager::get()->createPipeline(demo_shader, demo_render_pass, swapchain, VK_TRUE, VK_TRUE, VK_COMPARE_OP_LESS, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_POLYGON_MODE_FILL, { });
+    debug_pipeline = PTResourceManager::get()->createPipeline(demo_shader, demo_render_pass, swapchain, VK_TRUE, VK_TRUE, VK_COMPARE_OP_LESS, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_POLYGON_MODE_LINE, { });
     debugLog("    done.");
 
     createCommandPoolAndBuffers();
@@ -462,7 +469,7 @@ void PTApplication::createUniformBuffers()
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
-        PTBuffer* buf = PTResourceManager::get()->createBuffer(device, physical_device, transform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        PTBuffer* buf = PTResourceManager::get()->createBuffer(transform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
         buf->map();
         uniform_buffers.push_back(buf);
     }
@@ -492,7 +499,7 @@ void PTApplication::createCommandPoolAndBuffers()
 
 void PTApplication::createDepthResources()
 {
-    depth_image = PTResourceManager::get()->createImage(device, physical_device, swapchain->getExtent(), VK_FORMAT_D32_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    depth_image = PTResourceManager::get()->createImage(swapchain->getExtent(), VK_FORMAT_D32_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     depth_image_view = depth_image->createImageView(VK_IMAGE_ASPECT_DEPTH_BIT);
 }
 
@@ -708,7 +715,7 @@ void PTApplication::resizeSwapchain()
         glfwWaitEvents();
     }
     debugLog("    new size: " + to_string(width) + ", " + to_string(height));
-    swapchain = PTResourceManager::get()->createSwapchain(device, physical_device, surface, width, height);
+    swapchain = PTResourceManager::get()->createSwapchain(surface, width, height);
 
     createDepthResources();
     createFramebuffers(demo_render_pass->getRenderPass());
