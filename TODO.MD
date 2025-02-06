@@ -7,13 +7,13 @@
 
 ## Engine Stuff
 
+- [ ] scene tree system with builder/deserialisation system (0)
+- [ ] proper input handling from both keyboard and mouse (1)
 - [ ] object transform
-- [ ] scene tree system with builder/deserialisation system (2)
 - [ ] UI system (use STUI to generate charbufs, then pass it into a shader maybe????)
 - [ ] object and vertex picking
 - [ ] scene editing
 - [ ] mesh editing
-- [ ] proper input handling from both keyboard and mouse
 - [ ] live shader editor
 
 ## Art Stuff
