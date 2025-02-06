@@ -180,6 +180,7 @@ public:
 public:
 	static std::vector<Token> tokenise(const std::string& content);
     static std::vector<Token> prune(const std::vector<Token>& tokens);
+    // TODO: supply the scene instead of the map of resources
     static std::pair<std::string, PTResource*> deserialiseResourceDescriptor(const std::vector<Token>& tokens, size_t& first_token, const std::map<std::string, PTResource*>& resources, const std::string& content);
     static PTObject* deserialiseObject(const std::vector<Token>& tokens, size_t& first_token, const std::map<std::string, PTResource*>& resources, const std::string& content);
     static PTScene* deserialiseScene(const std::vector<Token>& tokens, size_t& first_token, const std::string& content);

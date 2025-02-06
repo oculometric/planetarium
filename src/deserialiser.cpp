@@ -425,7 +425,7 @@ PTObject* PTDeserialiser::deserialiseObject(const std::vector<Token>& tokens, si
     }
 
     first_token = semicolon;
-    return nullptr; // TODO: actually construct the object
+    return nullptr; // TODO: actually construct the object via the supplied scene
 }
 
 inline PTDeserialiser::TokenType PTDeserialiser::getType(const char c)

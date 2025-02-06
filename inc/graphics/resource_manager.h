@@ -12,6 +12,7 @@
 #include "render_pass.h"
 #include "shader.h"
 #include "swapchain.h"
+#include "node.h"
 #include "deserialiser.h"
 
 class PTResourceManager
@@ -36,6 +37,9 @@ public:
     PTRenderPass* createRenderPass(std::vector<PTRenderPassAttachment> attachments, bool enable_depth);
     PTShader* createShader(std::string shader_path_stub, bool force_duplicate = false);
     PTSwapchain* createSwapchain(VkSurfaceKHR surface, int window_x, int window_y);
+
+    template<class T>
+    PTNode* createNode(std::map<std::string, PTDeserialiser::Argument> arguments);
 
     PTResource* createGeneric(std::string type, std::vector<PTDeserialiser::Argument> args);
 

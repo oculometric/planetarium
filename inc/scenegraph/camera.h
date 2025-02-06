@@ -3,11 +3,10 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
-#include "object.h"
+#include "node.h"
 #include "matrix4.h"
-#include "vector3.h"
 
-class PTCamera : public PTObject
+class PTCameraNode : public PTNode
 {
 public:
 	float near_clip = 0.1f;
