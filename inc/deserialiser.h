@@ -5,19 +5,18 @@
 
 #include "vector4.h"
 
-/* example scene file:
+/* example scene file: */
 
-Resource(mesh, "suzanne.obj") : 4a3b825f
+const std::string demo = R"(Resource(mesh, "suzanne.obj") : 4a3b825f
 
 // comment
 
 Node() : parent
 {
-	Mesh(data = @4a3b825f, position = [0.5, 1.0, 0.0]) : mesh
+	Mesh(data = @4a3b825f, position = [0.5, 1.0, 0.0]) : mesh,
 	DirectionalLight() : sun_lamp
 }
-
-*/
+)";
 
 class PTDeserialiser
 {
@@ -89,14 +88,10 @@ public:
         {
             type = other.type;
             start_offset = other.start_offset;
+            s_value = other.s_value;
 
             switch (type)
             {
-            case TEXT:
-            case STRING:
-            case COMMENT:
-                s_value = other.s_value;
-                break;
             case VECTOR2:
             case VECTOR3:
             case VECTOR4:
@@ -117,14 +112,10 @@ public:
         {
             type = other.type;
             start_offset = other.start_offset;
+            s_value = other.s_value;
 
             switch (type)
             {
-            case TEXT:
-            case STRING:
-            case COMMENT:
-                s_value = other.s_value;
-                break;
             case VECTOR2:
             case VECTOR3:
             case VECTOR4:
@@ -170,9 +161,6 @@ private:
         case STRING:
         case INT:
         case TAG:
-        case VECTOR2:
-        case VECTOR3:
-        case VECTOR4:
             return false;
         default:
             return true;
