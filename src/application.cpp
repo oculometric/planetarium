@@ -66,10 +66,25 @@ void PTApplication::start()
 
     demo_mesh = PTResourceManager::get()->createMesh("suzanne.obj");
 
-    auto tokens = PTDeserialiser::prune(PTDeserialiser::tokenise(demo));
+    const string resource_bit = R"(Resource(mesh, "suzanne.obj", 5, [1,2,3], {3, "text", -0.4}, "other") : 4a3b825f;)";
+    const string object_bit = R"(
+    Node() : parent
+    {
+        MeshNode(data = @4a3b825f, position = [0.5, 1.0, 0.0]) : mesh;
+        DirectionalLightNode() : sun_lamp;
+    };
+    )";
+    
+    auto tokens = PTDeserialiser::prune(PTDeserialiser::tokenise(resource_bit));
     size_t start = 0;
     std::map<std::string, PTResource*> resources;
-    auto res_desc = PTDeserialiser::deserialiseResourceDescriptor(tokens, start, resources, demo);
+    pair<string, PTResource*> res = PTDeserialiser::deserialiseResourceDescriptor(tokens, start, resources, resource_bit);
+    // TODO: check if the resource name is occupied
+    resources[res.first] = res.second;
+    tokens = PTDeserialiser::prune(PTDeserialiser::tokenise(object_bit));
+    start = 0;
+    // TODO: instead of passing in just the resources, pass in a whole scene, and tell it to instantiate objects instead (and use its resource registry)
+    auto obj = PTDeserialiser::deserialiseObject(tokens, start, resources, object_bit);
 
     mainLoop();
 

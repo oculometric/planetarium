@@ -94,7 +94,7 @@ vector<PTDeserialiser::Token> PTDeserialiser::tokenise(const string& content)
             else if (!isSeparator(next_type))
                 reportError("invalid conjoined tokens", offset, content);
 
-            finished_token.s_value = current_token;
+            finished_token.s_value = current_token.substr(1);
             reset_token = true;
             break;
         case VECTOR4:
@@ -188,33 +188,22 @@ pair<string, PTResource*> PTDeserialiser::deserialiseResourceDescriptor(const st
         reportError("malformed resource descriptor", tokens[first_token].start_offset, content);
 
     size_t close_bracket = findClosingBracket(tokens, first_token + 1, false, content);
-    // TODO: actually, should resource identifiers be optional? probably not
-    if (tokens.size() <= close_bracket + 1 || (tokens.size() == close_bracket + 2 && tokens[close_bracket + 1].type != TokenType::SEMICOLON))
+
+    if (tokens.size() <= close_bracket + 3)
+        reportError("missing resource identifier", tokens[close_bracket].start_offset, content);
+    if (tokens[close_bracket + 3].type != TokenType::SEMICOLON)
         reportError("missing semicolon", tokens[close_bracket].start_offset, content);
 
-    if (tokens.size() <= close_bracket + 3 && tokens[close_bracket + 1].type != TokenType::SEMICOLON)
-        reportError("missing semicolon", tokens[close_bracket].start_offset, content);
-
-    if (tokens.size() > close_bracket + 3 && (tokens[close_bracket + 3].type != TokenType::SEMICOLON && tokens[close_bracket + 1].type != TokenType::SEMICOLON))
-        reportError("missing semicolon", tokens[close_bracket].start_offset, content);
-
-    size_t semicolon = close_bracket;
-    while (tokens[semicolon].type != TokenType::SEMICOLON)
-        semicolon++;
+    size_t semicolon = close_bracket + 3;
     
     string name = "";
 
-    if (semicolon - close_bracket == 1)
-        name = "__UNLABELLED_RESOURCE";
-    else if (semicolon - close_bracket == 3)
-    {
-        if (tokens[close_bracket + 1].type != TokenType::COLON)
-            reportError("expected colon after resource", tokens[close_bracket].start_offset, content);
-        else if (tokens[close_bracket + 2].type != TokenType::TEXT)
-            reportError("expected identifier after colon", tokens[close_bracket+1].start_offset, content);
-        
-        name = tokens[close_bracket + 2].s_value;
-    }
+    if (tokens[close_bracket + 1].type != TokenType::COLON)
+        reportError("expected colon after resource", tokens[close_bracket].start_offset, content);
+    else if (tokens[close_bracket + 2].type != TokenType::TEXT)
+        reportError("expected resource identifier after colon", tokens[close_bracket+1].start_offset, content);
+    
+    name = tokens[close_bracket + 2].s_value;
 
     vector<Token> bracket_contents;
     for (size_t i = first_token + 2; i <= close_bracket - 1; i++)
@@ -284,6 +273,159 @@ pair<string, PTResource*> PTDeserialiser::deserialiseResourceDescriptor(const st
 
     first_token = semicolon;
     return pair<string, PTResource*>{ name, resource };
+}
+
+PTObject* PTDeserialiser::deserialiseObject(const std::vector<Token>& tokens, size_t& first_token, const std::map<std::string, PTResource*>& resources, const std::string& content)
+{
+    if (tokens.size() <= first_token + 4)
+    {
+        size_t o = 0;
+        if (!tokens.empty())
+            o = tokens[tokens.size() - 1].start_offset;
+        reportError("no tokens to decode", o, content);
+    }
+    
+    if (tokens[first_token].type != TokenType::TEXT)
+        reportError("expected node type name", tokens[first_token].start_offset, content);
+
+    string object_type = tokens[first_token].s_value;
+
+    if (tokens[first_token + 1].type != TokenType::OPEN_ROUND)
+        reportError("malformed object descriptor", tokens[first_token].start_offset, content);
+
+    size_t close_bracket = findClosingBracket(tokens, first_token + 1, false, content);
+    size_t next_step = close_bracket + 1;
+
+    string object_name = object_type;
+    size_t semicolon = close_bracket;
+
+    if (tokens[next_step].type == COLON)
+    {
+        if (tokens.size() > next_step + 1 && tokens[next_step + 1].type == TEXT)
+            object_name = tokens[next_step + 1].s_value;
+        else
+            reportError("expected node name identifier after colon", tokens[next_step].start_offset, content);
+        next_step += 2;
+    }
+    
+    vector<PTObject*> children;
+
+    if (tokens[next_step].type == OPEN_CURLY)
+    {
+        size_t open_curly = next_step;
+        size_t close_curly = findClosingBracket(tokens, open_curly, true, content);
+        if (tokens.size() <= close_curly + 1 || tokens[close_curly + 1].type != SEMICOLON)
+            reportError("expected semicolon after close curly brace", tokens[close_curly].start_offset, content);
+        semicolon = close_curly + 1;
+        vector<Token> current_child;
+        vector<Token> bracket_stack;
+        for (size_t i = open_curly + 1; i < close_curly; i++)
+        {
+            current_child.push_back(tokens[i]);
+            size_t tmp = 0;
+            switch(tokens[i].type)
+            {
+                case OPEN_ROUND:
+                case OPEN_CURLY:
+                    bracket_stack.push_back(tokens[i]);
+                    break;
+                case CLOSE_ROUND:
+                    if (!bracket_stack.empty() && bracket_stack[bracket_stack.size() - 1].type == TokenType::OPEN_ROUND)
+                        bracket_stack.pop_back();
+                    else
+                        reportError("invalid closing bracket", tokens[i].start_offset, content);
+                    break;
+                case CLOSE_CURLY:
+                    if (!bracket_stack.empty() && bracket_stack[bracket_stack.size() - 1].type == TokenType::OPEN_CURLY)
+                        bracket_stack.pop_back();
+                    else
+                        reportError("invalid closing curly brace", tokens[i].start_offset, content);
+                    break;
+                case SEMICOLON:
+                    if (!bracket_stack.empty())
+                        break;
+                    
+                    current_child.pop_back();
+                    if (current_child.empty())
+                        reportError("missing argument before comma", tokens[i].start_offset, content);
+                    children.push_back(deserialiseObject(current_child, tmp, resources, content));
+                    current_child.clear();
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+    else if (tokens[next_step].type == SEMICOLON)
+    {
+        semicolon = next_step;
+    }
+    else
+        reportError("expected node name, open curly brace, or semicolon after node definition", tokens[next_step].start_offset, content);
+
+    vector<Token> bracket_contents;
+    for (size_t i = first_token + 2; i <= close_bracket - 1; i++)
+        bracket_contents.push_back(tokens[i]);
+
+    // split the rest into a list of lists of tokens
+    vector<vector<Token>> arguments;
+    vector<Token> current_argument;
+    vector<Token> bracket_stack;
+    for (size_t i = 0; i < bracket_contents.size(); i++)
+    {
+        current_argument.push_back(bracket_contents[i]);
+        switch(bracket_contents[i].type)
+        {
+            case OPEN_ROUND:
+            case OPEN_CURLY:
+                bracket_stack.push_back(bracket_contents[i]);
+                break;
+            case CLOSE_ROUND:
+                if (!bracket_stack.empty() && bracket_stack[bracket_stack.size() - 1].type == TokenType::OPEN_ROUND)
+                    bracket_stack.pop_back();
+                else
+                    reportError("invalid closing bracket", bracket_contents[i].start_offset, content);
+                break;
+            case CLOSE_CURLY:
+                if (!bracket_stack.empty() && bracket_stack[bracket_stack.size() - 1].type == TokenType::OPEN_CURLY)
+                    bracket_stack.pop_back();
+                else
+                    reportError("invalid closing curly brace", bracket_contents[i].start_offset, content);
+                break;
+            case COMMA:
+                if (!bracket_stack.empty())
+                    break;
+                
+                current_argument.pop_back();
+                if (current_argument.empty())
+                    reportError("missing argument before comma", bracket_contents[i].start_offset, content);
+                arguments.push_back(current_argument);
+                current_argument.clear();
+            default:
+                break;
+        }
+    }
+
+    if (!bracket_stack.empty())
+        reportError("missing closing bracket/brace", tokens[close_bracket - 1].start_offset, content);
+    
+    if (current_argument.empty())
+    {
+        if (!bracket_contents.empty())
+            reportError("missing argument after comma", bracket_contents[bracket_contents.size() - 1].start_offset, content);
+    }
+    else
+        arguments.push_back(current_argument);
+
+    map<string, Argument> initialiser_args;
+    for (auto arg : arguments)
+    {
+        auto pr = compileNamedArgument(arg, resources, content);
+        initialiser_args[pr.first] = pr.second;
+    }
+
+    first_token = semicolon;
+    return nullptr; // TODO: actually construct the object
 }
 
 inline PTDeserialiser::TokenType PTDeserialiser::getType(const char c)
@@ -386,6 +528,7 @@ size_t PTDeserialiser::findClosingBracket(const vector<Token>& tokens, size_t op
             case SEMICOLON:
                 if (!allow_semicolons)
                     reportError("missing closing " + bracket_name, tokens[open_index].start_offset, content);
+                break;
             case OPEN_ROUND:
             case OPEN_CURLY:
                 brackets.push_back(tokens[index]);
@@ -460,6 +603,26 @@ PTDeserialiser::Argument PTDeserialiser::compileArgument(const std::vector<Token
     }
 
     return arg;
+}
+
+pair<string, PTDeserialiser::Argument> PTDeserialiser::compileNamedArgument(const vector<PTDeserialiser::Token>& tokens, const map<string, PTResource*>& resources, const string& content)
+{
+    Argument arg;
+
+    if (tokens.size() < 3)
+        reportError("not enough tokens to construct named argument", 0, content);
+
+    if (tokens[0].type != TokenType::TEXT)
+        reportError("token before equals must be an identifier", tokens[0].start_offset, content);
+    if (tokens[1].type != TokenType::EQUALS)
+        reportError("expected identifier followed by equals", tokens[1].start_offset, content);
+    vector<Token> tmp = tokens;
+    tmp.erase(tmp.begin());
+    tmp.erase(tmp.begin());
+
+    arg = compileArgument(tmp, resources, content);
+
+    return pair<string, Argument>{ tokens[0].s_value, arg };
 }
 
 PTDeserialiser::TokenType PTDeserialiser::decodeVectorToken(const std::string token, PTVector4f& vector_out, size_t offset, const std::string& content)

@@ -8,19 +8,6 @@
 #include "vector3.h"
 #include "vector2.h"
 
-/* example scene file: */
-
-const std::string demo = R"(Resource(mesh, "suzanne.obj", 5, [1,2,3], {3, "text", -0.4}, "other") : 4a3b825f;)";
-/*
-// comment
-
-Node() : parent
-{
-	MeshNode(data = @4a3b825f, position = [0.5, 1.0, 0.0]) : mesh;
-	DirectionalLightNode() : sun_lamp;
-};
-)";*/
-
 class PTResource;
 class PTObject;
 class PTScene;
@@ -175,6 +162,16 @@ public:
             PTResource* r_val;
         };
 
+        inline Argument& operator=(const Argument& other)
+        {
+            type = other.type;
+            s_val = other.s_val;
+            f_val = other.f_val;
+            v4_val = other.v4_val;
+
+            return *this;
+        }
+
         inline ~Argument()
         {
         }
@@ -199,6 +196,7 @@ private:
     static size_t findClosingBracket(const std::vector<Token>& tokens, size_t open_index, bool allow_semicolons, const std::string& content);
 
     static Argument compileArgument(const std::vector<Token>& tokens, const std::map<std::string, PTResource*>& resources, const std::string& content);
+    static std::pair<std::string, Argument> compileNamedArgument(const std::vector<Token>& tokens, const std::map<std::string, PTResource*>& resources, const std::string& content);
 
     static TokenType decodeVectorToken(const std::string token, PTVector4f& vector_out, size_t offset, const std::string& content);
 };
