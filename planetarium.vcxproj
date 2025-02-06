@@ -22,6 +22,7 @@
     <ClInclude Include="inc\application.h" />
     <ClInclude Include="inc\debug.h" />
     <ClInclude Include="inc\debug_ui.h" />
+    <ClInclude Include="inc\deserialiser.h" />
     <ClInclude Include="inc\graphics\buffer.h" />
     <ClInclude Include="inc\graphics\image.h" />
     <ClInclude Include="inc\graphics\mesh.h" />
@@ -45,6 +46,7 @@
   <ItemGroup>
     <ClCompile Include="src\application.cpp" />
     <ClCompile Include="src\debug.cpp" />
+    <ClCompile Include="src\deserialiser.cpp" />
     <ClCompile Include="src\graphics\buffer.cpp" />
     <ClCompile Include="src\graphics\image.cpp" />
     <ClCompile Include="src\graphics\mesh.cpp" />

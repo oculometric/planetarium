@@ -81,6 +81,9 @@
     <ClInclude Include="inc\graphics\swapchain.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="inc\deserialiser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\application.cpp">
@@ -126,6 +129,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\graphics\swapchain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\deserialiser.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

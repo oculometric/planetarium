@@ -26,6 +26,7 @@
 
 ## Misc
 
+- [ ] fix console log scroll to end
 
 ## Completed
 - [x] make physical device stuff its own file (finding swapchain info, supported features, etc)
