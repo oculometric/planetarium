@@ -15,19 +15,78 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="lib\oculib\dither.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
+    <ClInclude Include="inc\application.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\debug.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\debug_ui.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\input.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\scenegraph\camera.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\scenegraph\object.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\scenegraph\scene.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\math\matrix3.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\math\matrix4.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\math\vector2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\math\vector3.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\math\vector4.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\graphics\buffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\graphics\image.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\graphics\mesh.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\graphics\physical_device.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\graphics\pipeline.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\graphics\render_pass.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\graphics\resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\graphics\resource_manager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\graphics\shader.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\graphics\swapchain.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
     <ClCompile Include="src\application.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\buffer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\debug.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\image.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\input.cpp">
@@ -36,136 +95,38 @@
     <ClCompile Include="src\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\mesh.cpp">
+    <ClCompile Include="src\scenegraph\scene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\physical_device.cpp">
+    <ClCompile Include="src\graphics\buffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\pipeline.cpp">
+    <ClCompile Include="src\graphics\image.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\render_pass.cpp">
+    <ClCompile Include="src\graphics\mesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\scene.cpp">
+    <ClCompile Include="src\graphics\physical_device.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\shader.cpp">
+    <ClCompile Include="src\graphics\pipeline.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\swapchain.cpp">
+    <ClCompile Include="src\graphics\render_pass.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="stui\examples\basic_usage.cpp">
+    <ClCompile Include="src\graphics\resource.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="stui\examples\compiler_tool.cpp">
+    <ClCompile Include="src\graphics\resource_manager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="stui\examples\compiler_tool_ls.cpp">
+    <ClCompile Include="src\graphics\shader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="stui\examples\page_usage.cpp">
+    <ClCompile Include="src\graphics\swapchain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="stui\examples\page_usage_ls.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="stui\examples\qr_demo.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="stui\examples\script_demo.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="stui\examples\widgets_demo.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="stui\examples\widgets_demo_ls.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="lib\oculib\camera.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="lib\oculib\dither.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="lib\oculib\image.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="lib\oculib\matrix4.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="lib\oculib\mesh.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="lib\oculib\object.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="lib\oculib\vector2.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="lib\oculib\vector3.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="lib\oculib\vector4.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="lib\oculib\vertex.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\application.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\buffer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\debug.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\debug_ui.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\defs.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\image.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\input.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\mesh.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\physical_device.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\pipeline.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\render_pass.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\scene.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\shader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\swapchain.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="stui\inc\stui.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="stui\inc\stui_extensions.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="stui\inc\stui_script.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
 </Project>
