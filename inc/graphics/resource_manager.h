@@ -45,7 +45,7 @@ public:
 
     template<class T>
     T* createNode(PTDeserialiser::ArgMap arguments);
-    PTScene* createScene();
+    PTScene* createScene(std::string file_name, bool force_duplicate = false);
 
     PTResource* createGeneric(std::string type, std::vector<PTDeserialiser::Argument> args);
 

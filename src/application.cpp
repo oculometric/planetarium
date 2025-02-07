@@ -66,22 +66,7 @@ void PTApplication::start()
     initController();
 
     demo_mesh = PTResourceManager::get()->createMesh("suzanne.obj");
-
-    // TODO: load scene from scene file instead
-    const string scene_string = R"(
-    Resource(mesh, "suzanne.obj") : 4a3b825f;
-    Resource(mesh, "teapot.obj") : teapot_mesh;
-    Node() : parent
-    {
-        MeshNode(data = @4a3b825f, position = [0.5, 1.0, 0.0]) : mesh;
-        MeshNode(data = @4a3b825f, position = [-1.5, 1.0, 0.0]);
-        MeshNode(data = @teapot_mesh, position = [0, 0, 2], scale = [0.2,0.2,0.2]);
-        //DirectionalLightNode() : sun_lamp;
-    };
-    CameraNode(position = [2, 0, 5]);
-    )";
-
-    current_scene = PTDeserialiser::deserialiseScene(scene_string);
+    current_scene = PTResourceManager::get()->createScene("demo.ptscn");
 
     mainLoop();
 

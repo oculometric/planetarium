@@ -1,5 +1,7 @@
 #include "resource_manager.h"
 
+#include <fstream>
+
 #include "debug.h"
 #include "scene.h"
 #include "buffer.h"
@@ -150,17 +152,37 @@ PTSwapchain* PTResourceManager::createSwapchain(VkSurfaceKHR surface, int window
     return sc;
 }
 
-PTScene* PTResourceManager::createScene()
+PTScene* PTResourceManager::createScene(string file_name, bool force_duplicate)
 {
-    PTScene* scene = new PTScene();
-    resources.emplace("scene-" + to_string((size_t)scene), (PTResource*)scene);
+    string identifier = "scene-" + file_name;
+    
+    PTScene* scene = nullptr;
+    if (!force_duplicate)
+        scene = tryGetExistingResource<PTScene>(identifier);
+    if (scene == nullptr)
+    {
+        ifstream file(file_name, ios::ate);
+        if (!file.is_open())
+            return nullptr;
+
+        size_t size = file.tellg();
+        string scene_text;
+        scene_text.resize(size, ' ');
+        file.seekg(0);
+        file.read(scene_text.data(), size);
+
+        scene = new PTScene();
+        PTDeserialiser::deserialiseScene(scene, scene_text);
+
+        resources.emplace(identifier, scene);
+    }
 
     scene->addReferencer();
 
     return scene;
 }
 
-PTResource* PTResourceManager::createGeneric(std::string type, std::vector<PTDeserialiser::Argument> args)
+PTResource* PTResourceManager::createGeneric(string type, vector<PTDeserialiser::Argument> args)
 {
     if (type == "mesh")
     {

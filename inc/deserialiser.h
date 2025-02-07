@@ -184,7 +184,7 @@ public:
     static std::vector<Token> prune(const std::vector<Token>& tokens);
     static std::pair<std::string, PTResource*> deserialiseResourceDescriptor(const std::vector<Token>& tokens, size_t& first_token, PTScene* scene, const std::string& content);
     static PTNode* deserialiseObject(const std::vector<Token>& tokens, size_t& first_token, PTScene* scene, const std::string& content);
-    static PTScene* deserialiseScene(const std::string& content);
+    static void deserialiseScene(PTScene* scene, const std::string& content);
 
 private:
     static inline TokenType getType(const char c);

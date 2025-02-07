@@ -457,17 +457,17 @@ PTNode* PTDeserialiser::deserialiseObject(const std::vector<Token>& tokens, size
     return node;
 }
 
-PTScene* PTDeserialiser::deserialiseScene(const std::string& content)
+void PTDeserialiser::deserialiseScene(PTScene* scene, const std::string& content)
 {
     vector<Token> tokens = prune(tokenise(content));
     
+    if (tokens.size() == 0) return;
+
     if (tokens.size() < 4)
         reportError("not enough tokens provided", 0, content);
 
     if (tokens[0].type != TokenType::TEXT)
         reportError("invalid first token", tokens[0].start_offset, content);
-
-    PTScene* scene = PTResourceManager::get()->createScene();
     
     size_t statement_first = 0;
     while (statement_first < tokens.size() - 1)
@@ -488,9 +488,7 @@ PTScene* PTDeserialiser::deserialiseScene(const std::string& content)
         statement_first++;
     }
 
-    // TODO: if any errors occur (INCLUDING PREVIOUS REPORTERRORS), destroy scene
-
-    return scene;
+    // TODO: if any errors occur (INCLUDING PREVIOUS REPORTERRORS), destroy scene? no actually! resource manager will do that
 }
 
 inline PTDeserialiser::TokenType PTDeserialiser::getType(const char c)
