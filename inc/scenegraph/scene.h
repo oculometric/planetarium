@@ -7,15 +7,14 @@
 #include "resource.h"
 #include "resource_manager.h"
 
-class PTScene : PTResource
+class PTScene : public PTResource
 {
     friend class PTResourceManager;
 private:
     std::map<std::string, PTResource*> referenced_resources;
     std::multimap<std::string, PTNode*> all_nodes;
-    // TODO: always create this. objects should be resources too (allocated via the resource manager, but there should be a scene instantiate function. also, should use a unified constructor and an arugment map for simplicity), so they can use the referencing system. also the scene references the objects
-    PTNode* root = nullptr;
-    PTCameraNode* camera = nullptr;
+    PTNode* root;
+    PTCameraNode* camera;
 
 public:
     PTScene(PTScene& other) = delete;
@@ -24,8 +23,8 @@ public:
     PTScene operator=(PTScene&& other) = delete;
 
     template<class T>
-    T* instantiate(std::string name, std::map<std::string, PTDeserialiser::Argument> arguments = { });
-    // TODO: node destruction
+    T* instantiate(std::string name, PTDeserialiser::ArgMap arguments = { });
+    // TODO: node destruction (i.e. 'remove node from tree')
 
     template<class T>
     T* getResource(std::string identifier);
@@ -36,22 +35,19 @@ public:
     PTMatrix4f getCameraMatrix();
 
 private:
-// TODO: both of these
     PTScene();
 
-    // should automatically un-depend on all nodes, and all resources
     ~PTScene();
 };
 
 template<class T>
-inline T* PTScene::instantiate(std::string name, std::map<std::string, PTDeserialiser::Argument> arguments)
+inline T* PTScene::instantiate(std::string name, PTDeserialiser::ArgMap arguments)
 {
     static_assert(std::is_base_of<PTNode, T>::value, "T is not a PTNode type");
     PTNode* node = PTResourceManager::get()->createNode<T>(arguments);
     node->name = name;
-    node->removeReferencer();
-
     addDependency(node);
+    node->removeReferencer();
 
     all_nodes.emplace(name, node);
     

@@ -66,16 +66,16 @@ void PTApplication::start()
 
     demo_mesh = PTResourceManager::get()->createMesh("suzanne.obj");
 
+    // TODO: load scene from scene file instead
     const string resource_bit = R"(Resource(mesh, "suzanne.obj", 5, [1,2,3], {3, "text", -0.4}, "other") : 4a3b825f;)";
     const string object_bit = R"(
     Node() : parent
     {
         MeshNode(data = @4a3b825f, position = [0.5, 1.0, 0.0]) : mesh;
-        DirectionalLightNode() : sun_lamp;
+        //DirectionalLightNode() : sun_lamp;
     };
     )";
 
-    // TODO: init scene via deserialiser
     current_scene = PTDeserialiser::deserialiseScene(resource_bit + object_bit);
 
     mainLoop();
@@ -215,6 +215,8 @@ void PTApplication::deinitController()
 
 void PTApplication::deinitVulkan()
 {
+    current_scene->removeReferencer();
+
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
         vkDestroySemaphore(device, image_available_semaphores[i], nullptr);

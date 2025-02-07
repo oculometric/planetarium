@@ -7,6 +7,7 @@
 #include "vector3.h"
 #include "vector4.h"
 #include "matrix4.h"
+#include "resource_manager.h"
 
 using namespace std;
 
@@ -20,6 +21,25 @@ using namespace std;
 //     camera.far_clip = 10.0f;
 //     camera.near_clip = 0.1f;
 // }
+
+PTScene::PTScene()
+{
+    root = instantiate<PTNode>("root");
+    camera = nullptr;
+}
+
+PTScene::~PTScene()
+{
+    for (auto node : all_nodes)
+        removeDependency(node.second);
+    root = nullptr;
+    camera = nullptr;
+    all_nodes.clear();
+    
+    for (auto res : referenced_resources)
+        removeDependency(res.second);
+    referenced_resources.clear();
+}
 
 void PTScene::addResource(std::string identifier, PTResource* resource)
 {
@@ -61,5 +81,7 @@ void PTScene::update(float delta_time)
 
 PTMatrix4f PTScene::getCameraMatrix()
 {
+    if (camera == nullptr)
+        return PTMatrix4f();
     return camera->getProjectionMatrix() * ~camera->getTransform()->getLocalToWorld();
 }

@@ -8,6 +8,7 @@
 ## Engine Stuff
 
 - [ ] scene tree system with builder/deserialisation system (0)
+- [ ] actually implement deserialisers for camera and mesh
 - [ ] proper input handling from both keyboard and mouse (1)
 - [ ] object transform
 - [ ] UI system (use STUI to generate charbufs, then pass it into a shader maybe????)

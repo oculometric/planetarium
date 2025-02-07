@@ -44,7 +44,7 @@ public:
     PTSwapchain* createSwapchain(VkSurfaceKHR surface, int window_x, int window_y);
 
     template<class T>
-    T* createNode(std::map<std::string, PTDeserialiser::Argument> arguments);
+    T* createNode(PTDeserialiser::ArgMap arguments);
     PTScene* createScene();
 
     PTResource* createGeneric(std::string type, std::vector<PTDeserialiser::Argument> args);
@@ -62,7 +62,7 @@ private:
 };
 
 template<class T>
-inline T* PTResourceManager::createNode(std::map<std::string, PTDeserialiser::Argument> arguments)
+inline T* PTResourceManager::createNode(PTDeserialiser::ArgMap arguments)
 {
     static_assert(std::is_base_of<PTNode, T>::value, "T is not a PTNode type");
     T* node = new T(arguments);

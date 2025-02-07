@@ -8,17 +8,18 @@
 using namespace std;
 
 template <typename T>
-PTNode* instantiateNode(PTScene* scene, string name, map<string, PTDeserialiser::Argument> args)
+PTNode* instantiateNode(PTScene* scene, string name, PTDeserialiser::ArgMap args)
 {
     return (PTNode*)(scene->instantiate<T>(name, args));
 }
 
-typedef PTNode*(*PTNodeInstantiateFunc)(PTScene*, string, map<string, PTDeserialiser::Argument>);
+typedef PTNode*(*PTNodeInstantiateFunc)(PTScene*, string, PTDeserialiser::ArgMap);
 
 map<string, PTNodeInstantiateFunc> node_instantiators = 
 {
-    pair<string, PTNodeInstantiateFunc>("mesh", instantiateNode<PTMeshNode>),
-    pair<string, PTNodeInstantiateFunc>("camera", instantiateNode<PTCameraNode>)
+    pair<string, PTNodeInstantiateFunc>("Node", instantiateNode<PTNode>),
+    pair<string, PTNodeInstantiateFunc>("MeshNode", instantiateNode<PTMeshNode>),
+    pair<string, PTNodeInstantiateFunc>("CameraNode", instantiateNode<PTCameraNode>)
 };
 
 vector<PTDeserialiser::Token> PTDeserialiser::tokenise(const string& content)
@@ -433,7 +434,7 @@ PTNode* PTDeserialiser::deserialiseObject(const std::vector<Token>& tokens, size
     else
         arguments.push_back(current_argument);
 
-    map<string, Argument> initialiser_args;
+    PTDeserialiser::ArgMap initialiser_args;
     for (auto arg : arguments)
     {
         auto pr = compileNamedArgument(arg, scene, content);
@@ -442,6 +443,9 @@ PTNode* PTDeserialiser::deserialiseObject(const std::vector<Token>& tokens, size
 
     PTNodeInstantiateFunc ptr = node_instantiators[object_type];
     
+    if (ptr == nullptr)
+        reportError("invalid node type", tokens[first_token].start_offset, content);
+
     PTNode* node = ptr(scene, object_name, initialiser_args);
     
     // TODO: add sub nodes as children of this node
@@ -479,6 +483,7 @@ PTScene* PTDeserialiser::deserialiseScene(const std::string& content)
         {
             PTNode* node = deserialiseObject(tokens, statement_first, scene, content);
         }
+        statement_first++;
     }
 
     // TODO: if any errors occur (INCLUDING PREVIOUS REPORTERRORS), destroy scene

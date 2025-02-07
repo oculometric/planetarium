@@ -177,6 +177,8 @@ public:
         }
     };
 
+    typedef std::map<std::string, PTDeserialiser::Argument> ArgMap;
+
 public:
 	static std::vector<Token> tokenise(const std::string& content);
     static std::vector<Token> prune(const std::vector<Token>& tokens);
