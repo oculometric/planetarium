@@ -2,13 +2,13 @@
 
 ## Vulkan Stuff
 
-- [ ] object drawing system
 - [ ] implement proper shader config and reflection, and checking this when creating render passes
 - [ ] fix semaphore issue on windows
+- [ ] improve mesh draw call queueing system to allow for unlimited objects and choice of shader/render pass/pipeline
 
 ## Engine Stuff
 
-- [ ] proper input handling from both keyboard and mouse (1)
+- [ ] proper input handling from both keyboard and mouse (0)
 - [ ] object transform (quaternions, reverse param update, transformation functions)
 - [ ] UI system (use STUI to generate charbufs, then pass it into a shader maybe????)
 - [ ] object and vertex picking
@@ -60,3 +60,4 @@
 - [x] actually implement deserialisers for camera and mesh
 - [x] scene tree system with builder/deserialisation system (0)
 - [x] scene/transform parent-child system (0)
+- [x] object drawing system

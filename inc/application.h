@@ -26,7 +26,18 @@ struct TransformMatrices
 
 const uint32_t MAX_FRAMES_IN_FLIGHT = 2;
 
+// TODO: improve drawing system to allow objects to actually specify their shader/uniform data etc
+struct PTDrawRequest
+{
+    PTMesh* mesh = nullptr;
+    //PTShader* shader = nullptr;
+    //PTPipeline* pipeline = nullptr;
+    //PTRenderPass* render_pass = nullptr;
+    //void* uniform_data = nullptr;
+};
+
 class PTScene;
+class PTNode;
 
 class PTApplication
 {
@@ -67,6 +78,8 @@ private:
     PTPipeline* debug_pipeline = nullptr;
     PTShader* demo_shader = nullptr;
 
+    std::multimap<PTNode*, PTDrawRequest> draw_queue;
+
     std::vector<PTBuffer*> uniform_buffers;
 
     PTImage* depth_image = nullptr;
@@ -104,6 +117,10 @@ public:
 
     VkCommandBuffer beginTransientCommands();
     void endTransientCommands(VkCommandBuffer transient_command_buffer);
+    
+    void addDrawRequest(PTDrawRequest request, PTNode* owner);
+    void removeAllDrawRequests(PTNode* owner);
+
     inline float getAspectRatio() const { return (float)swapchain->getExtent().width / (float)swapchain->getExtent().height; }
 
 private:
