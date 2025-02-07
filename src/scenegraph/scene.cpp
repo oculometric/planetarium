@@ -39,6 +39,8 @@ void PTScene::addResource(std::string identifier, PTResource* resource)
 // TODO: fix all this. the scene shouldn't have functionality, the scene should only manage the nodes and resources. the *nodes* should be the ones with functionality, which the user can override
 void PTScene::update(float delta_time)
 {
+    for (auto pair : all_nodes)
+        pair.second->process(delta_time);
     //PTInputManager* manager = PTApplication::get()->getInputManager();
 
     //PTApplication::get()->debug_mode = manager->getKeyState('D').action == 1;
@@ -68,9 +70,9 @@ void PTScene::update(float delta_time)
     //debugSetSceneProperty("camera asp", to_string(camera.aspect_ratio));
 }
 
-PTMatrix4f PTScene::getCameraMatrix()
+PTMatrix4f PTScene::getCameraMatrix(float aspect_ratio)
 {
     if (camera == nullptr)
         return PTMatrix4f();
-    return camera->getProjectionMatrix() * ~camera->getTransform()->getLocalToWorld();
+    return camera->getProjectionMatrix(aspect_ratio) * ~camera->getTransform()->getLocalToWorld();
 }

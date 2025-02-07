@@ -12,8 +12,8 @@ class PTScene : public PTResource
 private:
     std::map<std::string, PTResource*> referenced_resources;
     std::multimap<std::string, PTNode*> all_nodes;
-    PTNode* root;
-    PTCameraNode* camera;
+    PTNode* root = nullptr;
+    PTCameraNode* camera = nullptr;
 
 public:
     PTScene(PTScene& other) = delete;
@@ -29,9 +29,9 @@ public:
     T* getResource(std::string identifier);
     void addResource(std::string identifier, PTResource* resource);
 
-    virtual void update(float delta_time);
+    void update(float delta_time);
 
-    PTMatrix4f getCameraMatrix();
+    PTMatrix4f getCameraMatrix(float aspect_ratio);
 
 private:
     PTScene();
@@ -50,7 +50,11 @@ inline T* PTScene::instantiate(std::string name, PTDeserialiser::ArgMap argument
 
     all_nodes.emplace(name, node);
     
-    // TODO: parent to root
+    if (root != nullptr)
+        node->getTransform()->setParent(root->getTransform());
+    
+    if (std::is_base_of<PTCameraNode, T>::value)
+        camera = (PTCameraNode*)node;
 
     return (T*)node;
 }

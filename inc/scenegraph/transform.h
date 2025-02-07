@@ -4,22 +4,29 @@
 #include "vector3.h"
 #include "matrix4.h"
 #include "quaternion.h"
+#include "vector"
+
+class PTNode;
 
 class PTTransform
 {
 private:
     PTVector3f local_position{ 0, 0, 0 };
-    PTQuaternion local_rotation{ 1, 0, 0, 0 }; // TODO: quaternion class/library
+    PTQuaternion local_rotation{ 1, 0, 0, 0 };
     PTVector3f local_scale{ 1, 1, 1 };
 
     PTMatrix4f local_to_parent;
     PTMatrix4f local_to_world;
 
+    PTNode* node = nullptr;
+
     PTTransform* parent = nullptr;
+    std::vector<PTTransform*> children;
 
 public:
-    inline PTTransform(PTVector3f position = { 0, 0, 0 }, PTQuaternion rotation = { 1, 0, 0, 0 }, PTVector3f scale = { 1, 1, 1 }) : local_position(position), local_rotation(rotation), local_scale(scale)
+    inline PTTransform(PTNode* _node, PTVector3f position = { 0, 0, 0 }, PTQuaternion rotation = { 1, 0, 0, 0 }, PTVector3f scale = { 1, 1, 1 }) : local_position(position), local_rotation(rotation), local_scale(scale)
     {
+        node = _node;
         updateLocalFromParams();
         updateWorldFromLocal();
     }
@@ -38,7 +45,10 @@ public:
     inline PTMatrix4f getLocalToWorld() { return local_to_world; }
 
     // TODO: transform functions
-    // TODO: child/parent system
+    
+    void setParent(PTTransform* new_parent, bool preserve_world_transform = false);
+	inline PTTransform* getParent() { return parent; }
+	inline std::vector<PTTransform*> getChildren() { return children; }
     
 private:
     // TODO: update functions
@@ -46,5 +56,5 @@ private:
     void updateParamsFromLocal();
     void updateWorldFromLocal();
     void updateLocalFromWorld();
-
+    void updateChildren();
 };

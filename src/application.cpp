@@ -74,6 +74,7 @@ void PTApplication::start()
         MeshNode(data = @4a3b825f, position = [0.5, 1.0, 0.0]) : mesh;
         //DirectionalLightNode() : sun_lamp;
     };
+    CameraNode(position = [2, 0, 5]);
     )";
 
     current_scene = PTDeserialiser::deserialiseScene(resource_bit + object_bit);
@@ -775,19 +776,14 @@ void PTApplication::endTransientCommands(VkCommandBuffer transient_command_buffe
 void PTApplication::updateUniformBuffers(uint32_t frame_index)
 {
     TransformMatrices transform;
-    current_scene->getCameraMatrix().getColumnMajor(transform.world_to_clip);
+    PTMatrix4f matrix = current_scene->getCameraMatrix((float)width / (float)height);
+    matrix.getColumnMajor(transform.world_to_clip);
     PTMatrix4f().getColumnMajor(transform.model_to_world);
 
-    debugSetSceneProperty("w2c r0", to_string(current_scene->getCameraMatrix().row0()));
-    debugSetSceneProperty("w2c r1", to_string(current_scene->getCameraMatrix().row1()));
-    debugSetSceneProperty("w2c r2", to_string(current_scene->getCameraMatrix().row2()));
-    debugSetSceneProperty("w2c r3", to_string(current_scene->getCameraMatrix().row3()));
-
-    // cout << "blank matrix:" << endl;
-    // cout << OLMatrix4f().row0() << endl;;
-    // cout << OLMatrix4f().row1() << endl;;
-    // cout << OLMatrix4f().row2() << endl;;
-    // cout << OLMatrix4f().row3() << endl;;
+    debugSetSceneProperty("w2c r0", to_string(matrix.row0()));
+    debugSetSceneProperty("w2c r1", to_string(matrix.row1()));
+    debugSetSceneProperty("w2c r2", to_string(matrix.row2()));
+    debugSetSceneProperty("w2c r3", to_string(matrix.row3()));
 
     memcpy(uniform_buffers[frame_index]->getMappedMemory(), &transform, sizeof(TransformMatrices));
 }

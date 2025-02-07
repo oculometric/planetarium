@@ -4,6 +4,9 @@
 #include "resource.h"
 #include "deserialiser.h"
 
+class PTApplication;
+class PTScene;
+
 class PTNode : public PTResource
 {
 	friend class PTResourceManager;
@@ -11,18 +14,19 @@ public:
 	std::string name = "Node";
 
 private:
-	PTTransform transform;
+	PTTransform transform = PTTransform(this);
 
 public:
 	inline PTTransform* getTransform() { return &transform; }
 	PTScene* getScene();
-
-	// TODO: parent-child system, where parent nodes depend on child nodes
+	PTApplication* getApplication();
 
 	PTNode(PTNode& other) = delete;
     PTNode(PTNode&& other) = delete;
     PTNode operator=(PTNode& other) = delete;
     PTNode operator=(PTNode&& other) = delete;
+
+	inline virtual void process(float delta_time) { }
 
 protected:
 	// called to initialise the node with default values

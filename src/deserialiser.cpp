@@ -448,7 +448,9 @@ PTNode* PTDeserialiser::deserialiseObject(const std::vector<Token>& tokens, size
 
     PTNode* node = ptr(scene, object_name, initialiser_args);
     
-    // TODO: add sub nodes as children of this node
+    for (PTNode* child : children)
+        child->getTransform()->setParent(node->getTransform());
+
     // TODO: if any errors occur (INCLUDING PREVIOUS REPORTERRORS), destroy child nodes in scene
 
     first_token = semicolon;
@@ -481,7 +483,7 @@ PTScene* PTDeserialiser::deserialiseScene(const std::string& content)
         }
         else
         {
-            PTNode* node = deserialiseObject(tokens, statement_first, scene, content);
+            deserialiseObject(tokens, statement_first, scene, content);
         }
         statement_first++;
     }

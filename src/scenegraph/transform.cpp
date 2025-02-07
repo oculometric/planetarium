@@ -1,5 +1,23 @@
 #include "transform.h"
 
+void PTTransform::setParent(PTTransform* new_parent, bool preserve_world_transform)
+{
+    // TODO: support preserving the world transform
+
+    if (parent != nullptr)
+    {
+        auto find = parent->children.begin();
+        while (*find != this)
+            find++;
+        parent->children.erase(find);
+    }
+
+    parent = new_parent;
+    parent->children.push_back(this);
+    
+    updateWorldFromLocal();
+}
+
 void PTTransform::updateLocalFromParams()
 {
     PTMatrix4f translation
@@ -47,6 +65,8 @@ void PTTransform::updateLocalFromParams()
     };
 
     local_to_parent = translation * rotation_z * rotation_x * rotation_y * stretch;
+
+    updateChildren();
 }
 
 void PTTransform::updateWorldFromLocal()
@@ -54,5 +74,13 @@ void PTTransform::updateWorldFromLocal()
     if (parent == nullptr)
         local_to_world = local_to_parent;
     else
-        local_to_world = parent->local_to_world * local_to_parent;
+        local_to_world = parent->local_to_world * local_to_parent;    
+}
+
+void PTTransform::updateChildren()
+{
+    for (PTTransform* child : children)
+    {
+        child->updateWorldFromLocal();
+    }
 }

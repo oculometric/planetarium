@@ -8,6 +8,7 @@
 
 class PTCameraNode : public PTNode
 {
+	friend class PTResourceManager;
 public:
 	float near_clip = 0.1f;
 	float far_clip = 100.0f;

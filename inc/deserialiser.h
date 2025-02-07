@@ -211,41 +211,69 @@ inline bool hasArg(PTDeserialiser::ArgMap args, std::string name, PTDeserialiser
 inline bool getArg(PTDeserialiser::ArgMap args, std::string name, std::string& out)
 {
     if (hasArg(args, name, PTDeserialiser::ArgType::STRING_ARG))
+    {
         out = args[name].s_val;
+        return true;
+    }
+    return false;
 }
 
 inline bool getArg(PTDeserialiser::ArgMap args, std::string name, int& out)
 {
     if (hasArg(args, name, PTDeserialiser::ArgType::INT_ARG))
+    {
         out = args[name].i_val;
+        return true;
+    }
+    return false;
 }
 
 inline bool getArg(PTDeserialiser::ArgMap args, std::string name, float& out)
 {
     if (hasArg(args, name, PTDeserialiser::ArgType::FLOAT_ARG))
+    {
         out = args[name].f_val;
+        return true;
+    }
+    return false;
 }
 
 inline bool getArg(PTDeserialiser::ArgMap args, std::string name, PTVector2f& out)
 {
     if (hasArg(args, name, PTDeserialiser::ArgType::VECTOR2_ARG))
+    {
         out = args[name].v2_val;
+        return true;
+    }
+    return false;
 }
 
 inline bool getArg(PTDeserialiser::ArgMap args, std::string name, PTVector3f& out)
 {
     if (hasArg(args, name, PTDeserialiser::ArgType::VECTOR3_ARG))
+    {
         out = args[name].v3_val;
+        return true;
+    }
+    return false;
 }
 
 inline bool getArg(PTDeserialiser::ArgMap args, std::string name, PTVector4f& out)
 {
     if (hasArg(args, name, PTDeserialiser::ArgType::VECTOR4_ARG))
+    {
         out = args[name].v4_val;
+        return true;
+    }
+    return false;
 }
 
 inline bool getArg(PTDeserialiser::ArgMap args, std::string name, PTResource*& out)
 {
     if (hasArg(args, name, PTDeserialiser::ArgType::RESOURCE_ARG))
+    {
         out = args[name].r_val;
+        return true;
+    }
+    return false;
 }

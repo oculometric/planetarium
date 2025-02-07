@@ -235,7 +235,7 @@ void PTDebugManager::setFrametime(float delta, int number)
 void PTDebugManager::showExitButton()
 {
     VerticalBox* vb = (VerticalBox*)((main_page->getRoot()->getAllChildren())[0]->getAllChildren()[0]);
-    Label* l = (Label*)(vb->children[3]);
+    //Label* l = (Label*)(vb->children[3]);
     vb->children[3] = new Button("press enter to exit", exitButtonCallback);
     main_page->focusable_component_sequence.push_back(vb->children[3]);
     main_page->setFocusIndex(main_page->focusable_component_sequence.size() - 1);
@@ -246,7 +246,7 @@ void PTDebugManager::renderLoop()
 {
     while (!should_halt)
     {
-        bool dirty = main_page->checkInput();
+        main_page->checkInput();
 
         main_page->render();
 
