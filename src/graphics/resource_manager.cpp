@@ -1,6 +1,12 @@
 #include "resource_manager.h"
 
 #include "debug.h"
+#include "scene.h"
+#include "buffer.h"
+#include "image.h"
+#include "pipeline.h"
+#include "shader.h"
+#include "swapchain.h"
 
 using namespace std;
 
@@ -144,6 +150,16 @@ PTSwapchain* PTResourceManager::createSwapchain(VkSurfaceKHR surface, int window
     return sc;
 }
 
+PTScene* PTResourceManager::createScene()
+{
+    PTScene* scene = new PTScene();
+    resources.emplace("scene-" + to_string((size_t)scene), (PTResource*)scene);
+
+    scene->addReferencer();
+
+    return scene;
+}
+
 PTResource* PTResourceManager::createGeneric(std::string type, std::vector<PTDeserialiser::Argument> args)
 {
     if (type == "mesh")
@@ -164,6 +180,7 @@ PTResource* PTResourceManager::createGeneric(std::string type, std::vector<PTDes
 
         return createImage(args[0].s_val);
     }
+    // TODO: add other resource types as we go
 
     return nullptr;
 }

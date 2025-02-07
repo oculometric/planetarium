@@ -84,6 +84,18 @@
     <ClInclude Include="inc\deserialiser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="inc\scenegraph\mesh_node.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\scenegraph\node.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\scenegraph\transform.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\math\quaternion.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\application.cpp">

@@ -38,39 +38,39 @@ private:
     int height;
     bool window_resized = false;
 
-    GLFWwindow* window;
-    VkInstance instance;
+    GLFWwindow* window = nullptr;
+    VkInstance instance = VK_NULL_HANDLE;
 #ifndef NDEBUG
-    VkDebugUtilsMessengerEXT debug_messenger;
+    VkDebugUtilsMessengerEXT debug_messenger = VK_NULL_HANDLE;
 #endif
-    VkSurfaceKHR surface;
+    VkSurfaceKHR surface = VK_NULL_HANDLE;
 
     PTPhysicalDevice physical_device;
-    VkDevice device;
+    VkDevice device = VK_NULL_HANDLE;
 
-    PTSwapchain* swapchain;
+    PTSwapchain* swapchain = nullptr;
     std::vector<VkFramebuffer> framebuffers;
 
     std::map<PTQueueFamily, VkQueue> queues;
 
-    VkCommandPool command_pool;
+    VkCommandPool command_pool = VK_NULL_HANDLE;
     std::vector<VkCommandBuffer> command_buffers;
-    VkDescriptorPool descriptor_pool;
+    VkDescriptorPool descriptor_pool = VK_NULL_HANDLE;
     std::vector<VkDescriptorSet> descriptor_sets;
     
     std::vector<VkSemaphore> image_available_semaphores;
     std::vector<VkSemaphore> render_finished_semaphores;
     std::vector<VkFence> in_flight_fences;
 
-    PTRenderPass* demo_render_pass;
-    PTPipeline* demo_pipeline;
-    PTPipeline* debug_pipeline;
-    PTShader* demo_shader;
+    PTRenderPass* demo_render_pass = nullptr;
+    PTPipeline* demo_pipeline = nullptr;
+    PTPipeline* debug_pipeline = nullptr;
+    PTShader* demo_shader = nullptr;
 
     std::vector<PTBuffer*> uniform_buffers;
 
-    PTImage* depth_image;
-    VkImageView depth_image_view;
+    PTImage* depth_image = nullptr;
+    VkImageView depth_image_view = VK_NULL_HANDLE;
 
     static constexpr char* required_device_extensions[1] =
     {
@@ -84,9 +84,9 @@ private:
 #endif
     uint32_t frame_time_running_mean_us;
 
-    PTInputManager* input_manager;
-    PTScene* current_scene;
-    PTMesh* demo_mesh;
+    PTInputManager* input_manager = nullptr;
+    PTScene* current_scene = nullptr;
+    PTMesh* demo_mesh = nullptr;
 public:
     PTApplication(unsigned int _width, unsigned int _height);
 

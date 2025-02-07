@@ -36,12 +36,16 @@
     <ClInclude Include="inc\input.h" />
     <ClInclude Include="inc\math\matrix3.h" />
     <ClInclude Include="inc\math\matrix4.h" />
+    <ClInclude Include="inc\math\quaternion.h" />
     <ClInclude Include="inc\math\vector2.h" />
     <ClInclude Include="inc\math\vector3.h" />
     <ClInclude Include="inc\math\vector4.h" />
     <ClInclude Include="inc\scenegraph\camera.h" />
+    <ClInclude Include="inc\scenegraph\mesh_node.h" />
+    <ClInclude Include="inc\scenegraph\node.h" />
     <ClInclude Include="inc\scenegraph\object.h" />
     <ClInclude Include="inc\scenegraph\scene.h" />
+    <ClInclude Include="inc\scenegraph\transform.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\application.cpp" />

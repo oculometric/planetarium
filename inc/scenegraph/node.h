@@ -7,6 +7,9 @@
 class PTNode : public PTResource
 {
 	friend class PTResourceManager;
+public:
+	std::string name = "Node";
+
 private:
 	PTTransform* transform = nullptr;
 
@@ -30,7 +33,7 @@ protected:
 	// called to destroy the node. referenced resources should be removed as dependencies (decrementing the resource's reference count)
 	inline virtual void cleanUp() { };
 
-private:
+	// TODO: how do i make these private?
 	inline PTNode() { transform = new PTTransform(); create(); }
 	// TODO: will this call the child class implementation of create and deserialise???
 	inline PTNode(std::map<std::string, PTDeserialiser::Argument> arguments) { transform = new PTTransform(); create(); deserialise(arguments); }

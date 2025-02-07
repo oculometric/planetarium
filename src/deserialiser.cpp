@@ -10,7 +10,7 @@ using namespace std;
 template <typename T>
 PTNode* instantiateNode(PTScene* scene, string name, map<string, PTDeserialiser::Argument> args)
 {
-    return scene->instantiate<T>(name, args);
+    return (PTNode*)(scene->instantiate<T>(name, args));
 }
 
 typedef PTNode*(*PTNodeInstantiateFunc)(PTScene*, string, map<string, PTDeserialiser::Argument>);
@@ -286,7 +286,6 @@ pair<string, PTResource*> PTDeserialiser::deserialiseResourceDescriptor(const st
         initialiser_args.push_back(compileArgument(arg, scene, content));
 
     PTResource* resource = PTResourceManager::get()->createGeneric(resource_type, initialiser_args);
-    resource->removeReferencer();
 
     first_token = semicolon;
     return pair<string, PTResource*>{ name, resource };
@@ -446,9 +445,45 @@ PTNode* PTDeserialiser::deserialiseObject(const std::vector<Token>& tokens, size
     PTNode* node = ptr(scene, object_name, initialiser_args);
     
     // TODO: add sub nodes as children of this node
+    // TODO: if any errors occur (INCLUDING PREVIOUS REPORTERRORS), destroy child nodes in scene
 
     first_token = semicolon;
     return node;
+}
+
+PTScene* PTDeserialiser::deserialiseScene(const std::string& content)
+{
+    vector<Token> tokens = prune(tokenise(content));
+    
+    if (tokens.size() < 4)
+        reportError("not enough tokens provided", 0, content);
+
+    if (tokens[0].type != TokenType::TEXT)
+        reportError("invalid first token", tokens[0].start_offset, content);
+
+    PTScene* scene = PTResourceManager::get()->createScene();
+    
+    size_t statement_first = 0;
+    while (statement_first < tokens.size() - 1)
+    {
+        if (tokens[statement_first].type != TokenType::TEXT)
+            reportError("invalid token", tokens[statement_first].start_offset, content);
+        
+        if (tokens[statement_first].s_value == "Resource")
+        {
+            auto res = deserialiseResourceDescriptor(tokens, statement_first, scene, content);
+            scene->addResource(res.first, res.second);
+            res.second->removeReferencer();
+        }
+        else
+        {
+            PTNode* node = deserialiseObject(tokens, statement_first, scene, content);
+        }
+    }
+
+    // TODO: if any errors occur (INCLUDING PREVIOUS REPORTERRORS), destroy scene
+
+    return scene;
 }
 
 inline PTDeserialiser::TokenType PTDeserialiser::getType(const char c)
@@ -504,13 +539,13 @@ void PTDeserialiser::reportError(const string err, size_t off, const string& str
     {
         size_t find = str.find('\n', extract_start);
         if (find >= off) break;
-        extract_start = find + 1;
+        extract_start = static_cast<int32_t>(find + 1);
     }
     size_t find = str.find('\n', off);
     if (find != string::npos)
     {
         if ((int32_t)find < extract_end)
-            extract_end = find;
+            extract_end = static_cast<int32_t>(find);
     }
     string extract = str.substr(extract_start, extract_end - extract_start);
 
@@ -590,9 +625,10 @@ PTDeserialiser::Argument PTDeserialiser::compileArgument(const std::vector<Token
 
     if (tokens.empty())
         reportError("empty argument passed to compiler", 0, content);
-    
+
     if (tokens.size() == 1)
     {
+        PTResource* res = nullptr;
         Token t = tokens[0];
         switch (t.type)
         {
@@ -611,7 +647,7 @@ PTDeserialiser::Argument PTDeserialiser::compileArgument(const std::vector<Token
             arg.type = (ArgType)t.type;
             break;
         case TAG:
-            PTResource* res = scene->getResource<PTResource>(t.s_value);
+            res = scene->getResource<PTResource>(t.s_value);
             if (res == nullptr)
                 reportError("reference to undefined resource", t.start_offset, content);
             arg.r_val = res;
@@ -657,7 +693,7 @@ PTDeserialiser::TokenType PTDeserialiser::decodeVectorToken(const std::string to
     while (i != string::npos || set)
     {
         set = false;
-        int i_old = ++i;
+        size_t i_old = ++i;
         i = token.find(',', i + 1);
         axes.push_back(token.substr(i_old,i_old - i));
     }

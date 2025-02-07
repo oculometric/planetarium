@@ -74,17 +74,9 @@ void PTApplication::start()
         DirectionalLightNode() : sun_lamp;
     };
     )";
-    
-    auto tokens = PTDeserialiser::prune(PTDeserialiser::tokenise(resource_bit));
-    size_t start = 0;
-    std::map<std::string, PTResource*> resources;
-    pair<string, PTResource*> res = PTDeserialiser::deserialiseResourceDescriptor(tokens, start, resources, resource_bit);
-    // TODO: check if the resource name is occupied
-    resources[res.first] = res.second;
-    tokens = PTDeserialiser::prune(PTDeserialiser::tokenise(object_bit));
-    start = 0;
-    // TODO: instead of passing in just the resources, pass in a whole scene, and tell it to instantiate objects instead (and use its resource registry)
-    auto obj = PTDeserialiser::deserialiseObject(tokens, start, resources, object_bit);
+
+    // TODO: init scene via deserialiser
+    current_scene = PTDeserialiser::deserialiseScene(resource_bit + object_bit);
 
     mainLoop();
 
@@ -190,8 +182,6 @@ void PTApplication::initController()
 
 void PTApplication::mainLoop()
 {
-    current_scene = new PTScene();
-
     int frame_total_number = 0;
     uint32_t frame_index = 0;
     last_frame_start = chrono::high_resolution_clock::now();
@@ -203,7 +193,7 @@ void PTApplication::mainLoop()
         auto now = chrono::high_resolution_clock::now();
         chrono::duration<float> frame_time = now - last_frame_start;
 
-        frame_time_running_mean_us = (frame_time_running_mean_us + (chrono::duration_cast<chrono::microseconds>(frame_time).count())) / 2;
+        frame_time_running_mean_us = static_cast<uint32_t>((frame_time_running_mean_us + (chrono::duration_cast<chrono::microseconds>(frame_time).count())) / 2);
 
         debugFrametiming(frame_time_running_mean_us / 1000.0f, frame_total_number);        
         last_frame_start = now;
@@ -418,7 +408,7 @@ void PTApplication::initLogicalDevice(const vector<VkDeviceQueueCreateInfo>& que
     device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     debugLog("        enabling " + to_string(queue_create_infos.size()) + " device queues");
     device_create_info.pQueueCreateInfos = queue_create_infos.data();
-    device_create_info.queueCreateInfoCount = queue_create_infos.size();
+    device_create_info.queueCreateInfoCount = static_cast<uint32_t>(queue_create_infos.size());
 
     device_create_info.pEnabledFeatures = &features;
 
@@ -429,7 +419,7 @@ void PTApplication::initLogicalDevice(const vector<VkDeviceQueueCreateInfo>& que
     device_create_info.enabledLayerCount = 0;
 #else
     debugLog("        enabling " + to_string(layers.size()) + " layers");
-    device_create_info.enabledLayerCount = layers.size();
+    device_create_info.enabledLayerCount = static_cast<uint32_t>(layers.size());
     device_create_info.ppEnabledLayerNames = layers.data();
 #endif
 
@@ -457,7 +447,7 @@ void PTApplication::createFramebuffers(const VkRenderPass render_pass)
 
     framebuffers.resize(swapchain->getImageCount());
 
-    for (size_t i = 0; i < swapchain->getImageCount(); i++)
+    for (uint32_t i = 0; i < swapchain->getImageCount(); i++)
     {
         VkImageView attachments[] = { swapchain->getImageView(i), depth_image_view };
 

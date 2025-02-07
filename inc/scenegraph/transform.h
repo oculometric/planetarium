@@ -2,7 +2,7 @@
 
 #include "vector4.h"
 #include "vector3.h"
-#include "matrix3.h"
+#include "matrix4.h"
 #include "quaternion.h"
 
 class PTTransform
@@ -12,8 +12,8 @@ private:
     PTQuaternion local_rotation{ 1, 0, 0, 0 }; // TODO: quaternion class/library
     PTVector3f local_scale{ 1, 1, 1 };
 
-    PTMatrix3f local_to_parent;
-    PTMatrix3f local_to_world;
+    PTMatrix4f local_to_parent;
+    PTMatrix4f local_to_world;
 
     PTTransform* parent = nullptr;
 
@@ -34,8 +34,8 @@ public:
     inline void setLocalScale(PTVector3f scale) { local_scale = scale; updateLocalFromParams(); updateWorldFromLocal(); }
     // TODO: setters, world space
 
-    inline PTMatrix3f getLocalToParent() { return local_to_parent; }
-    inline PTMatrix3f getLocalToWorld() { return local_to_world; }
+    inline PTMatrix4f getLocalToParent() { return local_to_parent; }
+    inline PTMatrix4f getLocalToWorld() { return local_to_world; }
 
     // TODO: transform functions
     // TODO: child/parent system

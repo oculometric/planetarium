@@ -5,15 +5,20 @@
 #include <stdexcept>
 
 #include "resource.h"
-#include "buffer.h"
-#include "image.h"
-#include "mesh.h"
-#include "pipeline.h"
-#include "render_pass.h"
-#include "shader.h"
-#include "swapchain.h"
+#include "physical_device.h"
 #include "node.h"
 #include "deserialiser.h"
+#include "mesh.h"
+#include "render_pass.h"
+
+class PTScene;
+class PTBuffer;
+class PTImage;
+class PTMesh;
+class PTPipeline;
+class PTRenderPass;
+class PTShader;
+class PTSwapchain;
 
 class PTResourceManager
 {
@@ -39,7 +44,8 @@ public:
     PTSwapchain* createSwapchain(VkSurfaceKHR surface, int window_x, int window_y);
 
     template<class T>
-    PTNode* createNode(std::map<std::string, PTDeserialiser::Argument> arguments);
+    T* createNode(std::map<std::string, PTDeserialiser::Argument> arguments);
+    PTScene* createScene();
 
     PTResource* createGeneric(std::string type, std::vector<PTDeserialiser::Argument> args);
 
@@ -56,12 +62,12 @@ private:
 };
 
 template<class T>
-inline PTNode* PTResourceManager::createNode(std::map<std::string, PTDeserialiser::Argument> arguments)
+inline T* PTResourceManager::createNode(std::map<std::string, PTDeserialiser::Argument> arguments)
 {
     static_assert(std::is_base_of<PTNode, T>::value, "T is not a PTNode type");
     T* node = new T(arguments);
 
-    resources.emplace(to_string(node), node);
+    resources.emplace("node-" + std::to_string((size_t)node), node);
     node->addReferencer();
 
     return node;

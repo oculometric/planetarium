@@ -2,7 +2,9 @@
 
 #include "node.h"
 
-class PTMeshNode : PTNode
+class PTMeshNode : public PTNode
 {
+public:
+    using PTNode::PTNode;
     // TODO:
 };
