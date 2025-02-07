@@ -11,17 +11,6 @@
 
 using namespace std;
 
-// PTScene::PTScene()
-// {
-//     camera.local_position = PTVector3f{ 0, 0, 1 };
-//     camera.local_rotation = PTVector3f{ 0, 0, 0 };
-//     camera.local_scale = PTVector3f{ 1, 1, 1 };
-//     camera.horizontal_fov = 90.0f;
-//     camera.aspect_ratio = 4.0f / 3.0f;
-//     camera.far_clip = 10.0f;
-//     camera.near_clip = 0.1f;
-// }
-
 PTScene::PTScene()
 {
     root = instantiate<PTNode>("root");

@@ -5,7 +5,7 @@
 
 PTMeshNode::PTMeshNode(PTDeserialiser::ArgMap arguments) : PTNode(arguments)
 {
-    if (arguments.contains("data") && arguments["data"].type == PTDeserialiser::ArgType::RESOURCE_ARG)
+    if (hasArg(arguments, "data", PTDeserialiser::ArgType::RESOURCE_ARG))
     {
         mesh_data = (PTMesh*)arguments["data"].r_val;
         addDependency(mesh_data);

@@ -3,8 +3,7 @@
 #include <map>
 
 #include "node.h"
-#include "camera.h"
-#include "resource.h"
+#include "camera_node.h"
 #include "resource_manager.h"
 
 class PTScene : public PTResource

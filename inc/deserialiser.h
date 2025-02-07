@@ -202,3 +202,50 @@ private:
 
     static TokenType decodeVectorToken(const std::string token, PTVector4f& vector_out, size_t offset, const std::string& content);
 };
+
+inline bool hasArg(PTDeserialiser::ArgMap args, std::string name, PTDeserialiser::ArgType type)
+{
+    return args.contains(name) && args[name].type == type;
+}
+
+inline bool getArg(PTDeserialiser::ArgMap args, std::string name, std::string& out)
+{
+    if (hasArg(args, name, PTDeserialiser::ArgType::STRING_ARG))
+        out = args[name].s_val;
+}
+
+inline bool getArg(PTDeserialiser::ArgMap args, std::string name, int& out)
+{
+    if (hasArg(args, name, PTDeserialiser::ArgType::INT_ARG))
+        out = args[name].i_val;
+}
+
+inline bool getArg(PTDeserialiser::ArgMap args, std::string name, float& out)
+{
+    if (hasArg(args, name, PTDeserialiser::ArgType::FLOAT_ARG))
+        out = args[name].f_val;
+}
+
+inline bool getArg(PTDeserialiser::ArgMap args, std::string name, PTVector2f& out)
+{
+    if (hasArg(args, name, PTDeserialiser::ArgType::VECTOR2_ARG))
+        out = args[name].v2_val;
+}
+
+inline bool getArg(PTDeserialiser::ArgMap args, std::string name, PTVector3f& out)
+{
+    if (hasArg(args, name, PTDeserialiser::ArgType::VECTOR3_ARG))
+        out = args[name].v3_val;
+}
+
+inline bool getArg(PTDeserialiser::ArgMap args, std::string name, PTVector4f& out)
+{
+    if (hasArg(args, name, PTDeserialiser::ArgType::VECTOR4_ARG))
+        out = args[name].v4_val;
+}
+
+inline bool getArg(PTDeserialiser::ArgMap args, std::string name, PTResource*& out)
+{
+    if (hasArg(args, name, PTDeserialiser::ArgType::RESOURCE_ARG))
+        out = args[name].r_val;
+}

@@ -7,8 +7,7 @@
 
 ## Engine Stuff
 
-- [ ] scene tree system with builder/deserialisation system (0)
-- [ ] actually implement deserialisers for camera and mesh
+- [ ] scene/transform parent-child system (0)
 - [ ] proper input handling from both keyboard and mouse (1)
 - [ ] object transform
 - [ ] UI system (use STUI to generate charbufs, then pass it into a shader maybe????)
@@ -58,3 +57,5 @@
 - [x] clean up todos
 - [x] make Makefile respect header files [https://www.reddit.com/r/C_Programming/comments/xwhmup/is_there_a_good_way_to_automatically_handle/]
 - [x] replace oculib
+- [x] actually implement deserialisers for camera and mesh
+- [x] scene tree system with builder/deserialisation system (0)
