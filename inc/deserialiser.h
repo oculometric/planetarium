@@ -9,7 +9,7 @@
 #include "vector2.h"
 
 class PTResource;
-class PTObject;
+class PTNode;
 class PTScene;
 
 class PTDeserialiser
@@ -180,10 +180,10 @@ public:
 public:
 	static std::vector<Token> tokenise(const std::string& content);
     static std::vector<Token> prune(const std::vector<Token>& tokens);
-    // TODO: supply the scene instead of the map of resources
-    static std::pair<std::string, PTResource*> deserialiseResourceDescriptor(const std::vector<Token>& tokens, size_t& first_token, const std::map<std::string, PTResource*>& resources, const std::string& content);
-    static PTObject* deserialiseObject(const std::vector<Token>& tokens, size_t& first_token, const std::map<std::string, PTResource*>& resources, const std::string& content);
-    static PTScene* deserialiseScene(const std::vector<Token>& tokens, size_t& first_token, const std::string& content);
+    static std::pair<std::string, PTResource*> deserialiseResourceDescriptor(const std::vector<Token>& tokens, size_t& first_token, PTScene* scene, const std::string& content);
+    static PTNode* deserialiseObject(const std::vector<Token>& tokens, size_t& first_token, PTScene* scene, const std::string& content);
+    // TODO: create the scene, process resources (and add them via the function), process objects
+    static PTScene* deserialiseScene(const std::vector<Token>& tokens, const std::string& content);
 
 private:
     static inline TokenType getType(const char c);
@@ -196,8 +196,8 @@ private:
 
     static size_t findClosingBracket(const std::vector<Token>& tokens, size_t open_index, bool allow_semicolons, const std::string& content);
 
-    static Argument compileArgument(const std::vector<Token>& tokens, const std::map<std::string, PTResource*>& resources, const std::string& content);
-    static std::pair<std::string, Argument> compileNamedArgument(const std::vector<Token>& tokens, const std::map<std::string, PTResource*>& resources, const std::string& content);
+    static Argument compileArgument(const std::vector<Token>& tokens, PTScene* scene, const std::string& content);
+    static std::pair<std::string, Argument> compileNamedArgument(const std::vector<Token>& tokens, PTScene* scene, const std::string& content);
 
     static TokenType decodeVectorToken(const std::string token, PTVector4f& vector_out, size_t offset, const std::string& content);
 };

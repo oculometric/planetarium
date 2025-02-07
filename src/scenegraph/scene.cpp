@@ -10,15 +10,21 @@
 
 using namespace std;
 
-PTScene::PTScene()
+// PTScene::PTScene()
+// {
+//     camera.local_position = PTVector3f{ 0, 0, 1 };
+//     camera.local_rotation = PTVector3f{ 0, 0, 0 };
+//     camera.local_scale = PTVector3f{ 1, 1, 1 };
+//     camera.horizontal_fov = 90.0f;
+//     camera.aspect_ratio = 4.0f / 3.0f;
+//     camera.far_clip = 10.0f;
+//     camera.near_clip = 0.1f;
+// }
+
+void PTScene::addResource(std::string identifier, PTResource* resource)
 {
-    camera.local_position = PTVector3f{ 0, 0, 1 };
-    camera.local_rotation = PTVector3f{ 0, 0, 0 };
-    camera.local_scale = PTVector3f{ 1, 1, 1 };
-    camera.horizontal_fov = 90.0f;
-    camera.aspect_ratio = 4.0f / 3.0f;
-    camera.far_clip = 10.0f;
-    camera.near_clip = 0.1f;
+    referenced_resources[identifier] = resource;
+    addDependency(resource);
 }
 
 void PTScene::update(float delta_time)

@@ -52,7 +52,6 @@ public:
     static std::array<VkVertexInputAttributeDescription, 5> getVertexAttributeDescriptions();
 
 private:
-    // TODO: proper file reading (replace oculib)
     static void readFileToBuffers(std::string file_name, std::vector<PTVertex>& vertices, std::vector<uint16_t>& indices);
     void createVertexBuffers(const PTPhysicalDevice& physical_device, std::vector<PTVertex> vertices, std::vector<uint16_t> indices);
 };

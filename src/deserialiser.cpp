@@ -2,8 +2,24 @@
 
 #include "debug.h"
 #include "resource_manager.h"
+#include "scene.h"
+#include "mesh_node.h"
 
 using namespace std;
+
+template <typename T>
+PTNode* instantiateNode(PTScene* scene, string name, map<string, PTDeserialiser::Argument> args)
+{
+    return scene->instantiate<T>(name, args);
+}
+
+typedef PTNode*(*PTNodeInstantiateFunc)(PTScene*, string, map<string, PTDeserialiser::Argument>);
+
+map<string, PTNodeInstantiateFunc> node_instantiators = 
+{
+    pair<string, PTNodeInstantiateFunc>("mesh", instantiateNode<PTMeshNode>),
+    pair<string, PTNodeInstantiateFunc>("camera", instantiateNode<PTCameraNode>)
+};
 
 vector<PTDeserialiser::Token> PTDeserialiser::tokenise(const string& content)
 {
@@ -171,7 +187,7 @@ vector<PTDeserialiser::Token> PTDeserialiser::prune(const vector<Token>& tokens)
     return pruned;
 }
 
-pair<string, PTResource*> PTDeserialiser::deserialiseResourceDescriptor(const std::vector<Token>& tokens, size_t& first_token, const std::map<std::string, PTResource*>& resources, const std::string& content)
+pair<string, PTResource*> PTDeserialiser::deserialiseResourceDescriptor(const std::vector<Token>& tokens, size_t& first_token, PTScene* scene, const std::string& content)
 {
     if (tokens.size() <= first_token + 4)
     {
@@ -267,15 +283,16 @@ pair<string, PTResource*> PTDeserialiser::deserialiseResourceDescriptor(const st
 
     vector<Argument> initialiser_args;
     for (auto arg : arguments)
-        initialiser_args.push_back(compileArgument(arg, resources, content));
+        initialiser_args.push_back(compileArgument(arg, scene, content));
 
     PTResource* resource = PTResourceManager::get()->createGeneric(resource_type, initialiser_args);
+    resource->removeReferencer();
 
     first_token = semicolon;
     return pair<string, PTResource*>{ name, resource };
 }
 
-PTObject* PTDeserialiser::deserialiseObject(const std::vector<Token>& tokens, size_t& first_token, const std::map<std::string, PTResource*>& resources, const std::string& content)
+PTNode* PTDeserialiser::deserialiseObject(const std::vector<Token>& tokens, size_t& first_token, PTScene* scene, const std::string& content)
 {
     if (tokens.size() <= first_token + 4)
     {
@@ -308,7 +325,7 @@ PTObject* PTDeserialiser::deserialiseObject(const std::vector<Token>& tokens, si
         next_step += 2;
     }
     
-    vector<PTObject*> children;
+    vector<PTNode*> children;
 
     if (tokens[next_step].type == OPEN_CURLY)
     {
@@ -348,7 +365,7 @@ PTObject* PTDeserialiser::deserialiseObject(const std::vector<Token>& tokens, si
                     current_child.pop_back();
                     if (current_child.empty())
                         reportError("missing argument before comma", tokens[i].start_offset, content);
-                    children.push_back(deserialiseObject(current_child, tmp, resources, content));
+                    children.push_back(deserialiseObject(current_child, tmp, scene, content));
                     current_child.clear();
                     break;
                 default:
@@ -420,12 +437,18 @@ PTObject* PTDeserialiser::deserialiseObject(const std::vector<Token>& tokens, si
     map<string, Argument> initialiser_args;
     for (auto arg : arguments)
     {
-        auto pr = compileNamedArgument(arg, resources, content);
+        auto pr = compileNamedArgument(arg, scene, content);
         initialiser_args[pr.first] = pr.second;
     }
 
+    PTNodeInstantiateFunc ptr = node_instantiators[object_type];
+    
+    PTNode* node = ptr(scene, object_name, initialiser_args);
+    
+    // TODO: add sub nodes as children of this node
+
     first_token = semicolon;
-    return nullptr; // TODO: actually construct the object via the supplied scene
+    return node;
 }
 
 inline PTDeserialiser::TokenType PTDeserialiser::getType(const char c)
@@ -561,7 +584,7 @@ size_t PTDeserialiser::findClosingBracket(const vector<Token>& tokens, size_t op
     return index;
 }
 
-PTDeserialiser::Argument PTDeserialiser::compileArgument(const std::vector<Token>& tokens, const std::map<std::string, PTResource*>& resources, const std::string& content)
+PTDeserialiser::Argument PTDeserialiser::compileArgument(const std::vector<Token>& tokens, PTScene* scene, const std::string& content)
 {
     Argument arg;
 
@@ -588,9 +611,10 @@ PTDeserialiser::Argument PTDeserialiser::compileArgument(const std::vector<Token
             arg.type = (ArgType)t.type;
             break;
         case TAG:
-            if (!resources.contains(t.s_value))
+            PTResource* res = scene->getResource<PTResource>(t.s_value);
+            if (res == nullptr)
                 reportError("reference to undefined resource", t.start_offset, content);
-            arg.r_val = resources.at(t.s_value);
+            arg.r_val = res;
             arg.type = RESOURCE_ARG;
             break;
         default:
@@ -605,7 +629,7 @@ PTDeserialiser::Argument PTDeserialiser::compileArgument(const std::vector<Token
     return arg;
 }
 
-pair<string, PTDeserialiser::Argument> PTDeserialiser::compileNamedArgument(const vector<PTDeserialiser::Token>& tokens, const map<string, PTResource*>& resources, const string& content)
+pair<string, PTDeserialiser::Argument> PTDeserialiser::compileNamedArgument(const vector<PTDeserialiser::Token>& tokens, PTScene* scene, const string& content)
 {
     Argument arg;
 
@@ -620,7 +644,7 @@ pair<string, PTDeserialiser::Argument> PTDeserialiser::compileNamedArgument(cons
     tmp.erase(tmp.begin());
     tmp.erase(tmp.begin());
 
-    arg = compileArgument(tmp, resources, content);
+    arg = compileArgument(tmp, scene, content);
 
     return pair<string, Argument>{ tokens[0].s_value, arg };
 }

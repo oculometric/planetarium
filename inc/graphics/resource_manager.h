@@ -55,6 +55,18 @@ private:
     ~PTResourceManager();
 };
 
+template<class T>
+inline PTNode* PTResourceManager::createNode(std::map<std::string, PTDeserialiser::Argument> arguments)
+{
+    static_assert(std::is_base_of<PTNode, T>::value, "T is not a PTNode type");
+    T* node = new T(arguments);
+
+    resources.emplace(to_string(node), node);
+    node->addReferencer();
+
+    return node;
+}
+
 template<typename T>
 inline void PTResourceManager::releaseResource(T* resource)
 {

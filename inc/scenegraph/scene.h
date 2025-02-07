@@ -5,11 +5,11 @@
 #include "node.h"
 #include "camera.h"
 #include "resource.h"
+#include "resource_manager.h"
 
 class PTScene : PTResource
 {
 private:
-    // TODO: use this to keep track of named resources we know about
     std::map<std::string, PTResource*> referenced_resources;
     // TODO: always create this. objects should be resources too (allocated via the resource manager, but there should be a scene instantiate function. also, should use a unified constructor and an arugment map for simplicity), so they can use the referencing system. also the scene references the objects
     PTNode* root = nullptr;
@@ -22,7 +22,12 @@ public:
     PTScene operator=(PTScene&& other) = delete;
 
     template<class T>
-    T* instantiate(std::map<std::string, PTDeserialiser::Argument> arguments = { });
+    T* instantiate(std::string name, std::map<std::string, PTDeserialiser::Argument> arguments = { });
+    // TODO: node destruction
+
+    template<class T>
+    T* getResource(std::string identifier);
+    void addResource(std::string identifier, PTResource* resource);
 
     virtual void update(float delta_time);
 
@@ -34,3 +39,27 @@ private:
 
     ~PTScene();
 };
+
+template<class T>
+inline T* PTScene::instantiate(std::string name, std::map<std::string, PTDeserialiser::Argument> arguments)
+{
+    static_assert(std::is_base_of<PTNode, T>::value, "T is not a PTNode type");
+    T* node = PTResourceManager::get()->createNode(arguments);
+    node->name = name;
+    node->removeReferencer();
+
+    addDependency(node);
+    
+    // TODO: parent to root
+
+    return node;
+}
+
+template<class T>
+inline T* PTScene::getResource(std::string identifier)
+{
+    static_assert(std::is_base_of<PTResource, T>::value, "T is not a PTResource type");
+    if (referenced_resources.contains(identifier))
+        return referenced_resources[identifier];
+    return nullptr;
+}
