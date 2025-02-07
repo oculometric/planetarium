@@ -27,6 +27,7 @@ void PTScene::addResource(std::string identifier, PTResource* resource)
     addDependency(resource);
 }
 
+// TODO: fix all this. the scene shouldn't have functionality, the scene should only manage the nodes and resources. the *nodes* should be the ones with functionality, which the user can override
 void PTScene::update(float delta_time)
 {
     PTInputManager* manager = PTApplication::get()->getInputManager();
@@ -41,6 +42,7 @@ void PTScene::update(float delta_time)
         0
     } * delta_time * 2.0f;
 
+    // ie this code would go on a subclass of the PTCameraNode class
     PTVector4f world_movement = camera.getLocalRotation() * local_movement;
 
     camera.local_position += PTVector3f{ world_movement.x, world_movement.y, world_movement.z };
