@@ -99,7 +99,6 @@ private:
 
     PTInputManager* input_manager = nullptr;
     PTScene* current_scene = nullptr;
-    PTMesh* demo_mesh = nullptr;
 public:
     PTApplication(unsigned int _width, unsigned int _height);
 

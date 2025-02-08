@@ -65,7 +65,6 @@ void PTApplication::start()
     initVulkan();
     initController();
 
-    demo_mesh = PTResourceManager::get()->createMesh("suzanne.obj");
     current_scene = PTResourceManager::get()->createScene("demo.ptscn");
 
     mainLoop();
@@ -233,8 +232,6 @@ void PTApplication::deinitVulkan()
     demo_render_pass->removeReferencer();
 
     swapchain->removeReferencer();
-
-    demo_mesh->removeReferencer();
 
     vkDestroyImageView(device, depth_image_view, nullptr);
     depth_image->removeReferencer();
