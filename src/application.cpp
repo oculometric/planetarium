@@ -14,6 +14,8 @@
 #include "resource_manager.h"
 #include "node.h"
 
+#define MAX_OBJECTS 512
+
 using namespace std;
 
 static PTApplication* main_application = nullptr;
@@ -218,7 +220,7 @@ void PTApplication::deinitVulkan()
     for (auto framebuffer : framebuffers)
         vkDestroyFramebuffer(device, framebuffer, nullptr);
 
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT * MAX_OBJECTS; i++)
     {
         uniform_buffers[i]->removeReferencer();
     }
@@ -456,8 +458,6 @@ void PTApplication::createFramebuffers(const VkRenderPass render_pass)
     debugLog("        created " + to_string(framebuffers.size()) + " framebuffer objects");
     debugLog("    done.");
 }
-
-#define MAX_OBJECTS 512
 
 void PTApplication::createUniformBuffers()
 {

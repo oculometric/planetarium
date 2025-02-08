@@ -42,7 +42,7 @@ void PTScene::update(float delta_time)
 
     PTInputManager* manager = PTApplication::get()->getInputManager();
 
-    PTApplication::get()->debug_mode = manager->getKeyState('D').action == 1;
+    PTApplication::get()->debug_mode = (manager->getKeyState('D').action == 1) || manager->getButtonState(PTInputButton::CONTROL_SOUTH);
 
     PTVector3f local_movement = PTVector3f
     {

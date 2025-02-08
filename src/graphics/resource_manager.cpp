@@ -215,6 +215,8 @@ PTResourceManager::~PTResourceManager()
         return;
     }
 
+    debugLog("resource manager cleaning up " + to_string(resources.size()) + " lingering resources...");
+
     for (auto current_pair : resources)
     {
         PTResource* current = current_pair.second;
@@ -237,6 +239,7 @@ PTResourceManager::~PTResourceManager()
         
         if (iter != end || (*iter).second->reference_counter == 0)
         {
+            debugLog("    unloading resource " + (*iter).first);
             resources.erase(iter);
             delete (*iter).second;
         }
@@ -246,9 +249,14 @@ PTResourceManager::~PTResourceManager()
 
     if (!resources.empty())
     {
-        debugLog("WARNING: cycle detected in resource dependency graph! unloads of the last " + to_string(resources.size()) + " resources may be out of order");
+        debugLog("    WARNING: cycle detected in resource dependency graph! unloads of the last " + to_string(resources.size()) + " resources may be out of order");
         for (auto pair : resources)
+        {
+            debugLog("    unloading resource " + pair.first);
             delete pair.second;
+        }
     }
     resources.clear();
+
+    debugLog("done.");
 }
