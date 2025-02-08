@@ -1,50 +1,25 @@
 #version 450
 
+layout(binding = 0) uniform TransformMatrices
+{
+    mat4 model_to_world;
+    mat4 world_to_clip;
+} transform;
+
 layout(location = 0) in vec3 frag_colour;
 layout(location = 1) in vec3 frag_position;
 layout(location = 2) in vec3 frag_normal;
 layout(location = 3) in vec3 frag_tangent;
 layout(location = 4) in vec2 frag_uv;
+layout(location = 5) in vec3 frag_wp;
+layout(location = 6) in vec3 frag_wn;
 
 layout(location = 0) out vec4 out_colour;
 
-const mat4 bayer =
-{
-    { 0, 8,  2, 10 },
-    { 4, 12, 6, 14 },
-    { 1, 9,  3, 11 },
-    { 5, 13, 7, 15 }
-};
-
-ivec3 get_grid(vec3 position, vec3 grid_divisions)
-{
-    return ivec3(floor(position * grid_divisions));
-}
-
-float filter_value(vec2 screen_position, vec2 grid_divisions)
-{
-    ivec2 grid_position = ivec2(floor(screen_position * grid_divisions));
-    return bayer[grid_position.x % 4][grid_position.y % 4] / 16.0;
-}
-
-const vec2 screen_size = vec2(640.0, 480.0);
-const float pixels_size = 4.0;
-const float divisions = 2.0;
+const vec3 sun_direction = normalize(vec3(0.1, 0.2, -0.9));
 
 void main()
 {
-    vec3 inp = frag_colour * divisions;
-
-    vec3 outp = (
-        floor(inp) + vec3(greaterThan(
-            fract(inp),
-            vec3(filter_value(frag_position.xy / 2, screen_size / pixels_size))
-        ))
-    ) / divisions;
-    
-    //out_colour = vec4(vec3(outp), 1.0);
-
-    //out_colour = vec4(frag_colour, 1.0);
-    ivec3 grid = get_grid(frag_position, vec3(16, 16, 16)) % 2;
-    out_colour = vec4((vec3(grid.x * grid.y) + 0.2) * frag_position, 1.0);
+    float brightness = clamp(dot(-sun_direction, frag_wn), 0, 1);
+    out_colour = vec4(vec3(brightness), 1);
 }

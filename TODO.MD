@@ -8,6 +8,7 @@
 
 ## Engine Stuff
 
+- [ ] fix bug with quaternions where something goes to infinity
 - [ ] proper input handling from both keyboard and mouse (0)
 - [ ] UI system (use STUI to generate charbufs, then pass it into a shader maybe????)
 - [ ] object and vertex picking
