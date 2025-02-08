@@ -18,6 +18,10 @@ struct PTVector3
     inline void operator*=(const T f) { x *= f; y *= f; z *= f; }
     inline void operator/=(const T f) { x /= f; y /= f; z /= f; }
     inline PTVector3<T> operator -() { return PTVector3<T>{ -x, -y, -z }; }
+
+    inline static constexpr PTVector3<T> right() { return PTVector3<T>{ 1, 0, 0 }; }
+    inline static constexpr PTVector3<T> up() { return PTVector3<T>{ 0, 1, 0 }; }
+    inline static constexpr PTVector3<T> forward() { return PTVector3<T>{ 0, 0, 1 }; }
 };
 
 template<typename T>

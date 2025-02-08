@@ -9,7 +9,6 @@
 ## Engine Stuff
 
 - [ ] proper input handling from both keyboard and mouse (0)
-- [ ] object transform (quaternions, reverse param update, transformation functions)
 - [ ] UI system (use STUI to generate charbufs, then pass it into a shader maybe????)
 - [ ] object and vertex picking
 - [ ] scene editing
@@ -61,3 +60,4 @@
 - [x] scene tree system with builder/deserialisation system (0)
 - [x] scene/transform parent-child system (0)
 - [x] object drawing system
+- [x] object transform (quaternions, reverse param update, transformation functions) (0)

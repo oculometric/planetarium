@@ -4,9 +4,7 @@
 
 #include "application.h"
 #include "debug.h"
-#include "vector3.h"
-#include "vector4.h"
-#include "matrix4.h"
+#include "ptmath.h"
 #include "resource_manager.h"
 
 using namespace std;
@@ -41,33 +39,37 @@ void PTScene::update(float delta_time)
 {
     for (auto pair : all_nodes)
         pair.second->process(delta_time);
-    //PTInputManager* manager = PTApplication::get()->getInputManager();
 
-    //PTApplication::get()->debug_mode = manager->getKeyState('D').action == 1;
+    PTInputManager* manager = PTApplication::get()->getInputManager();
 
-    //PTVector4f local_movement = PTVector4f
-    //{
-    //    (float)manager->getAxisState(PTInputAxis::MOVE_AXIS_X) / (float)INT16_MAX,
-    //    -((float)manager->getButtonState(PTInputButton::LEFT_MAJOR) - (float)manager->getButtonState(PTInputButton::RIGHT_MAJOR)),
-    //    (float)manager->getAxisState(PTInputAxis::MOVE_AXIS_Y) / (float)INT16_MAX, 
-    //    0
-    //} * delta_time * 2.0f;
+    PTApplication::get()->debug_mode = manager->getKeyState('D').action == 1;
 
-    //// ie this code would go on a subclass of the PTCameraNode class
-    //PTVector4f world_movement = camera.getLocalRotation() * local_movement;
+    PTVector3f local_movement = PTVector3f
+    {
+       (float)manager->getAxisState(PTInputAxis::MOVE_AXIS_X) / (float)INT16_MAX,
+       -((float)manager->getButtonState(PTInputButton::LEFT_MAJOR) - (float)manager->getButtonState(PTInputButton::RIGHT_MAJOR)),
+       (float)manager->getAxisState(PTInputAxis::MOVE_AXIS_Y) / (float)INT16_MAX,
+    } * delta_time * 2.0f;
 
-    //camera.local_position += PTVector3f{ world_movement.x, world_movement.y, world_movement.z };
-    //debugSetSceneProperty("camera pos", to_string(camera.local_position));
-    //
-    //camera.local_rotation -= (PTVector3f{ (float)manager->getAxisState(PTInputAxis::LOOK_AXIS_Y), 0, (float)manager->getAxisState(PTInputAxis::LOOK_AXIS_X) } / INT16_MAX) * delta_time * 90.0f;
-    //debugSetSceneProperty("camera rot", to_string(camera.local_rotation));
+    // ie this code would go on a subclass of the PTCameraNode class
+    PTVector3f world_movement = rotate(camera->getTransform()->getLocalRotation(), local_movement);
 
-    //camera.horizontal_fov += ((float)manager->getButtonState(PTInputButton::RIGHT_MINOR) - (float)manager->getButtonState(PTInputButton::LEFT_MINOR)) * delta_time * 30.0f;
-    //camera.horizontal_fov = max(min(camera.horizontal_fov, 120.0f), 10.0f);
-    //debugSetSceneProperty("camera fov", to_string(camera.horizontal_fov));
+    camera->getTransform()->translate(world_movement);
+    debugSetSceneProperty("camera pos", to_string(camera->getTransform()->getLocalPosition()));
+    
+    float look_x = (float)manager->getAxisState(PTInputAxis::LOOK_AXIS_X) / INT16_MAX;
+    float look_y = (float)manager->getAxisState(PTInputAxis::LOOK_AXIS_Y) / INT16_MAX;
+    debugSetSceneProperty("look", to_string(-look_x) + ',' + to_string(-look_y));
 
-    //camera.aspect_ratio = PTApplication::get()->getAspectRatio();
-    //debugSetSceneProperty("camera asp", to_string(camera.aspect_ratio));
+    camera->getTransform()->rotate(look_y * delta_time * 90.0f, camera->getTransform()->getRight(), camera->getTransform()->getPosition());
+    camera->getTransform()->rotate(look_x * delta_time * 90.0f, PTVector3f::forward(), camera->getTransform()->getPosition());
+    debugSetSceneProperty("camera rot", to_string(camera->getTransform()->getLocalRotation()));
+
+    debugSetSceneProperty("camera for", to_string(camera->getTransform()->getForward()));
+
+    camera->horizontal_fov += ((float)manager->getButtonState(PTInputButton::RIGHT_MINOR) - (float)manager->getButtonState(PTInputButton::LEFT_MINOR)) * delta_time * 30.0f;
+    camera->horizontal_fov = max(min(camera->horizontal_fov, 120.0f), 10.0f);
+    debugSetSceneProperty("camera fov", to_string(camera->horizontal_fov));
 }
 
 PTMatrix4f PTScene::getCameraMatrix(float aspect_ratio)
