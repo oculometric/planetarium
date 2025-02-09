@@ -63,7 +63,11 @@
     <ClCompile Include="src\graphics\swapchain.cpp" />
     <ClCompile Include="src\input.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\scenegraph\camera_node.cpp" />
+    <ClCompile Include="src\scenegraph\mesh_node.cpp" />
+    <ClCompile Include="src\scenegraph\node.cpp" />
     <ClCompile Include="src\scenegraph\scene.cpp" />
+    <ClCompile Include="src\scenegraph\transform.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
@@ -136,14 +140,14 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Programs\Vulkan\Include;C:\Users\c025180n\Documents\glfw-3.4.bin.WIN64\include;C:\Users\c025180n\source\repos\planetarium\stui\inc;C:\Users\c025180n\source\repos\planetarium\inc\scenegraph;C:\Users\c025180n\source\repos\planetarium\inc\math;C:\Users\c025180n\source\repos\planetarium\inc\graphics;C:\Users\c025180n\source\repos\planetarium\inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\VulkanSDK\1.4.304.1\Include;C:\Programs\Vulkan\Include;C:\Users\jacob\Documents\glfw-3.4.bin.WIN64\include;C:\Users\c025180n\Documents\glfw-3.4.bin.WIN64\include;$(ProjectDir)stui\inc;$(ProjectDir)inc\scenegraph;$(ProjectDir)inc\math;$(ProjectDir)inc\graphics;$(ProjectDir)inc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <WarningLevel>Level3</WarningLevel>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
-      <AdditionalLibraryDirectories>C:\Users\c025180n\Documents\glfw-3.4.bin.WIN64\lib-vc2019;C:\Programs\Vulkan\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\VulkanSDK\1.4.304.1\Lib;C:\Users\jacob\Documents\glfw-3.4.bin.WIN64\lib-vc2019;C:\Users\c025180n\Documents\glfw-3.4.bin.WIN64\lib-vc2019;C:\Programs\Vulkan\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>

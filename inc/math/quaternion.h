@@ -1,10 +1,13 @@
 #pragma once
 
+#define _USE_MATH_DEFINES
+#include <math.h>
+#include <format>
+
 #include "vector4.h"
 #include "vector3.h"
 #include "matrix4.h"
 #include "debug.h"
-#include <format>
 
 struct PTQuaternion
 {
