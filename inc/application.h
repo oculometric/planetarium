@@ -45,6 +45,7 @@ class PTApplication
 {
 public:
     bool debug_mode = false;
+    bool wants_screenshot = false;
 
 private:
     int width;

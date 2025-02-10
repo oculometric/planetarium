@@ -193,6 +193,38 @@ void PTApplication::mainLoop()
 
         drawFrame(frame_index);
 
+        if (wants_screenshot)
+        {
+            VkExtent2D ext = swapchain->getExtent();
+            PTImage* screenshot_img = PTResourceManager::get()->createImage(ext, 
+                                                                            VK_FORMAT_R8G8B8A8_UINT, 
+                                                                            VK_IMAGE_TILING_OPTIMAL, 
+                                                                            VK_IMAGE_USAGE_TRANSFER_DST_BIT, 
+                                                                            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+            screenshot_img->transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+            VkCommandBuffer cmd = beginTransientCommands();
+
+            VkImageSubresourceLayers src_layers{ };
+            src_layers.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            src_layers.baseArrayLayer = 0;
+            src_layers.layerCount = 1;
+            src_layers.mipLevel = 0;
+            VkImageCopy copy_region{ };
+            copy_region.srcOffset = VkOffset3D{ 0, 0, 0 };
+            copy_region.dstOffset = VkOffset3D{ 0, 0, 0 };
+            copy_region.extent = VkExtent3D{ ext.width, ext.height, 1 };
+            copy_region.srcSubresource = src_layers;
+            copy_region.dstSubresource = src_layers;
+            // TODO: make this actually work
+            vkCmdCopyImage(cmd, swapchain->getImage(frame_index), VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, screenshot_img->getImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
+            endTransientCommands(cmd);
+
+            // TODO: write it out to PNG
+
+            screenshot_img->removeReferencer();
+            wants_screenshot = false;
+        }
+
         frame_index = (frame_index + 1) % MAX_FRAMES_IN_FLIGHT;
         frame_total_number++;
     }

@@ -2,15 +2,17 @@
 
 ## Vulkan Stuff
 
+- [ ] screenshot button
 - [ ] implement proper shader config and reflection, and checking this when creating render passes
 - [ ] fix semaphore issue on windows
 - [ ] improve mesh draw call queueing system to allow for unlimited objects and choice of shader/render pass/pipeline
 
 ## Engine Stuff
 
-- [ ] fix bug with quaternions where something goes to infinity
 - [ ] proper input handling from both keyboard and mouse (0)
+- [ ] move functional code out of scene
 - [ ] UI system (use STUI to generate charbufs, then pass it into a shader maybe????)
+- [ ] fix bug with quaternions where something goes to infinity
 - [ ] object and vertex picking
 - [ ] scene editing
 - [ ] mesh editing
