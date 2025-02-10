@@ -31,7 +31,7 @@ public:
 
     void update(float delta_time);
 
-    PTMatrix4f getCameraMatrix(float aspect_ratio);
+    void getCameraMatrix(float aspect_ratio, PTMatrix4f& world_to_view, PTMatrix4f& view_to_clip);
 
 private:
     PTScene();

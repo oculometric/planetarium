@@ -2,11 +2,10 @@
 
 #include "common.glsl"
 
-VERTEX_INPUTS
 UNIFORM_COMMON
-VARYING_COMMON(out)
+VARYING_COMMON(in)
+FRAGMENT_OUTPUTS
 
 void main()
 {
-    STANDARD_VARYING_MATH
 }

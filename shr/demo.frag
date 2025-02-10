@@ -1,25 +1,22 @@
 #version 450
 
-layout(binding = 0) uniform TransformMatrices
-{
-    mat4 model_to_world;
-    mat4 world_to_clip;
-} transform;
+#include "common.glsl"
 
-layout(location = 0) in vec3 frag_colour;
-layout(location = 1) in vec3 frag_position;
-layout(location = 2) in vec3 frag_normal;
-layout(location = 3) in vec3 frag_tangent;
-layout(location = 4) in vec2 frag_uv;
-layout(location = 5) in vec3 frag_wp;
-layout(location = 6) in vec3 frag_wn;
+UNIFORM_COMMON
+VARYING_COMMON(in)
+FRAGMENT_OUTPUTS
 
-layout(location = 0) out vec4 out_colour;
+const vec3 sun_direction = normalize(vec3(0.1, 0.4, -0.9)); // TODO: this would be moved into the common uniforms
 
-const vec3 sun_direction = normalize(vec3(0.1, 0.2, -0.9));
+const float divs = 6.0;
+const float pixel_size = 1.0f;
 
 void main()
 {
-    float brightness = clamp(dot(-sun_direction, frag_wn), 0, 1);
-    out_colour = vec4(vec3(brightness), 1);
+    float brightness = clamp(dot(-sun_direction, varyings.world_normal), 0, 1);
+
+    float scaled = brightness * divs;
+    brightness = (floor(scaled) + float(fract(scaled) > ((float(int(gl_FragCoord.x / pixel_size) % 2 == int(gl_FragCoord.y / pixel_size) % 2) + 1.0) / 3.0))) / divs;
+
+    frag_colour = vec4(vec3(brightness), 1);
 }

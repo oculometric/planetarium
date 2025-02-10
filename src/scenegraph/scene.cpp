@@ -72,9 +72,14 @@ void PTScene::update(float delta_time)
     debugSetSceneProperty("camera fov", to_string(camera->horizontal_fov));
 }
 
-PTMatrix4f PTScene::getCameraMatrix(float aspect_ratio)
+void PTScene::getCameraMatrix(float aspect_ratio, PTMatrix4f& world_to_view, PTMatrix4f& view_to_clip)
 {
     if (camera == nullptr)
-        return PTMatrix4f();
-    return camera->getProjectionMatrix(aspect_ratio) * ~camera->getTransform()->getLocalToWorld();
+    {
+        world_to_view = PTMatrix4f();
+        view_to_clip = PTCameraNode::projectionMatrix(0.1f, 100.0f, 120.0f, aspect_ratio);
+        return;
+    }
+    world_to_view = ~camera->getTransform()->getLocalToWorld();
+    view_to_clip = camera->getProjectionMatrix(aspect_ratio);
 }

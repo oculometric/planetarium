@@ -461,7 +461,7 @@ void PTApplication::createFramebuffers(const VkRenderPass render_pass)
 
 void PTApplication::createUniformBuffers()
 {
-    VkDeviceSize transform_buffer_size = sizeof(TransformMatrices);
+    VkDeviceSize transform_buffer_size = sizeof(CommonUniforms);
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT * MAX_OBJECTS; i++)
     {
@@ -531,7 +531,7 @@ void PTApplication::createDescriptorPoolAndSets()
         VkDescriptorBufferInfo buffer_info{ };
         buffer_info.buffer = uniform_buffers[i]->getBuffer();
         buffer_info.offset = 0;
-        buffer_info.range = sizeof(TransformMatrices);
+        buffer_info.range = sizeof(CommonUniforms);
 
         VkWriteDescriptorSet write_set{ };
         write_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -787,21 +787,23 @@ void PTApplication::removeAllDrawRequests(PTNode* owner)
 
 void PTApplication::updateUniformBuffers(uint32_t frame_index)
 {
-    PTMatrix4f camera_matrix = current_scene->getCameraMatrix(getAspectRatio());
+    CommonUniforms uniforms;
+
+    PTMatrix4f world_to_view;
+    PTMatrix4f view_to_clip;
+    current_scene->getCameraMatrix(getAspectRatio(), world_to_view, view_to_clip);
+    world_to_view.getColumnMajor(uniforms.world_to_view);
+    view_to_clip.getColumnMajor(uniforms.view_to_clip);
+
+    uniforms.viewport_size = PTVector2f{ (float)swapchain->getExtent().width, (float)swapchain->getExtent().height };
+
     uint32_t offset = 0;
     for (auto instruction : draw_queue)
     {
-        TransformMatrices transform;
-        camera_matrix.getColumnMajor(transform.world_to_clip);
-        instruction.first->getTransform()->getLocalToWorld().getColumnMajor(transform.model_to_world);
-        memcpy(uniform_buffers[offset + frame_index]->getMappedMemory(), &transform, sizeof(TransformMatrices));
+        instruction.first->getTransform()->getLocalToWorld().getColumnMajor(uniforms.model_to_world);
+        memcpy(uniform_buffers[offset + frame_index]->getMappedMemory(), &uniforms, sizeof(CommonUniforms));
         offset += MAX_FRAMES_IN_FLIGHT;
     }
-
-    debugSetSceneProperty("w2c r0", to_string(camera_matrix.row0()));
-    debugSetSceneProperty("w2c r1", to_string(camera_matrix.row1()));
-    debugSetSceneProperty("w2c r2", to_string(camera_matrix.row2()));
-    debugSetSceneProperty("w2c r3", to_string(camera_matrix.row3()));
 }
 
 int PTApplication::evaluatePhysicalDevice(PTPhysicalDevice d)

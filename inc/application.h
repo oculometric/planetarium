@@ -18,10 +18,12 @@
 #include "image.h"
 #include "mesh.h"
 
-struct TransformMatrices
+struct CommonUniforms
 {
     float model_to_world[16];
-    float world_to_clip[16];
+    float world_to_view[16];
+    float view_to_clip[16];
+    PTVector2f viewport_size;
 };
 
 const uint32_t MAX_FRAMES_IN_FLIGHT = 2;
