@@ -40,26 +40,33 @@ void PTScene::update(float delta_time)
     for (auto pair : all_nodes)
         pair.second->process(delta_time);
 
+    // ie this code would go on a subclass of the PTCameraNode class
     PTInputManager* manager = PTApplication::get()->getInputManager();
 
-    PTApplication::get()->debug_mode = (manager->getKeyState('D').action == 1) || manager->getButtonState(PTInputButton::CONTROL_SOUTH);
+    PTApplication::get()->debug_mode = (manager->getKeyState('F').action == 1) || manager->getButtonState(PTInputButton::CONTROL_SOUTH);
     PTApplication::get()->wants_screenshot = (manager->getKeyState('P').action == 1) || manager->getButtonState(PTInputButton::CONTROL_NORTH);
+
+    float keyboard_x = (float)(manager->getKeyState('D').action == 1) - (float)(manager->getKeyState('A').action == 1);
+    float keyboard_y = (float)(manager->getKeyState('W').action == 1) - (float)(manager->getKeyState('S').action == 1);
+    float keyboard_z = (float)(manager->getKeyState('E').action == 1) - (float)(manager->getKeyState('Q').action == 1);
+    
+    float keyboard_lx = (float)(manager->getKeyState('J').action == 1) - (float)(manager->getKeyState('L').action == 1);
+    float keyboard_ly = (float)(manager->getKeyState('I').action == 1) - (float)(manager->getKeyState('K').action == 1);
 
     PTVector3f local_movement = PTVector3f
     {
-       (float)manager->getAxisState(PTInputAxis::MOVE_AXIS_X) / (float)INT16_MAX,
-       -((float)manager->getButtonState(PTInputButton::LEFT_MAJOR) - (float)manager->getButtonState(PTInputButton::RIGHT_MAJOR)),
-       (float)manager->getAxisState(PTInputAxis::MOVE_AXIS_Y) / (float)INT16_MAX,
+       ((float)manager->getAxisState(PTInputAxis::MOVE_AXIS_X) / (float)INT16_MAX) + keyboard_x,
+       (-((float)manager->getButtonState(PTInputButton::LEFT_MAJOR) - (float)manager->getButtonState(PTInputButton::RIGHT_MAJOR))) + keyboard_z,
+       ((float)manager->getAxisState(PTInputAxis::MOVE_AXIS_Y) / (float)INT16_MAX) - keyboard_y,
     } * delta_time * 2.0f;
 
-    // ie this code would go on a subclass of the PTCameraNode class
     PTVector3f world_movement = rotate(camera->getTransform()->getLocalRotation(), local_movement);
 
     camera->getTransform()->translate(world_movement);
     debugSetSceneProperty("camera pos", to_string(camera->getTransform()->getLocalPosition()));
     
-    float look_x = (float)manager->getAxisState(PTInputAxis::LOOK_AXIS_X) / INT16_MAX;
-    float look_y = (float)manager->getAxisState(PTInputAxis::LOOK_AXIS_Y) / INT16_MAX;
+    float look_x = ((float)manager->getAxisState(PTInputAxis::LOOK_AXIS_X) / INT16_MAX) - keyboard_lx;
+    float look_y = ((float)manager->getAxisState(PTInputAxis::LOOK_AXIS_Y) / INT16_MAX) - keyboard_ly;
     debugSetSceneProperty("look", to_string(-look_x) + ',' + to_string(-look_y));
 
     camera->getTransform()->rotate(look_y * delta_time * 90.0f, camera->getTransform()->getRight(), camera->getTransform()->getPosition());

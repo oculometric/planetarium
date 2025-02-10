@@ -362,9 +362,8 @@ PTNode* PTDeserialiser::deserialiseObject(const std::vector<Token>& tokens, size
                     if (!bracket_stack.empty())
                         break;
                     
-                    current_child.pop_back();
                     if (current_child.empty())
-                        reportError("missing argument before comma", tokens[i].start_offset, content);
+                        reportError("missing child before semicolon", tokens[i].start_offset, content);
                     children.push_back(deserialiseObject(current_child, tmp, scene, content));
                     current_child.clear();
                     break;

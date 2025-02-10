@@ -9,7 +9,9 @@
 
 ## Engine Stuff
 
-- [ ] proper input handling from both keyboard and mouse (0)
+- [ ] proper input handling from both keyboard and mouse
+- [ ] make all input functions return a float instead for easy maths (from controller)
+- [ ] make float isDown and bool wasPressed and bool wasReleased functions for each keyboard key
 - [ ] move functional code out of scene
 - [ ] UI system (use STUI to generate charbufs, then pass it into a shader maybe????)
 - [ ] fix bug with quaternions where something goes to infinity
