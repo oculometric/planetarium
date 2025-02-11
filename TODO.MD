@@ -3,15 +3,22 @@
 ## Vulkan Stuff
 
 - [ ] screenshot button
-- [ ] implement proper shader config and reflection, and checking this when creating render passes
-- [ ] fix semaphore issue on windows
+- [ ] fix semaphore issue when resizing the framebuffer
 - [ ] improve mesh draw call queueing system to allow for unlimited objects and choice of shader/render pass/pipeline
+      - organise objects by material (i.e. the non-common uniform buffer is all the same)
+      - draw objects with indexed descriptor sets?
+      - descriptor set pool needs to be able to support dynamic numbers of different descriptor set layouts
+      - store allocated descriptor sets on the object draw-request (create when the draw-request is created, destroy when the draw-request is removed)
+      - alternatively, just submit multiple command buffers to the queue
+- [ ] implement proper shader config and reflection, and checking this when creating render passes
 
 ## Engine Stuff
 
-- [ ] proper input handling from both keyboard and mouse
 - [ ] make all input functions return a float instead for easy maths (from controller)
 - [ ] make float isDown and bool wasPressed and bool wasReleased functions for each keyboard key
+- [ ] better way of specifying which keyboard key to check the state of
+- [ ] cross platform controller support
+- [ ] mouse input support
 - [ ] move functional code out of scene
 - [ ] UI system (use STUI to generate charbufs, then pass it into a shader maybe????)
 - [ ] fix bug with quaternions where something goes to infinity

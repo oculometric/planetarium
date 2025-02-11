@@ -606,6 +606,7 @@ void PTApplication::createSyncObjects()
 
 void PTApplication::drawFrame(uint32_t frame_index)
 {
+    debugLog("starting frame " + to_string(frame_index));
     updateUniformBuffers(frame_index);
 
     // TODO: move the following into appropriate functions, this is just a test
@@ -622,6 +623,7 @@ void PTApplication::drawFrame(uint32_t frame_index)
     }
     else if (window_resized)
     {
+        debugLog("window resized during acquire image!");
         resizeSwapchain();
         return;
     }
@@ -730,6 +732,7 @@ void PTApplication::drawFrame(uint32_t frame_index)
     }
     else if (window_resized)
     {
+        debugLog("window resized during present~");
         resizeSwapchain();
     }
     else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
@@ -763,7 +766,8 @@ void PTApplication::resizeSwapchain()
     createFramebuffers(demo_render_pass->getRenderPass());
 
     window_resized = false;
-
+    vkDeviceWaitIdle(device);
+    
     debugLog("done.");
 }
 
