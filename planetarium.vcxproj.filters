@@ -159,4 +159,18 @@
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="demo.ptscn">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="FORMATTING.md">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="NODE.md">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="TODO.MD">
+      <Filter>Resource Files</Filter>
+    </None>
+  </ItemGroup>
 </Project>

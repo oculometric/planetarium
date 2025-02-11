@@ -184,7 +184,7 @@ void PTApplication::mainLoop()
         auto now = chrono::high_resolution_clock::now();
         chrono::duration<float> frame_time = now - last_frame_start;
 
-        frame_time_running_mean_us = static_cast<uint32_t>((frame_time_running_mean_us + (chrono::duration_cast<chrono::microseconds>(frame_time).count())) / 2);
+        frame_time_running_mean_us = static_cast<uint32_t>((frame_time_running_mean_us * 0.8f) + (chrono::duration_cast<chrono::microseconds>(frame_time).count() * 0.2f));
 
         debugFrametiming(frame_time_running_mean_us / 1000.0f, frame_total_number);        
         last_frame_start = now;

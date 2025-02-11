@@ -69,6 +69,12 @@
     <ClCompile Include="src\scenegraph\scene.cpp" />
     <ClCompile Include="src\scenegraph\transform.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="demo.ptscn" />
+    <None Include="FORMATTING.md" />
+    <None Include="NODE.md" />
+    <None Include="TODO.MD" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <ProjectGuid>{4AD14313-5910-441B-B5E7-7540F89AC85D}</ProjectGuid>
