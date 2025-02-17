@@ -8,15 +8,14 @@
 #include <array>
 #include <chrono>
 
-#include "input.h"
-#include "shader.h"
-#include "pipeline.h"
-#include "physical_device.h"
-#include "swapchain.h"
-#include "buffer.h"
-#include "render_pass.h"
-#include "image.h"
-#include "mesh.h"
+#include "graphics/shader.h"
+#include "graphics/pipeline.h"
+#include "graphics/physical_device.h"
+#include "graphics/swapchain.h"
+#include "graphics/buffer.h"
+#include "graphics/render_pass.h"
+#include "graphics/image.h"
+#include "graphics/mesh.h"
 
 struct CommonUniforms
 {
@@ -100,7 +99,6 @@ private:
 #endif
     uint32_t frame_time_running_mean_us;
 
-    PTInputManager* input_manager = nullptr;
     PTScene* current_scene = nullptr;
 public:
     PTApplication(unsigned int _width, unsigned int _height);
@@ -112,8 +110,6 @@ public:
     void operator=(PTApplication&& other) = delete;
 
     void start();
-
-    PTInputManager* getInputManager();
 
     static PTApplication* get();
 

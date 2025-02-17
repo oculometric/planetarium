@@ -8,11 +8,11 @@
 #include <algorithm>
 #include <cstdlib>
 
-#include "scene.h"
+#include "scenegraph/scene.h"
 #include "debug.h"
-#include "mesh.h"
 #include "resource_manager.h"
 #include "node.h"
+#include "input/input.h"
 
 #define MAX_OBJECTS 512
 
@@ -75,11 +75,6 @@ void PTApplication::start()
 
     deinitVulkan();
     deinitWindow();
-}
-
-PTInputManager* PTApplication::getInputManager()
-{
-    return input_manager;
 }
 
 PTApplication* PTApplication::get()
@@ -167,8 +162,7 @@ void PTApplication::initVulkan()
 void PTApplication::initController()
 {
     glfwSetKeyCallback(window, keyboardCallback);
-    input_manager = new PTInputManager();
-    initInputManager(input_manager);
+    PTInput* _ = new PTInput();
 }
 
 void PTApplication::mainLoop()
@@ -179,7 +173,7 @@ void PTApplication::mainLoop()
     while (!glfwWindowShouldClose(window))
     {
         glfwPollEvents();
-        input_manager->pollControllers();
+        PTInput::get()->pollGamepads();
 
         auto now = chrono::high_resolution_clock::now();
         chrono::duration<float> frame_time = now - last_frame_start;
@@ -234,6 +228,7 @@ void PTApplication::mainLoop()
 
 void PTApplication::deinitController()
 {
+    delete PTInput::get();
 }
 
 void PTApplication::deinitVulkan()
@@ -606,7 +601,7 @@ void PTApplication::createSyncObjects()
 
 void PTApplication::drawFrame(uint32_t frame_index)
 {
-    debugLog("starting frame " + to_string(frame_index));
+    //debugLog("starting frame " + to_string(frame_index));
     updateUniformBuffers(frame_index);
 
     // TODO: move the following into appropriate functions, this is just a test

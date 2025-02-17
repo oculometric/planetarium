@@ -14,7 +14,6 @@
 
 ## Engine Stuff
 
-- [ ] make all input functions return a float instead for easy maths (from controller)
 - [ ] make float isDown and bool wasPressed and bool wasReleased functions for each keyboard key
 - [ ] better way of specifying which keyboard key to check the state of
 - [ ] cross platform controller support
@@ -73,3 +72,4 @@
 - [x] scene/transform parent-child system (0)
 - [x] object drawing system
 - [x] object transform (quaternions, reverse param update, transformation functions) (0)
+- [x] make all input functions return a float instead for easy maths (from controller)
