@@ -1,6 +1,6 @@
-Resource(mesh, "suzanne.obj") : 4a3b825f;
-Resource(mesh, "teapot.obj") : teapot_mesh;
-Resource(mesh, "desert_surrealism.obj") : origin_mesh;
+Resource(mesh, "res/suzanne.obj") : 4a3b825f;
+Resource(mesh, "res/teapot.obj") : teapot_mesh;
+Resource(mesh, "res/desert_surrealism.obj") : origin_mesh;
 
 MeshNode(data = @origin_mesh);
 

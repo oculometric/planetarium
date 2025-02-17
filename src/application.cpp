@@ -67,7 +67,7 @@ void PTApplication::start()
     initVulkan();
     initController();
 
-    current_scene = PTResourceManager::get()->createScene("demo.ptscn");
+    current_scene = PTResourceManager::get()->createScene("res/demo.ptscn");
 
     mainLoop();
 
