@@ -20,6 +20,7 @@
 #include "graphics/mesh.h"
 #include "debug.h"
 #include "resource_manager.h"
+#include "bitmap.h"
 
 #define MAX_OBJECTS 512
 
@@ -782,9 +783,9 @@ void PTApplication::takeScreenshot(uint32_t frame_index)
 
     VkImageBlit blit_region{ };
     blit_region.srcOffsets[0] = VkOffset3D{ 0, 0, 0 };
-    blit_region.srcOffsets[1] = VkOffset3D{ static_cast<int32_t>(screenshot_img->getSize().width), static_cast<int32_t>(screenshot_img->getSize().height), 1 };
-    blit_region.dstOffsets[0] = blit_region.srcOffsets[0];
-    blit_region.dstOffsets[1] = blit_region.srcOffsets[1];
+    blit_region.srcOffsets[1] = VkOffset3D{ static_cast<int32_t>(ext.width), static_cast<int32_t>(ext.height), 1 };
+    blit_region.dstOffsets[0] = VkOffset3D{ 0, static_cast<int32_t>(ext.height), 0 };
+    blit_region.dstOffsets[1] = VkOffset3D{ static_cast<int32_t>(ext.width), 0, 1 };
     blit_region.srcSubresource = src_layers;
     blit_region.dstSubresource = src_layers;
     
@@ -846,8 +847,8 @@ void PTApplication::takeScreenshot(uint32_t frame_index)
     endTransientCommands(cmd);
 
     screenshot_img->removeReferencer();
-    
-    // TODO: write it out to PNG
+
+    writeRGBABitmap("screenshot.bmp", host_buffer->map(), ext.width, ext.height);
 
     host_buffer->removeReferencer();
     wants_screenshot = false;

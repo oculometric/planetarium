@@ -2,7 +2,6 @@
 
 ## Vulkan Stuff
 
-- [ ] screenshot button
 - [ ] improve mesh draw call queueing system to allow for unlimited objects and choice of shader/render pass/pipeline
       - organise objects by material (i.e. the non-common uniform buffer is all the same)
       - draw objects with indexed descriptor sets?
@@ -75,3 +74,4 @@
 - [x] object transform (quaternions, reverse param update, transformation functions) (0)
 - [x] make all input functions return a float instead for easy maths (from controller)
 - [x] fix semaphore issue when resizing the framebuffer
+- [x] screenshot button
