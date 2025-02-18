@@ -147,6 +147,7 @@ private:
     void drawFrame(uint32_t frame_index);
     void resizeSwapchain();
     static void windowResizeCallback(GLFWwindow* window, int new_width, int new_height);
+    void takeScreenshot(uint32_t frame_index);
 
     void updateUniformBuffers(uint32_t frame_index);
     int evaluatePhysicalDevice(PTPhysicalDevice d);

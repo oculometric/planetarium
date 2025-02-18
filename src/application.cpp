@@ -196,86 +196,7 @@ void PTApplication::mainLoop()
 
         if (wants_screenshot)
         {
-            VkExtent2D ext = swapchain->getExtent();
-            PTImage* screenshot_img = PTResourceManager::get()->createImage(ext, 
-                                                                            VK_FORMAT_R8G8B8A8_SRGB, 
-                                                                            VK_IMAGE_TILING_OPTIMAL, 
-                                                                            VK_IMAGE_USAGE_TRANSFER_DST_BIT, 
-                                                                            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-            screenshot_img->transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-            VkCommandBuffer cmd = beginTransientCommands();
-
-            VkImageSubresourceLayers src_layers{ };
-            src_layers.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            src_layers.baseArrayLayer = 0;
-            src_layers.layerCount = 1;
-            src_layers.mipLevel = 0;
-            // VkImageCopy copy_region{ };
-            // copy_region.srcOffset = VkOffset3D{ 0, 0, 0 };
-            // copy_region.dstOffset = VkOffset3D{ 0, 0, 0 };
-            // copy_region.extent = VkExtent3D{ ext.width, ext.height, 1 };
-            // copy_region.srcSubresource = src_layers;
-            // copy_region.dstSubresource = src_layers;
-
-            VkImageBlit blit_region{ };
-            blit_region.srcOffsets[0] = VkOffset3D{ 0, 0, 0 };
-            blit_region.srcOffsets[1] = VkOffset3D{ static_cast<int32_t>(screenshot_img->getSize().width), static_cast<int32_t>(screenshot_img->getSize().height), 1 };
-            blit_region.dstOffsets[0] = blit_region.srcOffsets[0];
-            blit_region.dstOffsets[1] = blit_region.srcOffsets[1];
-            blit_region.srcSubresource = src_layers;
-            blit_region.dstSubresource = src_layers;
-            
-            VkImageMemoryBarrier image_barrier{ };
-            image_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-            image_barrier.image = swapchain->getImage(frame_index);
-            image_barrier.oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-            image_barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-            image_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            image_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            image_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            image_barrier.subresourceRange.baseMipLevel = 0;
-            image_barrier.subresourceRange.levelCount = 1;
-            image_barrier.subresourceRange.baseArrayLayer = 0;
-            image_barrier.subresourceRange.layerCount = 1;
-            image_barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-            image_barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-
-            vkCmdPipelineBarrier
-            (
-                cmd,
-                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
-                0,
-                0, nullptr,
-                0, nullptr,
-                1, &image_barrier
-            );
-            
-            vkCmdBlitImage(cmd, swapchain->getImage(frame_index), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, screenshot_img->getImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit_region, VkFilter::VK_FILTER_NEAREST);
-            
-            VkImageMemoryBarrier image_barrier_reversed = image_barrier;
-            image_barrier_reversed.oldLayout = image_barrier.newLayout;
-            image_barrier_reversed.newLayout = image_barrier.oldLayout;
-            image_barrier_reversed.srcAccessMask = image_barrier.dstAccessMask;
-            image_barrier_reversed.dstAccessMask = image_barrier.srcAccessMask;
-            
-            vkCmdPipelineBarrier
-            (
-                cmd,
-                VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                0,
-                0, nullptr,
-                0, nullptr,
-                1, &image_barrier_reversed
-            );
-
-            endTransientCommands(cmd);
-
-            // TODO: transfer screenshot_img out to a host accessible image
-
-            // TODO: write it out to PNG
-
-            screenshot_img->removeReferencer();
-            wants_screenshot = false;
+            takeScreenshot(frame_index);
         }
 
         frame_index = (frame_index + 1) % MAX_FRAMES_IN_FLIGHT;
@@ -836,6 +757,100 @@ void PTApplication::resizeSwapchain()
 void PTApplication::windowResizeCallback(GLFWwindow* window, int new_width, int new_height)
 {
     get()->window_resized = true;
+}
+
+void PTApplication::takeScreenshot(uint32_t frame_index)
+{
+    VkCommandBuffer cmd = beginTransientCommands();
+
+    VkExtent2D ext = swapchain->getExtent();
+    PTImage* screenshot_img = PTResourceManager::get()->createImage(ext, 
+                                                                    VK_FORMAT_R8G8B8A8_SRGB, 
+                                                                    VK_IMAGE_TILING_OPTIMAL, 
+                                                                    VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, 
+                                                                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    screenshot_img->transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, cmd);
+    VkMemoryRequirements memory_requirements{ };
+    vkGetImageMemoryRequirements(device, screenshot_img->getImage(), &memory_requirements);
+    PTBuffer* host_buffer = PTResourceManager::get()->createBuffer(memory_requirements.size, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+    VkImageSubresourceLayers src_layers{ };
+    src_layers.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    src_layers.baseArrayLayer = 0;
+    src_layers.layerCount = 1;
+    src_layers.mipLevel = 0;
+
+    VkImageBlit blit_region{ };
+    blit_region.srcOffsets[0] = VkOffset3D{ 0, 0, 0 };
+    blit_region.srcOffsets[1] = VkOffset3D{ static_cast<int32_t>(screenshot_img->getSize().width), static_cast<int32_t>(screenshot_img->getSize().height), 1 };
+    blit_region.dstOffsets[0] = blit_region.srcOffsets[0];
+    blit_region.dstOffsets[1] = blit_region.srcOffsets[1];
+    blit_region.srcSubresource = src_layers;
+    blit_region.dstSubresource = src_layers;
+    
+    VkImageMemoryBarrier image_barrier{ };
+    image_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    image_barrier.image = swapchain->getImage(frame_index);
+    image_barrier.oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    image_barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+    image_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    image_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    image_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    image_barrier.subresourceRange.baseMipLevel = 0;
+    image_barrier.subresourceRange.levelCount = 1;
+    image_barrier.subresourceRange.baseArrayLayer = 0;
+    image_barrier.subresourceRange.layerCount = 1;
+    image_barrier.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    image_barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+
+    vkCmdPipelineBarrier
+    (
+        cmd,
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+        0,
+        0, nullptr,
+        0, nullptr,
+        1, &image_barrier
+    );
+    
+    vkCmdBlitImage(cmd, swapchain->getImage(frame_index), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, screenshot_img->getImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit_region, VkFilter::VK_FILTER_NEAREST);
+    
+    VkImageMemoryBarrier image_barrier_reversed = image_barrier;
+    image_barrier_reversed.oldLayout = image_barrier.newLayout;
+    image_barrier_reversed.newLayout = image_barrier.oldLayout;
+    image_barrier_reversed.srcAccessMask = image_barrier.dstAccessMask;
+    image_barrier_reversed.dstAccessMask = image_barrier.srcAccessMask;
+    
+    vkCmdPipelineBarrier
+    (
+        cmd,
+        VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        0,
+        0, nullptr,
+        0, nullptr,
+        1, &image_barrier_reversed
+    );
+
+    VkBufferImageCopy copy_region{ };
+    copy_region.imageOffset = VkOffset3D{ 0, 0, 0 };
+    copy_region.imageExtent = VkExtent3D{ ext.width, ext.height, 1 };
+    copy_region.imageSubresource = src_layers;
+    copy_region.bufferOffset = 0;
+    copy_region.bufferRowLength = ext.width;
+    copy_region.bufferImageHeight = ext.height;
+
+    screenshot_img->transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, cmd);
+
+    vkCmdCopyImageToBuffer(cmd, screenshot_img->getImage(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, host_buffer->getBuffer(), 1, &copy_region);
+
+    endTransientCommands(cmd);
+
+    screenshot_img->removeReferencer();
+    
+    // TODO: write it out to PNG
+
+    host_buffer->removeReferencer();
+    wants_screenshot = false;
 }
 
 VkCommandBuffer PTApplication::beginTransientCommands()

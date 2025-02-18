@@ -41,10 +41,10 @@ public:
     inline VkImageLayout getLayout() const { return layout; }
 
     VkImageView createImageView(VkImageAspectFlags aspect_flags);
-    void transitionImageLayout(VkImageLayout new_layout);
-    void copyBufferToImage(VkBuffer buffer);
+    void transitionImageLayout(VkImageLayout new_layout, VkCommandBuffer cmd = VK_NULL_HANDLE);
+    void copyBufferToImage(VkBuffer buffer, VkCommandBuffer cmd = VK_NULL_HANDLE);
 
-    static void transitionImageLayout(VkImage image, VkImageLayout old_layout, VkImageLayout new_layout);
+    static void transitionImageLayout(VkImage image, VkImageLayout old_layout, VkImageLayout new_layout, VkCommandBuffer cmd = VK_NULL_HANDLE);
 
 private:
     void createImage(PTPhysicalDevice physical_device, VkExtent2D _size, VkFormat _format, VkImageTiling _tiling, VkImageUsageFlags _usage, VkMemoryPropertyFlags properties);
