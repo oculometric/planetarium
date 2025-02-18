@@ -60,56 +60,7 @@ VkImageView PTImage::createImageView(VkImageAspectFlags aspect_flags)
 
 void PTImage::transitionImageLayout(VkImageLayout new_layout)
 {
-    if (layout == new_layout) return;
-    
-    VkCommandBuffer command_buffer = PTApplication::get()->beginTransientCommands();
-
-    VkImageMemoryBarrier image_barrier{ };
-    image_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    image_barrier.image = image;
-    image_barrier.oldLayout = layout;
-    image_barrier.newLayout = new_layout;
-    image_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    image_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-    image_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    image_barrier.subresourceRange.baseMipLevel = 0;
-    image_barrier.subresourceRange.levelCount = 1;
-    image_barrier.subresourceRange.baseArrayLayer = 0;
-    image_barrier.subresourceRange.layerCount = 1;
-    
-    VkPipelineStageFlags source_stage;
-    VkPipelineStageFlags destination_stage;
-
-    if (layout == VK_IMAGE_LAYOUT_UNDEFINED && new_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
-    {
-        image_barrier.srcAccessMask = 0;
-        image_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-
-        source_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        destination_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-    }
-    else if (layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
-    {
-        image_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        image_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-        source_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-        destination_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-    }
-    else
-        throw invalid_argument("unsupported layout transition");
-
-    vkCmdPipelineBarrier
-    (
-        command_buffer,
-        source_stage, destination_stage,
-        0,
-        0, nullptr,
-        0, nullptr,
-        1, &image_barrier
-    );
-
-    PTApplication::get()->endTransientCommands(command_buffer);
+    transitionImageLayout(image, layout, new_layout);
 
     layout = new_layout;
 }
@@ -137,6 +88,60 @@ void PTImage::copyBufferToImage(VkBuffer buffer)
     };
 
     vkCmdCopyBufferToImage(command_buffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
+
+    PTApplication::get()->endTransientCommands(command_buffer);
+}
+
+void PTImage::transitionImageLayout(VkImage image, VkImageLayout old_layout, VkImageLayout new_layout)
+{
+    if (old_layout == new_layout) return;
+    
+    VkCommandBuffer command_buffer = PTApplication::get()->beginTransientCommands();
+
+    VkImageMemoryBarrier image_barrier{ };
+    image_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    image_barrier.image = image;
+    image_barrier.oldLayout = old_layout;
+    image_barrier.newLayout = new_layout;
+    image_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    image_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    image_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    image_barrier.subresourceRange.baseMipLevel = 0;
+    image_barrier.subresourceRange.levelCount = 1;
+    image_barrier.subresourceRange.baseArrayLayer = 0;
+    image_barrier.subresourceRange.layerCount = 1;
+    
+    VkPipelineStageFlags source_stage;
+    VkPipelineStageFlags destination_stage;
+
+    if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED && new_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+    {
+        image_barrier.srcAccessMask = 0;
+        image_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+        source_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        destination_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    }
+    else if (old_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+    {
+        image_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        image_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+        source_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        destination_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    }
+    else
+        throw invalid_argument("unsupported layout transition");
+
+    vkCmdPipelineBarrier
+    (
+        command_buffer,
+        source_stage, destination_stage,
+        0,
+        0, nullptr,
+        0, nullptr,
+        1, &image_barrier
+    );
 
     PTApplication::get()->endTransientCommands(command_buffer);
 }

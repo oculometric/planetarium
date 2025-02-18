@@ -36,6 +36,7 @@
 
 ## Misc
 
+- [ ] 'q' shortcut to quit via stui
 - [ ] fix console log scroll to end
 - [ ] array handling for deserialiser argument parsing
 

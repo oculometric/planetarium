@@ -8,14 +8,18 @@
 #include <array>
 #include <chrono>
 
-#include "graphics/shader.h"
-#include "graphics/pipeline.h"
 #include "graphics/physical_device.h"
-#include "graphics/swapchain.h"
-#include "graphics/buffer.h"
-#include "graphics/render_pass.h"
-#include "graphics/image.h"
-#include "graphics/mesh.h"
+#include "math/ptmath.h"
+
+class PTScene;
+class PTNode;
+class PTSwapchain;
+class PTShader;
+class PTRenderPass;
+class PTPipeline;
+class PTBuffer;
+class PTImage;
+class PTMesh;
 
 struct CommonUniforms
 {
@@ -36,9 +40,6 @@ struct PTDrawRequest
     //PTRenderPass* render_pass = nullptr;
     //void* uniform_data = nullptr;
 };
-
-class PTScene;
-class PTNode;
 
 class PTApplication
 {
@@ -119,7 +120,7 @@ public:
     void addDrawRequest(PTDrawRequest request, PTNode* owner);
     void removeAllDrawRequests(PTNode* owner);
 
-    inline float getAspectRatio() const { return (float)swapchain->getExtent().width / (float)swapchain->getExtent().height; }
+    float getAspectRatio() const;
 
 private:
     void initWindow();

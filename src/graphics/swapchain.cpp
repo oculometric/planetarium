@@ -55,7 +55,7 @@ PTSwapchain::PTSwapchain(VkDevice device, PTPhysicalDevice& physical_device, VkS
     swap_chain_create_info.imageColorSpace = selected_surface_format.colorSpace;
     swap_chain_create_info.imageExtent = selected_extent;
     swap_chain_create_info.imageArrayLayers = 1;
-    swap_chain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+    swap_chain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 
     // check if the queues are the same
     if (physical_device.getQueueFamily(PTQueueFamily::PRESENT) != physical_device.getQueueFamily(PTQueueFamily::GRAPHICS))

@@ -44,6 +44,8 @@ public:
     void transitionImageLayout(VkImageLayout new_layout);
     void copyBufferToImage(VkBuffer buffer);
 
+    static void transitionImageLayout(VkImage image, VkImageLayout old_layout, VkImageLayout new_layout);
+
 private:
     void createImage(PTPhysicalDevice physical_device, VkExtent2D _size, VkFormat _format, VkImageTiling _tiling, VkImageUsageFlags _usage, VkMemoryPropertyFlags properties);
 };
