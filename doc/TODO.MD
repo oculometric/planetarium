@@ -24,6 +24,7 @@
 - [ ] scene editing
 - [ ] mesh editing
 - [ ] live shader editor
+- [ ] COMPILED node editing
 
 ## Art Stuff
 
@@ -35,7 +36,6 @@
 
 ## Misc
 
-- [ ] fix console log scroll to end
 - [ ] array handling for deserialiser argument parsing
 
 ## Completed
@@ -75,3 +75,4 @@
 - [x] fix semaphore issue when resizing the framebuffer
 - [x] screenshot button
 - [x] 'q' shortcut to quit via stui
+- [x] fix console log scroll to end

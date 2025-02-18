@@ -230,19 +230,12 @@ void PTDebugManager::exitButtonCallback()
 void PTDebugManager::appendToLog(string s)
 {
     console->text += s + '\n';
-    console->scroll++;
+    console->scroll = INT_MAX - 2;
     if (log.is_open())
     {
         log << s << '\n';
         log.flush();
     }
-    // if (console->text.length() > 5000)
-    // {
-    //     size_t cutoff = console->text.find('\n', 5000);
-    //     if (cutoff == string::npos || cutoff - 5000 > 200)
-    //         cutoff = 5000;
-    //     console->text = console->text.substr(cutoff);
-    // }
 }
 
 void PTDebugManager::setFrametime(float delta, int number)
