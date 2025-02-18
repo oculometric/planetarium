@@ -15,7 +15,6 @@ int main(int argc, char* argv[])
     try
     {
         app.start();
-        debugDeinit();
     }
     catch (const std::exception& e)
     {

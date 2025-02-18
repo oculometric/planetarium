@@ -35,7 +35,6 @@
 
 ## Misc
 
-- [ ] 'q' shortcut to quit via stui
 - [ ] fix console log scroll to end
 - [ ] array handling for deserialiser argument parsing
 
@@ -75,3 +74,4 @@
 - [x] make all input functions return a float instead for easy maths (from controller)
 - [x] fix semaphore issue when resizing the framebuffer
 - [x] screenshot button
+- [x] 'q' shortcut to quit via stui

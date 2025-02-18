@@ -4,3 +4,5 @@ bin
 /.vs
 /planetarium/x64
 /x64
+planetarium.log
+screenshot.bmp

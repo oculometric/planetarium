@@ -6,8 +6,10 @@
 #include <thread>
 #include <format>
 #include <chrono>
+#include <fstream>
 
 #include "debug_ui.h"
+#include "application.h"
 
 using namespace stui;
 using namespace std;
@@ -95,6 +97,7 @@ private:
 
     bool should_halt = false;
     thread render_thread;
+    ofstream log;
 
 public:
     inline PTDebugManager()
@@ -113,13 +116,20 @@ public:
 
         main_page->focusable_component_sequence = { console, scene_props_box, object_props_box };
 
+        main_page->shortcuts.push_back(Input::Shortcut{ Input::Key{ 'q', Input::ControlKeys::NONE }, quitShortcutPressed });
+
         render_thread = thread(&PTDebugManager::renderLoop, this);
+
+        log.open("planetarium.log");
+        if (!log.is_open())
+            debugLog("unable to open log file!");
     }
 
     void appendToLog(string s);
     void setFrametime(float delta, int number);
     void showExitButton();
     static void exitButtonCallback();
+    static void quitShortcutPressed();
 
     inline void setSceneProp(string name, string val) { scene_props_box->elements[name] = val; }
     inline void setObjectProp(string name, string val) { object_props_box->elements[name] = val; }
@@ -128,6 +138,9 @@ public:
 
     inline ~PTDebugManager()
     {
+        if (!log.is_open())
+            log.close();
+
         render_thread.join();
 
         main_page->render();
@@ -218,6 +231,11 @@ void PTDebugManager::appendToLog(string s)
 {
     console->text += s + '\n';
     console->scroll++;
+    if (log.is_open())
+    {
+        log << s << '\n';
+        log.flush();
+    }
     // if (console->text.length() > 5000)
     // {
     //     size_t cutoff = console->text.find('\n', 5000);
@@ -252,4 +270,10 @@ void PTDebugManager::renderLoop()
 
         main_page->framerate(24);
     }
+}
+
+void PTDebugManager::quitShortcutPressed()
+{
+    PTApplication::get()->should_stop = true;
+    mgr->should_halt = true;
 }

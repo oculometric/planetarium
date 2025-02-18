@@ -83,6 +83,9 @@ void PTApplication::start()
 
     deinitVulkan();
     deinitWindow();
+
+    if (!should_stop)
+        debugDeinit();
 }
 
 PTApplication* PTApplication::get()
@@ -178,7 +181,7 @@ void PTApplication::mainLoop()
     int frame_total_number = 0;
     uint32_t frame_index = 0;
     last_frame_start = chrono::high_resolution_clock::now();
-    while (!glfwWindowShouldClose(window))
+    while (!glfwWindowShouldClose(window) && !should_stop)
     {
         glfwPollEvents();
         PTInput::get()->pollGamepads();
@@ -196,9 +199,7 @@ void PTApplication::mainLoop()
         drawFrame(frame_index);
 
         if (wants_screenshot)
-        {
             takeScreenshot(frame_index);
-        }
 
         frame_index = (frame_index + 1) % MAX_FRAMES_IN_FLIGHT;
         frame_total_number++;
