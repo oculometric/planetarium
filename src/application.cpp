@@ -740,6 +740,13 @@ void PTApplication::resizeSwapchain()
     vkDeviceWaitIdle(device);
     debugLog("    old size: " + to_string(swapchain->getExtent().width) + ", " + to_string(swapchain->getExtent().height));
 
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    {
+        vkDestroySemaphore(device, image_available_semaphores[i], nullptr);
+        vkDestroySemaphore(device, render_finished_semaphores[i], nullptr);
+        vkDestroyFence(device, in_flight_fences[i], nullptr);
+    }
+
     for (auto framebuffer : framebuffers)
         vkDestroyFramebuffer(device, framebuffer, nullptr);
 
@@ -759,6 +766,7 @@ void PTApplication::resizeSwapchain()
 
     createDepthResources();
     createFramebuffers(demo_render_pass->getRenderPass());
+    createSyncObjects();
 
     window_resized = false;
     vkDeviceWaitIdle(device);

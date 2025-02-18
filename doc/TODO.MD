@@ -3,13 +3,13 @@
 ## Vulkan Stuff
 
 - [ ] screenshot button
-- [ ] fix semaphore issue when resizing the framebuffer
 - [ ] improve mesh draw call queueing system to allow for unlimited objects and choice of shader/render pass/pipeline
       - organise objects by material (i.e. the non-common uniform buffer is all the same)
       - draw objects with indexed descriptor sets?
       - descriptor set pool needs to be able to support dynamic numbers of different descriptor set layouts
       - store allocated descriptor sets on the object draw-request (create when the draw-request is created, destroy when the draw-request is removed)
       - alternatively, just submit multiple command buffers to the queue
+      - material specifies the shader, pipeline, descriptor set layout, descriptor set values, textures
 - [ ] implement proper shader config and reflection, and checking this when creating render passes
 
 ## Engine Stuff
@@ -73,3 +73,4 @@
 - [x] object drawing system
 - [x] object transform (quaternions, reverse param update, transformation functions) (0)
 - [x] make all input functions return a float instead for easy maths (from controller)
+- [x] fix semaphore issue when resizing the framebuffer
