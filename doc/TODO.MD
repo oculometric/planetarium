@@ -3,13 +3,14 @@
 ## Vulkan Stuff
 
 - [ ] improve mesh draw call queueing system to allow for unlimited objects and choice of shader/render pass/pipeline
-      - specify the transform pointer to track
-      - organise objects by material (i.e. the non-common uniform buffer is all the same)
-      - draw objects with indexed descriptor sets?
-      - descriptor set pool needs to be able to support dynamic numbers of different descriptor set layouts
-      - store allocated descriptor sets on the object draw-request (create when the draw-request is created, destroy when the draw-request is removed)
-      - alternatively, just submit multiple command buffers to the queue
-      - material specifies the shader, pipeline, descriptor set layout, descriptor set values, textures
+      - [x] specify the transform pointer to track
+      - [ ] organise objects by material (i.e. the non-common uniform buffer is all the same)
+      - [ ] draw objects with indexed descriptor sets?
+      - [ ] descriptor set pool needs to be able to support dynamic numbers of different descriptor set layouts
+      - [ ] store allocated descriptor sets on the object draw-request (create when the draw-request is created, destroy when the draw-request is removed)
+      - [ ] alternatively, just submit multiple command buffers to the queue
+      - [ ] material specifies the shader, pipeline, descriptor set layout, descriptor set values, textures
+- [ ] common uniforms should carry and object id
 - [ ] implement proper shader config and reflection, and checking this when creating render passes
 
 ## Engine Stuff
@@ -26,6 +27,7 @@
 - [ ] mesh editing
 - [ ] live shader editor
 - [ ] COMPILED node editing
+- [ ] 3d reconstruction using meshing/shared topology solving (i.e. you draw some geometry from one view, then you draw some from another view and say what's what, then the engine solves the relative orientations of the view and the vertices)
 
 ## Art Stuff
 
@@ -34,6 +36,7 @@
 - [ ] stylised post-processing
 - [ ] spaceship terminal interface/look
 - [ ] google earth replacement
+- [ ] dernacueilliette walkaround scene
 
 ## Misc
 

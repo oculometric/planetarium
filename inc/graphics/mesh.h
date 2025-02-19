@@ -30,11 +30,6 @@ private:
     PTBuffer* index_buffer = nullptr;
     uint32_t index_count = 0;
 
-    PTMesh(VkDevice _device, const PTPhysicalDevice& physical_device, std::string file_name);
-    PTMesh(VkDevice _device, const PTPhysicalDevice& physical_device, std::vector<PTVertex> vertices, std::vector<uint16_t> indices);
-
-    ~PTMesh();
-
 public:
     PTMesh() = delete;
     PTMesh(const PTMesh& other) = delete;
@@ -52,6 +47,11 @@ public:
     static std::array<VkVertexInputAttributeDescription, 5> getVertexAttributeDescriptions();
 
 private:
+    PTMesh(VkDevice _device, const PTPhysicalDevice& physical_device, std::string file_name);
+    PTMesh(VkDevice _device, const PTPhysicalDevice& physical_device, std::vector<PTVertex> vertices, std::vector<uint16_t> indices);
+
+    ~PTMesh();
+
     static void readFileToBuffers(std::string file_name, std::vector<PTVertex>& vertices, std::vector<uint16_t>& indices);
     void createVertexBuffers(const PTPhysicalDevice& physical_device, std::vector<PTVertex> vertices, std::vector<uint16_t> indices);
 };

@@ -24,7 +24,6 @@ private:
     VkViewport viewport;
     VkRect2D scissor;
 
-    // TODO: setters for these, which recreate the pipeline resources
     VkBool32 depth_write;
     VkBool32 depth_test;
     VkCompareOp depth_op;
@@ -60,4 +59,8 @@ public:
     inline VkFrontFace getWindingOrder() const { return winding_order; }
     inline VkPolygonMode getPolygonMode() const { return polygon_mode; }
 
+    // TODO: setters for these, which recreate the pipeline resources
+    void setDepthParams(VkBool32 write, VkBool32 test, VkCompareOp op);
+    void setCulling(VkCullModeFlags cull);
+    void setPolygonMode(VkPolygonMode mode);
 };
