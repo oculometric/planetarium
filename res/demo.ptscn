@@ -2,14 +2,14 @@ Resource(mesh, "res/suzanne.obj") : 4a3b825f;
 Resource(mesh, "res/teapot.obj") : teapot_mesh;
 Resource(mesh, "res/desert_surrealism.obj") : origin_mesh;
 
-MeshNode(data = @origin_mesh);
+MeshNode(data = @origin_mesh) : desert;
 GizmoNode();
 
 Node() : parent
 {
-    MeshNode(data = @4a3b825f, position = [0.5, 1.0, 0.0]) : mesh;
-    MeshNode(data = @4a3b825f, position = [-1.5, 1.0, 0.0]);
-    MeshNode(data = @teapot_mesh, position = [0, 0, 2], scale = [0.2,0.2,0.2]);
+    MeshNode(data = @4a3b825f, position = [0.5, 1.0, 0.0]) : monkey_a;
+    MeshNode(data = @4a3b825f, position = [-1.5, 1.0, 0.0]) : monkey_b;
+    MeshNode(data = @teapot_mesh, position = [0, 0, 2], scale = [0.2,0.2,0.2]) : teapot;
     //DirectionalLightNode() : sun_lamp;
 };
 FlyCameraNode(position = [2, 0, 5]);

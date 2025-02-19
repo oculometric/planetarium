@@ -9,7 +9,7 @@ PTMeshNode::PTMeshNode(PTDeserialiser::ArgMap arguments) : PTNode(arguments)
     if (hasArg(arguments, "data", PTDeserialiser::ArgType::RESOURCE_ARG))
     {
         mesh_data = (PTMesh*)arguments["data"].r_val;
-        getApplication()->addDrawRequest(PTDrawRequest{ mesh_data }, this);
+        getApplication()->addDrawRequest(PTDrawRequest{ mesh_data, getTransform() }, this);
         addDependency(mesh_data);
     }
 }

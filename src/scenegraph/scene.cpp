@@ -32,7 +32,7 @@ PTScene::~PTScene()
 vector<PTNode*> PTScene::getNodes() const
 {
     vector<PTNode*> nodes;
-    nodes.resize(all_nodes.size());
+    nodes.reserve(all_nodes.size());
     for (auto pair : all_nodes)
         nodes.push_back(pair.second);
     return nodes;

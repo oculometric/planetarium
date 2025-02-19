@@ -20,6 +20,7 @@ class PTPipeline;
 class PTBuffer;
 class PTImage;
 class PTMesh;
+class PTTransform;
 
 struct CommonUniforms
 {
@@ -35,6 +36,7 @@ const uint32_t MAX_FRAMES_IN_FLIGHT = 2;
 struct PTDrawRequest
 {
     PTMesh* mesh = nullptr;
+    PTTransform* transform = nullptr;
     //PTShader* shader = nullptr;
     //PTPipeline* pipeline = nullptr;
     //PTRenderPass* render_pass = nullptr;

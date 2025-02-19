@@ -920,7 +920,10 @@ void PTApplication::updateUniformBuffers(uint32_t frame_index)
     uint32_t offset = 0;
     for (auto instruction : draw_queue)
     {
-        instruction.first->getTransform()->getLocalToWorld().getColumnMajor(uniforms.model_to_world);
+        if (instruction.second.transform != nullptr)
+            instruction.second.transform->getLocalToWorld().getColumnMajor(uniforms.model_to_world);
+        else
+            PTMatrix4f().getColumnMajor(uniforms.model_to_world);
         memcpy(uniform_buffers[offset + frame_index]->getMappedMemory(), &uniforms, sizeof(CommonUniforms));
         offset += MAX_FRAMES_IN_FLIGHT;
     }

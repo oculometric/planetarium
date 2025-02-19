@@ -210,13 +210,13 @@ void debugSetObjectProperty(std::string name, std::string content)
     mgr->setObjectProp(name, content);
 }
 
-void debugClearSceneProperty(std::string name, std::string content)
+void debugClearSceneProperty(std::string name)
 {
     if (mgr == nullptr) return;
     mgr->clearSceneProp(name);
 }
 
-void debugClearObjectProperty(std::string name, std::string content)
+void debugClearObjectProperty(std::string name)
 {
     if (mgr == nullptr) return;
     mgr->clearObjectProp(name);
