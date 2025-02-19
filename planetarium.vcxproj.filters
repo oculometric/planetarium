@@ -24,15 +24,6 @@
     <ClInclude Include="inc\debug_ui.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="inc\input.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="inc\scenegraph\camera.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="inc\scenegraph\object.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="inc\scenegraph\scene.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -96,15 +87,27 @@
     <ClInclude Include="inc\math\quaternion.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="inc\input\gamepad.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\input\input.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\scenegraph\camera_node.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\scenegraph\fly_camera_node.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\scenegraph\gizmo_node.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\application.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\debug.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\input.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\main.cpp">
@@ -158,11 +161,23 @@
     <ClCompile Include="src\scenegraph\transform.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\bitmap.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\scenegraph\fly_camera_node.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\scenegraph\gizmo_node.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\input\gamepad.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\input\input.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="demo.ptscn">
-      <Filter>Resource Files</Filter>
-    </None>
     <None Include="FORMATTING.md">
       <Filter>Resource Files</Filter>
     </None>
@@ -172,5 +187,25 @@
     <None Include="TODO.MD">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="res\demo.ptscn">
+      <Filter>Resource Files</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Object Include="res\debug_axes.obj">
+      <Filter>Resource Files</Filter>
+    </Object>
+    <Object Include="res\desert_surrealism.obj">
+      <Filter>Resource Files</Filter>
+    </Object>
+    <Object Include="res\suzanne.obj">
+      <Filter>Resource Files</Filter>
+    </Object>
+    <Object Include="res\teapot.obj">
+      <Filter>Resource Files</Filter>
+    </Object>
+    <Object Include="res\uvcube.obj">
+      <Filter>Resource Files</Filter>
+    </Object>
   </ItemGroup>
 </Project>

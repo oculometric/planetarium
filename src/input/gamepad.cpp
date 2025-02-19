@@ -112,8 +112,11 @@ bool PTGamepad::isValid()
 
 PTGamepad::~PTGamepad()
 {
+#ifdef _WIN32
+#else
     if (isValid())
         close(device_handle);
+#endif
 }
 
 void PTGamepad::setButtonState(Button button, bool state)

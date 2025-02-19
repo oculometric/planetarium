@@ -33,22 +33,25 @@
     <ClInclude Include="inc\graphics\resource_manager.h" />
     <ClInclude Include="inc\graphics\shader.h" />
     <ClInclude Include="inc\graphics\swapchain.h" />
-    <ClInclude Include="inc\input.h" />
+    <ClInclude Include="inc\input\gamepad.h" />
+    <ClInclude Include="inc\input\input.h" />
     <ClInclude Include="inc\math\matrix3.h" />
     <ClInclude Include="inc\math\matrix4.h" />
     <ClInclude Include="inc\math\quaternion.h" />
     <ClInclude Include="inc\math\vector2.h" />
     <ClInclude Include="inc\math\vector3.h" />
     <ClInclude Include="inc\math\vector4.h" />
-    <ClInclude Include="inc\scenegraph\camera.h" />
+    <ClInclude Include="inc\scenegraph\camera_node.h" />
+    <ClInclude Include="inc\scenegraph\fly_camera_node.h" />
+    <ClInclude Include="inc\scenegraph\gizmo_node.h" />
     <ClInclude Include="inc\scenegraph\mesh_node.h" />
     <ClInclude Include="inc\scenegraph\node.h" />
-    <ClInclude Include="inc\scenegraph\object.h" />
     <ClInclude Include="inc\scenegraph\scene.h" />
     <ClInclude Include="inc\scenegraph\transform.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\application.cpp" />
+    <ClCompile Include="src\bitmap.cpp" />
     <ClCompile Include="src\debug.cpp" />
     <ClCompile Include="src\deserialiser.cpp" />
     <ClCompile Include="src\graphics\buffer.cpp" />
@@ -61,19 +64,29 @@
     <ClCompile Include="src\graphics\resource_manager.cpp" />
     <ClCompile Include="src\graphics\shader.cpp" />
     <ClCompile Include="src\graphics\swapchain.cpp" />
-    <ClCompile Include="src\input.cpp" />
+    <ClCompile Include="src\input\gamepad.cpp" />
+    <ClCompile Include="src\input\input.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\scenegraph\camera_node.cpp" />
+    <ClCompile Include="src\scenegraph\fly_camera_node.cpp" />
+    <ClCompile Include="src\scenegraph\gizmo_node.cpp" />
     <ClCompile Include="src\scenegraph\mesh_node.cpp" />
     <ClCompile Include="src\scenegraph\node.cpp" />
     <ClCompile Include="src\scenegraph\scene.cpp" />
     <ClCompile Include="src\scenegraph\transform.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="demo.ptscn" />
     <None Include="FORMATTING.md" />
     <None Include="NODE.md" />
+    <None Include="res\demo.ptscn" />
     <None Include="TODO.MD" />
+  </ItemGroup>
+  <ItemGroup>
+    <Object Include="res\debug_axes.obj" />
+    <Object Include="res\desert_surrealism.obj" />
+    <Object Include="res\suzanne.obj" />
+    <Object Include="res\teapot.obj" />
+    <Object Include="res\uvcube.obj" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

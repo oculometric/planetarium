@@ -4,7 +4,7 @@
 
 using namespace std;
 
-#include "input.h"
+#include "input/input.h"
 #include "application.h"
 
 void PTFlyCameraNode::process(float delta_time)

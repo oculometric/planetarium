@@ -16,6 +16,10 @@ public:
     enum EventType
     {
     #ifdef _WIN32
+        INVALID = 0,
+        BUTTON,
+        JOYSTICK,
+        INIT
     #else
         INVALID     = 0b00000000,
         BUTTON      = JS_EVENT_BUTTON,
