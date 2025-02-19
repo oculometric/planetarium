@@ -14,9 +14,11 @@ const float pixel_size = 1.0f;
 void main()
 {
     float brightness = clamp(dot(-sun_direction, varyings.world_normal), 0, 1);
+    vec3 surface = (varyings.colour + 0.1f) * brightness;
 
-    float scaled = brightness * divs;
-    brightness = (floor(scaled) + float(fract(scaled) > ((float(int(gl_FragCoord.x / pixel_size) % 2 == int(gl_FragCoord.y / pixel_size) % 2) + 1.0) / 3.0))) / divs;
+    vec3 scaled = surface * divs;
+    float val = (float(int(gl_FragCoord.x / pixel_size) % 2 == int(gl_FragCoord.y / pixel_size) % 2) + 1.0) / 3.0;
+    surface = (floor(scaled) + vec3(greaterThan(fract(scaled), vec3(val)))) / divs;
 
-    frag_colour = vec4(vec3(brightness), 1);
+    frag_colour = vec4(vec3(surface), 1);
 }

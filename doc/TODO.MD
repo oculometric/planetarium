@@ -14,7 +14,6 @@
 
 ## Engine Stuff
 
-- [ ] add ability to read vertex colours from OBJ files
 - [ ] show debug axes of objects currently hovered over (this should be a new Node type)
 - [ ] make float isDown and bool wasPressed and bool wasReleased functions for each keyboard key
 - [ ] better way of specifying which keyboard key to check the state of (A vs a, etc)
@@ -80,3 +79,4 @@
 - [x] fix console log scroll to end
 - [x] make custom node type creation easier and more fluid (template, # defines, way of checking type of instance. also, make the makefile search for node types and import them)
 - [x] move functional code out of scene
+- [x] add ability to read vertex colours from OBJ files

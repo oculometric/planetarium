@@ -154,6 +154,7 @@ void PTMesh::readFileToBuffers(std::string file_name, std::vector<PTVertex>& ver
 
     // vectors to load data into
     vector<PTVector3f> tmp_co;
+    vector<PTVector3f> tmp_cl;
     vector<PTFaceCorner> tmp_fc;
     vector<PTVector2f> tmp_uv;
     vector<PTVector3f> tmp_vn;
@@ -174,6 +175,17 @@ void PTMesh::readFileToBuffers(std::string file_name, std::vector<PTVertex>& ver
             file >> tmp3.y;
             file >> tmp3.z;
             tmp_co.push_back(tmp3);
+            if (file.peek() != '\n')
+            {
+                file >> tmp3.x;
+                file >> tmp3.y;
+                file >> tmp3.z;
+                tmp_cl.push_back(tmp3);
+            }
+            else
+            {
+                tmp_cl.push_back(PTVector3f{ 0, 0, 0 });
+            }
         }
         else if (tmps == "vn")
         {
@@ -242,6 +254,7 @@ void PTMesh::readFileToBuffers(std::string file_name, std::vector<PTVertex>& ver
         {
             PTVertex new_vert;
             new_vert.position = tmp_co[fc.co];
+            new_vert.colour = tmp_cl[fc.co];
             new_vert.normal = tmp_vn[fc.vn];
             if (tmp_uv.size() > fc.uv)
                 new_vert.uv = tmp_uv[fc.uv];
