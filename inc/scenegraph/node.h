@@ -10,15 +10,17 @@ class PTScene;
 class PTNode : public PTResource
 {
 	friend class PTResourceManager;
+	friend class PTScene;
 public:
 	std::string name = "Node";
 
 private:
 	PTTransform transform = PTTransform(this);
+	PTScene* scene = nullptr;
 
 public:
 	inline PTTransform* getTransform() { return &transform; }
-	PTScene* getScene();
+	inline PTScene* getScene() const { return scene; }
 	PTApplication* getApplication();
 
 	PTNode(PTNode& other) = delete;
@@ -39,3 +41,21 @@ protected:
 	// called to destroy the node. referenced resources should be removed as dependencies (decrementing the resource's reference count)
 	inline ~PTNode() { }
 };
+
+/**
+ * template for custom node types
+ * 
+ * class PTCustomNode : public PTNode
+{
+	friend class PTResourceManager;
+private:
+	// private variables
+
+public:
+	// public functions
+
+protected:
+	PTCustomNode(PTDeserialiser::ArgMap arguments);
+	~PTCustomNode();
+};
+ */

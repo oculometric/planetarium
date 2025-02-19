@@ -3,6 +3,7 @@ Resource(mesh, "res/teapot.obj") : teapot_mesh;
 Resource(mesh, "res/desert_surrealism.obj") : origin_mesh;
 
 MeshNode(data = @origin_mesh);
+GizmoNode();
 
 Node() : parent
 {
@@ -11,4 +12,4 @@ Node() : parent
     MeshNode(data = @teapot_mesh, position = [0, 0, 2], scale = [0.2,0.2,0.2]);
     //DirectionalLightNode() : sun_lamp;
 };
-CameraNode(position = [2, 0, 5]);
+FlyCameraNode(position = [2, 0, 5]);

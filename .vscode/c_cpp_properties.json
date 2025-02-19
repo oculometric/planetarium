@@ -4,7 +4,8 @@
             "name": "Linux",
             "includePath": [
                 "${workspaceFolder}/**",
-                "${workspaceFolder}/stui/inc"
+                "${workspaceFolder}/stui/inc",
+                "${workspaceFolder}/inc/input"
             ],
             "defines": [],
             "cStandard": "c20",

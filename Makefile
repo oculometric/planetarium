@@ -4,7 +4,7 @@ OBJ_DIR			:= bin/obj/
 SHR_DIR			:= shr/
 
 CC				:= g++
-CC_FLAGS		:= -std=c++20 -g -O0 -Iinc -Iinc/graphics -Iinc/math -Iinc/scenegraph -Istui/inc -Wall
+CC_FLAGS		:= -std=c++20 -g -O0 -Iinc -Iinc/graphics -Iinc/math -Iinc/scenegraph -Iinc/input -Istui/inc -Wall
 CC_INCLUDE		:= 
 
 LD				:= g++
@@ -47,10 +47,13 @@ $(BIN_DIR)%_frag.spv: $(SHR_DIR)%.frag
 	@echo "Compiling fragment shader" $<
 	@$(SC) $< -o $@
 
+nodes:
+	@./generate_nodes_list.sh
+
 shaders: $(SC_FILES_OUT)
 	@cp $(SC_FILES_OUT) .
 
-$(EXE_OUT): $(CC_FILES_OUT)
+$(EXE_OUT): nodes $(CC_FILES_OUT)
 	@echo "Linking" $(EXE_OUT)
 	@$(LD) $(LD_FLAGS) -o $@ $(CC_FILES_OUT) $(LD_INCLUDE)
 

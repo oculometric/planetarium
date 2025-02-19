@@ -3,6 +3,7 @@
 ## Vulkan Stuff
 
 - [ ] improve mesh draw call queueing system to allow for unlimited objects and choice of shader/render pass/pipeline
+      - specify the transform pointer to track
       - organise objects by material (i.e. the non-common uniform buffer is all the same)
       - draw objects with indexed descriptor sets?
       - descriptor set pool needs to be able to support dynamic numbers of different descriptor set layouts
@@ -13,11 +14,12 @@
 
 ## Engine Stuff
 
+- [ ] add ability to read vertex colours from OBJ files
+- [ ] show debug axes of objects currently hovered over (this should be a new Node type)
 - [ ] make float isDown and bool wasPressed and bool wasReleased functions for each keyboard key
-- [ ] better way of specifying which keyboard key to check the state of
+- [ ] better way of specifying which keyboard key to check the state of (A vs a, etc)
 - [ ] cross platform controller support
 - [ ] mouse input support
-- [ ] move functional code out of scene
 - [ ] UI system (use STUI to generate charbufs, then pass it into a shader maybe????)
 - [ ] fix bug with quaternions where something goes to infinity
 - [ ] object and vertex picking
@@ -76,3 +78,5 @@
 - [x] screenshot button
 - [x] 'q' shortcut to quit via stui
 - [x] fix console log scroll to end
+- [x] make custom node type creation easier and more fluid (template, # defines, way of checking type of instance. also, make the makefile search for node types and import them)
+- [x] move functional code out of scene

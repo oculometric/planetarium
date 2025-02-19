@@ -1,6 +1,7 @@
 #pragma once
 
 #include <map>
+#include <vector>
 
 #include "node.h"
 #include "camera_node.h"
@@ -25,12 +26,17 @@ public:
     T* instantiate(std::string name, PTDeserialiser::ArgMap arguments = { });
     // TODO: node destruction (i.e. 'remove node from tree')
 
+    std::vector<PTNode*> getNodes() const;
+    template<class T>
+    T* findNode(std::string name) const;
+
     template<class T>
     T* getResource(std::string identifier);
     void addResource(std::string identifier, PTResource* resource);
 
     void update(float delta_time);
 
+    inline PTCameraNode* getCamera() const { return camera; }
     void getCameraMatrix(float aspect_ratio, PTMatrix4f& world_to_view, PTMatrix4f& view_to_clip);
 
 private:
@@ -44,6 +50,7 @@ inline T* PTScene::instantiate(std::string name, PTDeserialiser::ArgMap argument
 {
     static_assert(std::is_base_of<PTNode, T>::value, "T is not a PTNode type");
     PTNode* node = PTResourceManager::get()->createNode<T>(arguments);
+    node->scene = this;
     node->name = name;
     addDependency(node);
     node->removeReferencer();

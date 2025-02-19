@@ -3,7 +3,6 @@
 #include "debug.h"
 #include "resource_manager.h"
 #include "scene.h"
-#include "mesh_node.h"
 
 using namespace std;
 
@@ -15,12 +14,9 @@ PTNode* instantiateNode(PTScene* scene, string name, PTDeserialiser::ArgMap args
 
 typedef PTNode*(*PTNodeInstantiateFunc)(PTScene*, string, PTDeserialiser::ArgMap);
 
-map<string, PTNodeInstantiateFunc> node_instantiators = 
-{
-    pair<string, PTNodeInstantiateFunc>("Node", instantiateNode<PTNode>),
-    pair<string, PTNodeInstantiateFunc>("MeshNode", instantiateNode<PTMeshNode>),
-    pair<string, PTNodeInstantiateFunc>("CameraNode", instantiateNode<PTCameraNode>)
-};
+#define INSTANTIATE_FUNC(type) pair<string, PTNodeInstantiateFunc>(#type, instantiateNode<PT##type>)
+
+#include "node_list.generated.h"
 
 vector<PTDeserialiser::Token> PTDeserialiser::tokenise(const string& content)
 {
