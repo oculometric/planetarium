@@ -35,7 +35,7 @@ void PTGizmoNode::process(float delta_time)
         getApplication()->removeAllDrawRequests(this);
         if (min_node != nullptr)
         {
-            getApplication()->addDrawRequest(PTDrawRequest{ axes_mesh, min_node->getTransform() }, this);
+            getApplication()->addDrawRequest(DrawRequest{ axes_mesh, min_node->getTransform() }, this);
             debugSetObjectProperty("name", min_node->name);
             debugSetObjectProperty("position", to_string(min_node->getTransform()->getPosition()));
             debugSetObjectProperty("rotation", to_string(min_node->getTransform()->getLocalRotation()));

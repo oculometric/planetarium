@@ -4,9 +4,10 @@
 #include <vector>
 
 #include "resource.h"
-#include "shader.h"
-#include "render_pass.h"
-#include "swapchain.h"
+
+class PTShader;
+class PTRenderPass;
+class PTSwapchain;
 
 class PTPipeline : public PTResource
 {

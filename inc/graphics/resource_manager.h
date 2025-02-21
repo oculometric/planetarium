@@ -10,6 +10,7 @@
 #include "deserialiser.h"
 #include "mesh.h"
 #include "render_pass.h"
+#include "material.h"
 
 class PTScene;
 class PTBuffer;
@@ -19,6 +20,7 @@ class PTPipeline;
 class PTRenderPass;
 class PTShader;
 class PTSwapchain;
+class PTMaterial;
 
 class PTResourceManager
 {
@@ -42,6 +44,8 @@ public:
     PTRenderPass* createRenderPass(std::vector<PTRenderPassAttachment> attachments, bool enable_depth);
     PTShader* createShader(std::string shader_path_stub, bool force_duplicate = false);
     PTSwapchain* createSwapchain(VkSurfaceKHR surface, int window_x, int window_y);
+    PTMaterial* createMaterial(std::string material_path, PTSwapchain* swapchain); // TODO: load material from file (deserialise)
+    PTMaterial* createMaterial(PTSwapchain* swapchain, PTShader* _shader, std::map<std::string, PTMaterial::MaterialParam> params, VkBool32 depth_write, VkBool32 depth_test, VkCompareOp depth_op, VkCullModeFlags culling, VkPolygonMode polygon_mode);
 
     template<class T>
     T* createNode(PTDeserialiser::ArgMap arguments);

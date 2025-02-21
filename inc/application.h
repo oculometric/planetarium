@@ -21,6 +21,7 @@ class PTBuffer;
 class PTImage;
 class PTMesh;
 class PTTransform;
+class PTMaterial;
 
 struct CommonUniforms
 {
@@ -32,19 +33,19 @@ struct CommonUniforms
 
 const uint32_t MAX_FRAMES_IN_FLIGHT = 2;
 
-// TODO: improve drawing system to allow objects to actually specify their shader/uniform data etc
-struct PTDrawRequest
-{
-    PTMesh* mesh = nullptr;
-    PTTransform* transform = nullptr;
-    //PTShader* shader = nullptr;
-    //PTPipeline* pipeline = nullptr;
-    //PTRenderPass* render_pass = nullptr;
-    //void* uniform_data = nullptr;
-};
-
 class PTApplication
 {
+private:
+    // TODO: draw queue ordering must respect material priority
+    struct DrawRequest
+    {
+        PTMesh* mesh = nullptr;
+        PTTransform* transform = nullptr;
+        PTMaterial* material = nullptr;
+        std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> descriptor_sets;
+        std::array<PTBuffer*, MAX_FRAMES_IN_FLIGHT> descriptor_buffers;
+    };
+
 public:
     bool debug_mode = false;
     bool wants_screenshot = false;
@@ -73,18 +74,19 @@ private:
     VkCommandPool command_pool = VK_NULL_HANDLE;
     std::vector<VkCommandBuffer> command_buffers;
     VkDescriptorPool descriptor_pool = VK_NULL_HANDLE;
-    std::vector<VkDescriptorSet> descriptor_sets;
+    //std::vector<VkDescriptorSet> descriptor_sets;
     
     std::vector<VkSemaphore> image_available_semaphores;
     std::vector<VkSemaphore> render_finished_semaphores;
     std::vector<VkFence> in_flight_fences;
 
-    PTRenderPass* demo_render_pass = nullptr;
-    PTPipeline* demo_pipeline = nullptr;
-    PTPipeline* debug_pipeline = nullptr;
-    PTShader* demo_shader = nullptr;
+    PTMaterial* default_material = nullptr; // TODO: assign default material
+    //PTRenderPass* demo_render_pass = nullptr;
+    //PTPipeline* demo_pipeline = nullptr;
+    //PTPipeline* debug_pipeline = nullptr;
+    //PTShader* demo_shader = nullptr;
 
-    std::multimap<PTNode*, PTDrawRequest> draw_queue;
+    std::multimap<PTNode*, DrawRequest> draw_queue;
 
     std::vector<PTBuffer*> uniform_buffers;
 
@@ -120,7 +122,7 @@ public:
     VkCommandBuffer beginTransientCommands();
     void endTransientCommands(VkCommandBuffer transient_command_buffer);
     
-    void addDrawRequest(PTDrawRequest request, PTNode* owner);
+    void addDrawRequest(PTNode* owner, PTMesh* mesh, PTMaterial* material = nullptr, PTTransform* target_transform = nullptr);
     void removeAllDrawRequests(PTNode* owner);
 
     float getAspectRatio() const;

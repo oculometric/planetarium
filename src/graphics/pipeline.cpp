@@ -1,6 +1,9 @@
 #include "pipeline.h"
 
 #include "mesh.h"
+#include "shader.h"
+#include "render_pass.h"
+#include "swapchain.h"
 
 using namespace std;
 

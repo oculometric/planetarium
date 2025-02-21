@@ -152,6 +152,18 @@ PTSwapchain* PTResourceManager::createSwapchain(VkSurfaceKHR surface, int window
     return sc;
 }
 
+PTMaterial* PTResourceManager::createMaterial(PTSwapchain* swapchain, PTShader* _shader, std::map<std::string, PTMaterial::MaterialParam> params, VkBool32 depth_write, VkBool32 depth_test, VkCompareOp depth_op, VkCullModeFlags culling, VkPolygonMode polygon_mode)
+{
+    string identifier = "material-" + '-' + to_string((size_t)device) + '-' + to_string((size_t)_shader);
+
+    PTMaterial* mt = new PTMaterial(device, swapchain, _shader, params, depth_write, depth_test, depth_op, culling, polygon_mode);
+    resources.emplace(identifier, mt);
+
+    mt->addReferencer();
+
+    return mt;
+}
+
 PTScene* PTResourceManager::createScene(string file_name, bool force_duplicate)
 {
     string identifier = "scene-" + file_name;
