@@ -87,7 +87,6 @@ public:
     void setMat4Param(std::string name, PTMatrix4f val);
     void setTextureParam(std::string name, PTImage* val);
 
-    // TODO: materials should handle updating their own uniform buffers
     void updateUniformBuffers() const;
 
 private:

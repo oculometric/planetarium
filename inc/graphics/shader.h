@@ -3,6 +3,7 @@
 #include <vulkan/vulkan.h>
 #include <vector>
 #include <string>
+#include <map>
 
 #include "resource.h"
 
@@ -37,6 +38,9 @@ private:
     VkShaderModule fragment_shader = VK_NULL_HANDLE;
 
     VkDescriptorSetLayout descriptor_set_layout = VK_NULL_HANDLE;
+    // TODO: shader needs to know the size of its descriptors (their bindings, offsets, and sizes)
+    std::vector<std::pair<uint32_t, std::pair<VkDeviceSize, VkDeviceSize>>> descriptor_bindings_and_sizes;
+    std::map<std::string, UniformDescriptor> uniform_variables;
 
     PTShader(VkDevice _device, std::string shader_path_stub);
 
@@ -51,11 +55,10 @@ public:
 
     std::vector<VkPipelineShaderStageCreateInfo> getStageCreateInfo() const;
     
-    // TODO: make these return arrays of info for each descriptor set layout
     inline VkDescriptorSetLayout getDescriptorSetLayout() const { return descriptor_set_layout; }
-    // TODO: shader needs to know the size of its descriptor buffers, and its binding indices
-    uint32_t getDescriptorBufferBinding();
-    VkDeviceSize getDescriptorBufferSize();
+    size_t getDescriptorCount() const;
+    std::pair<uint32_t, std::pair<VkDeviceSize, VkDeviceSize>> getDescriptorBinding(size_t index) const;
+    uint32_t getDescriptorSetSize() const;
 
 private:
     bool readFromFile(std::string shader_path_stub, std::vector<char>& vertex_code, std::vector<char>& fragment_code);

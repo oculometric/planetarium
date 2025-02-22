@@ -156,6 +156,8 @@ void PTApplication::initVulkan()
     createDescriptorPoolAndSets();
 
     debugLog("    creating default material");
+    // TODO: convert this
+    //default_material = PTResourceManager::get()->createMaterial("default.ptmat", swapchain);
     default_material = PTResourceManager::get()->createMaterial(swapchain, descriptor_pool, render_pass, PTResourceManager::get()->createShader("demo"), { }, VK_TRUE, VK_TRUE, VK_COMPARE_OP_LESS, VK_CULL_MODE_BACK_BIT, VK_POLYGON_MODE_FILL);
     debugLog("    done.");
 

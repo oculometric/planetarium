@@ -1,5 +1,7 @@
 #include "material.h"
 
+#include <assert.h>
+
 #include "resource_manager.h"
 #include "shader.h"
 #include "buffer.h"
@@ -149,6 +151,13 @@ void PTMaterial::setTextureParam(std::string name, PTImage* val)
     updateUniformBuffers();
 }
 
+void PTMaterial::updateUniformBuffers() const
+{
+    // TODO: materials should handle updating their own uniform buffers
+    // FIXME: this!
+    assert(false);
+}
+
 PTMaterial::PTMaterial(VkDevice _device, VkDescriptorPool _descriptor_pool, PTRenderPass* _render_pass, PTSwapchain* swapchain, PTShader* _shader, std::map<std::string, MaterialParam> params, VkBool32 depth_write, VkBool32 depth_test, VkCompareOp depth_op, VkCullModeFlags culling, VkPolygonMode polygon_mode)
 {
     device = _device;
@@ -169,29 +178,36 @@ PTMaterial::PTMaterial(VkDevice _device, VkDescriptorPool _descriptor_pool, PTRe
     if (vkAllocateDescriptorSets(device, &set_allocation_info, descriptor_sets.data()) != VK_SUCCESS)
         throw runtime_error("unable to allocate descriptor sets");
 
-    // FIXME: the shader should be allowed to have multiple descriptor sets, and we should set them all up (APART FROM THE COMMON ONE). this requires converting the descriptor_buffers and descriptor_sets to arrays, and allocating MAX_FRAMES_IN_FLIGHT sets for each descriptor
-    VkDeviceSize buffer_size = getShader()->getDescriptorBufferSize();
-
+    size_t descriptors = getShader()->getDescriptorCount();
+    
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
-        descriptor_buffers[i] = PTResourceManager::get()->createBuffer(buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-        addDependency(descriptor_buffers[i], false);
+        PTBuffer* buffer = PTResourceManager::get()->createBuffer(getShader()->getDescriptorSetSize(), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        descriptor_buffers[i] = buffer;
+        addDependency(buffer, false);
         
-        VkDescriptorBufferInfo buffer_info{ };
-        buffer_info.buffer = descriptor_buffers[i]->getBuffer();
-        buffer_info.offset = 0;
-        buffer_info.range = buffer_size;
+        vector<VkWriteDescriptorSet> set_writes;
+        for (size_t b = 1; b < descriptors; b++)
+        {
+            auto binding_info = getShader()->getDescriptorBinding(b);
 
-        VkWriteDescriptorSet write_set{ };
-        write_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        write_set.dstSet = descriptor_sets[i];
-        write_set.dstBinding = getShader()->getDescriptorBufferBinding();
-        write_set.dstArrayElement = 0;
-        write_set.descriptorCount = 1;
-        write_set.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        write_set.pBufferInfo = &buffer_info;
+            VkDescriptorBufferInfo buffer_info{ };
+            buffer_info.buffer = buffer->getBuffer();
+            buffer_info.offset = binding_info.second.first;
+            buffer_info.range = binding_info.second.second;
 
-        vkUpdateDescriptorSets(device, 1, &write_set, 0, nullptr);
+            VkWriteDescriptorSet write_set{ };
+            write_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            write_set.dstSet = descriptor_sets[i];
+            write_set.dstBinding = binding_info.first;
+            write_set.dstArrayElement = 0;
+            write_set.descriptorCount = 1;
+            write_set.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            write_set.pBufferInfo = &buffer_info;
+            set_writes.push_back(write_set);
+        }
+
+        vkUpdateDescriptorSets(device, static_cast<uint32_t>(set_writes.size()), set_writes.data(), 0, nullptr);
     }
 
     addDependency(shader, true);

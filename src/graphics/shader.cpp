@@ -2,6 +2,8 @@
 
 #include <fstream>
 
+#include "spirv_reflect.h"
+
 using namespace std;
 
 PTShader::PTShader(VkDevice _device, const string shader_path_stub)
@@ -40,6 +42,16 @@ PTShader::~PTShader()
 {
     vkDestroyDescriptorSetLayout(device, descriptor_set_layout, nullptr);
     destroyShaderModules();
+}
+
+size_t PTShader::getDescriptorCount() const
+{
+    return descriptor_bindings_and_sizes.size();
+}
+
+std::pair<uint32_t, std::pair<VkDeviceSize, VkDeviceSize>> PTShader::getDescriptorBinding(size_t index) const
+{
+    return descriptor_bindings_and_sizes[index];
 }
 
 bool PTShader::readFromFile(const string shader_path_stub, vector<char>& vertex_code, vector<char>& fragment_code)
@@ -96,7 +108,10 @@ void PTShader::createShaderModules(const vector<char>& vertex_code, const vector
 
 void PTShader::createDescriptorSetLayout()
 {
+    SpvReflectShaderModule reflect_module;
+    if (spvReflectCreateShaderModule(  ))// TODO: here/.....
     // TODO: make this conform according to the actual shaders! i.e. for each uniform buffer binding, generate a descriptor set layout binding
+    // FIXME: replace this with reflection stuff
     VkDescriptorSetLayoutBinding transform_binding{ };
     transform_binding.binding = 0;
     transform_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -116,6 +131,7 @@ void PTShader::createDescriptorSetLayout()
 
 void PTShader::destroyShaderModules()
 {
+    vkDestroyDescriptorSetLayout(device, descriptor_set_layout, nullptr);
     vkDestroyShaderModule(device, vertex_shader, nullptr);
     vkDestroyShaderModule(device, fragment_shader, nullptr);
 }
