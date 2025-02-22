@@ -74,7 +74,7 @@ private:
 
     VkCommandPool command_pool = VK_NULL_HANDLE;
     std::vector<VkCommandBuffer> command_buffers;
-    
+
     VkDescriptorPool descriptor_pool = VK_NULL_HANDLE;
     
     std::vector<VkSemaphore> image_available_semaphores;
@@ -139,10 +139,9 @@ private:
     std::vector<VkDeviceQueueCreateInfo> constructQueues();
     void initLogicalDevice(const std::vector<VkDeviceQueueCreateInfo>& queue_create_infos, const std::vector<const char*>& layers);
     void collectQueues();
-    void createFramebuffers(const VkRenderPass render_pass);
+    void createFramebuffers();
     void createCommandPoolAndBuffers();
     void createDepthResources();
-    void createUniformBuffers();
     void createDescriptorPoolAndSets();
     void createSyncObjects();
 

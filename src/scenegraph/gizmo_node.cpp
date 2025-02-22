@@ -35,7 +35,7 @@ void PTGizmoNode::process(float delta_time)
         getApplication()->removeAllDrawRequests(this);
         if (min_node != nullptr)
         {
-            getApplication()->addDrawRequest(DrawRequest{ axes_mesh, min_node->getTransform() }, this);
+            getApplication()->addDrawRequest(this, axes_mesh, nullptr, min_node->getTransform());
             debugSetObjectProperty("name", min_node->name);
             debugSetObjectProperty("position", to_string(min_node->getTransform()->getPosition()));
             debugSetObjectProperty("rotation", to_string(min_node->getTransform()->getLocalRotation()));
@@ -52,7 +52,7 @@ void PTGizmoNode::process(float delta_time)
         tracking_node = min_node;
     }
 
-    // TODO: use an entirely vertex-colour-based unlit shader, which draws on top of other things (ignores depth)
+    // TODO: use an entirely vertex-colour-based unlit material, which draws on top of other things (ignores depth)
 }
 
 PTGizmoNode::PTGizmoNode(PTDeserialiser::ArgMap arguments)

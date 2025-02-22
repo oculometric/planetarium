@@ -63,12 +63,17 @@ PTSwapchain::PTSwapchain(VkDevice device, PTPhysicalDevice& physical_device, VkS
         vector<uint32_t> queue_family_indices(physical_device.getAllQueueFamilies().size());
         for (pair<PTQueueFamily, uint32_t> family : physical_device.getAllQueueFamilies())
             queue_family_indices.push_back(family.second);
+        queue_families = queue_family_indices;
         swap_chain_create_info.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
         swap_chain_create_info.queueFamilyIndexCount = queue_family_indices.size();
         swap_chain_create_info.pQueueFamilyIndices = queue_family_indices.data();
+        sharing_mode = VK_SHARING_MODE_CONCURRENT;
     }
     else
+    {
         swap_chain_create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        sharing_mode = VK_SHARING_MODE_EXCLUSIVE;
+    }
 
     swap_chain_create_info.preTransform = capabilities.currentTransform;
     swap_chain_create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
@@ -83,6 +88,8 @@ PTSwapchain::PTSwapchain(VkDevice device, PTPhysicalDevice& physical_device, VkS
     image_format = selected_surface_format.format;
     extent = selected_extent;
     image_count = selected_image_count;
+    surface_present_mode = selected_surface_present_mode;
+    transform = capabilities.currentTransform;
 
     // collect swapchain images
     vkGetSwapchainImagesKHR(device, swapchain, &selected_image_count, nullptr);
@@ -119,4 +126,39 @@ PTSwapchain::~PTSwapchain()
         vkDestroyImageView(target_device, image_view, nullptr);
 
     vkDestroySwapchainKHR(target_device, swapchain, nullptr);
+}
+
+void PTSwapchain::resize(VkSurfaceKHR surface, int size_x, int size_y)
+{
+    for (auto image_view : image_views)
+        vkDestroyImageView(target_device, image_view, nullptr);
+
+    vkDestroySwapchainKHR(target_device, swapchain, nullptr);
+
+    extent = VkExtent2D{ static_cast<uint32_t>(size_x), static_cast<uint32_t>(size_y) };
+
+    // create swapchain
+    VkSwapchainCreateInfoKHR swap_chain_create_info{ };
+    swap_chain_create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+    swap_chain_create_info.surface = surface;
+    swap_chain_create_info.minImageCount = image_count;
+    swap_chain_create_info.imageFormat = surface_format.format;
+    swap_chain_create_info.imageColorSpace = surface_format.colorSpace;
+    swap_chain_create_info.imageExtent = extent;
+    swap_chain_create_info.imageArrayLayers = 1;
+    swap_chain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    if (sharing_mode == VK_SHARING_MODE_CONCURRENT)
+    {
+        swap_chain_create_info.queueFamilyIndexCount = queue_families.size();
+        swap_chain_create_info.pQueueFamilyIndices = queue_families.data();
+    }
+    swap_chain_create_info.imageSharingMode = sharing_mode;
+    swap_chain_create_info.preTransform = transform;
+    swap_chain_create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+    swap_chain_create_info.presentMode = surface_present_mode;
+    swap_chain_create_info.clipped = VK_TRUE;
+    swap_chain_create_info.oldSwapchain = VK_NULL_HANDLE;
+
+    if (vkCreateSwapchainKHR(target_device, &swap_chain_create_info, nullptr, &swapchain) != VK_SUCCESS)
+        throw runtime_error("unable to create swap chain");
 }

@@ -17,6 +17,10 @@ private:
     VkFormat image_format;
     uint32_t image_count;
     VkExtent2D extent;
+    std::vector<uint32_t> queue_families;
+    VkPresentModeKHR surface_present_mode;
+    VkSharingMode sharing_mode;
+    VkSurfaceTransformFlagBitsKHR transform;
     std::vector<VkImage> images;
     std::vector<VkImageView> image_views;
 
@@ -31,11 +35,13 @@ public:
     PTSwapchain operator=(const PTSwapchain& other) = delete;
     PTSwapchain operator=(const PTSwapchain&& other) = delete;
 
-    inline VkSwapchainKHR getSwapchain() { return swapchain; }
-    inline VkSurfaceFormatKHR getSurfaceFormat() { return surface_format; }
-    inline VkFormat getImageFormat() { return image_format; }
-    inline uint32_t getImageCount() { return image_count; }
-    inline VkExtent2D getExtent() { return extent; }
-    inline VkImage getImage(uint32_t index) { return images[index]; }
-    inline VkImageView getImageView(uint32_t index) { return image_views[index]; }
+    inline VkSwapchainKHR getSwapchain() const { return swapchain; }
+    inline VkSurfaceFormatKHR getSurfaceFormat() const { return surface_format; }
+    inline VkFormat getImageFormat() const { return image_format; }
+    inline uint32_t getImageCount() const { return image_count; }
+    inline VkExtent2D getExtent() const { return extent; }
+    inline VkImage getImage(uint32_t index) const { return images[index]; }
+    inline VkImageView getImageView(uint32_t index) const { return image_views[index]; }
+
+    void resize(VkSurfaceKHR surface, int size_x, int size_y);
 };

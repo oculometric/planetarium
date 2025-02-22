@@ -151,9 +151,7 @@ void PTApplication::initVulkan()
 
     createDepthResources();
 
-    createFramebuffers(default_material->getRenderPass()->getRenderPass());
-
-    createUniformBuffers();
+    createFramebuffers();
 
     createDescriptorPoolAndSets();
 
@@ -213,6 +211,9 @@ void PTApplication::deinitVulkan()
 {
     current_scene->removeReferencer();
 
+    while (!draw_queue.empty())
+        removeAllDrawRequests(draw_queue.begin()->first);
+
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
         vkDestroySemaphore(device, image_available_semaphores[i], nullptr);
@@ -224,12 +225,6 @@ void PTApplication::deinitVulkan()
 
     for (auto framebuffer : framebuffers)
         vkDestroyFramebuffer(device, framebuffer, nullptr);
-
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT * MAX_OBJECTS; i++)
-    {
-        uniform_buffers[i]->removeReferencer();
-    }
-    uniform_buffers.clear();
 
     vkDestroyDescriptorPool(device, descriptor_pool, nullptr);
 
@@ -435,7 +430,7 @@ void PTApplication::collectQueues()
     }
 }
 
-void PTApplication::createFramebuffers(const VkRenderPass render_pass)
+void PTApplication::createFramebuffers()
 {
     debugLog("    creating framebuffers...");
 
@@ -447,7 +442,7 @@ void PTApplication::createFramebuffers(const VkRenderPass render_pass)
 
         VkFramebufferCreateInfo framebuffer_create_info{ };
         framebuffer_create_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        framebuffer_create_info.renderPass = render_pass; // FIXME: do all materials need to use a single shared render pass??? that would be very annoying
+        framebuffer_create_info.renderPass = render_pass->getRenderPass();
         framebuffer_create_info.attachmentCount = 2;
         framebuffer_create_info.pAttachments = attachments;
         framebuffer_create_info.width = swapchain->getExtent().width;
@@ -460,18 +455,6 @@ void PTApplication::createFramebuffers(const VkRenderPass render_pass)
 
     debugLog("        created " + to_string(framebuffers.size()) + " framebuffer objects");
     debugLog("    done.");
-}
-
-void PTApplication::createUniformBuffers()
-{
-    VkDeviceSize transform_buffer_size = sizeof(CommonUniforms);
-
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT * MAX_OBJECTS; i++)
-    {
-        PTBuffer* buf = PTResourceManager::get()->createBuffer(transform_buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-        buf->map();
-        uniform_buffers.push_back(buf);
-    }
 }
 
 void PTApplication::createCommandPoolAndBuffers()
@@ -504,8 +487,6 @@ void PTApplication::createDepthResources()
 
 void PTApplication::createDescriptorPoolAndSets()
 {
-    // TODO: create a new pool for each shader?
-    // TODO: okay so actualy, we should create a set of descriptors for each object based on its material (when the draw request is added). the descriptor pool doesn't need to know about the layouts until we allocate more
     VkDescriptorPoolSize pool_size{ };
     pool_size.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     pool_size.descriptorCount = MAX_FRAMES_IN_FLIGHT * MAX_OBJECTS;
@@ -603,9 +584,6 @@ void PTApplication::drawFrame(uint32_t frame_index)
     command_buffer_begin_info.flags = 0;
     command_buffer_begin_info.pInheritanceInfo = nullptr;
 
-    if (vkBeginCommandBuffer(command_buffers[frame_index], &command_buffer_begin_info) != VK_SUCCESS)
-        throw std::runtime_error("unable to begin recording command buffer");
-
     VkViewport viewport{ };
     viewport.x = 0.0f;
     viewport.y = 0.0f;
@@ -613,12 +591,10 @@ void PTApplication::drawFrame(uint32_t frame_index)
     viewport.height = static_cast<float>(swapchain->getExtent().height);
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
-    vkCmdSetViewport(command_buffers[frame_index], 0, 1, &viewport);
 
     VkRect2D scissor{ };
     scissor.offset = {0, 0};
     scissor.extent = swapchain->getExtent();
-    vkCmdSetScissor(command_buffers[frame_index], 0, 1, &scissor);
 
     VkRenderPassBeginInfo render_pass_begin_info{ };
     render_pass_begin_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -631,7 +607,12 @@ void PTApplication::drawFrame(uint32_t frame_index)
     clear_values[1].depthStencil = { 1.0f, 0 };
     render_pass_begin_info.clearValueCount = static_cast<uint32_t>(clear_values.size());
     render_pass_begin_info.pClearValues = clear_values.data();
+    
+    if (vkBeginCommandBuffer(command_buffers[frame_index], &command_buffer_begin_info) != VK_SUCCESS)
+        throw runtime_error("unable to begin recording command buffer");
 
+    vkCmdSetViewport(command_buffers[frame_index], 0, 1, &viewport);
+    vkCmdSetScissor(command_buffers[frame_index], 0, 1, &scissor);
     vkCmdBeginRenderPass(command_buffers[frame_index], &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
 
     PTMaterial* mat = nullptr;
@@ -725,9 +706,6 @@ void PTApplication::resizeSwapchain()
     for (auto framebuffer : framebuffers)
         vkDestroyFramebuffer(device, framebuffer, nullptr);
 
-    // TODO: make the swapchian have a 'resize' function
-    swapchain->removeReferencer();
-
     vkDestroyImageView(device, depth_image_view, nullptr);
     depth_image->removeReferencer();
 
@@ -738,10 +716,10 @@ void PTApplication::resizeSwapchain()
         glfwWaitEvents();
     }
     debugLog("    new size: " + to_string(width) + ", " + to_string(height));
-    swapchain = PTResourceManager::get()->createSwapchain(surface, width, height);
+    swapchain->resize(surface, width, height);
 
     createDepthResources();
-    createFramebuffers(default_material->getRenderPass()->getRenderPass());
+    createFramebuffers();
     createSyncObjects();
 
     window_resized = false;
@@ -894,7 +872,8 @@ void PTApplication::addDrawRequest(PTNode* owner, PTMesh* mesh, PTMaterial* mate
     request.material =  (material == nullptr) ? default_material : material;
     request.transform = (target_transform == nullptr) ? owner->getTransform() : target_transform;
 
-    std::array<VkDescriptorSetLayout, MAX_FRAMES_IN_FLIGHT> layouts{ common_buffer_layout };
+    std::array<VkDescriptorSetLayout, MAX_FRAMES_IN_FLIGHT> layouts;
+    layouts.fill(common_buffer_layout);
     VkDescriptorSetAllocateInfo set_allocation_info{ };
     set_allocation_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     set_allocation_info.descriptorPool = descriptor_pool;
@@ -932,8 +911,13 @@ void PTApplication::addDrawRequest(PTNode* owner, PTMesh* mesh, PTMaterial* mate
 
 void PTApplication::removeAllDrawRequests(PTNode* owner)
 {
-    // FIXME: destroy buffers and descriptor sets
-    static_assert(false);
+    for (auto[itr, range_end] = draw_queue.equal_range(owner); itr != range_end; ++itr)
+    {
+        for (PTBuffer* buf : itr->second.descriptor_buffers)
+            buf->removeReferencer();
+        vkFreeDescriptorSets(device, descriptor_pool, itr->second.descriptor_sets.size(), itr->second.descriptor_sets.data());
+    }
+
     draw_queue.erase(owner);
 }
 
@@ -954,18 +938,11 @@ void PTApplication::updateUniformBuffers(uint32_t frame_index)
 
     uniforms.viewport_size = PTVector2f{ (float)swapchain->getExtent().width, (float)swapchain->getExtent().height };
 
-    // uint32_t offset = 0;
     for (auto instruction : draw_queue)
     {
-        // TODO: fix this for the new system
-        static_assert(false);
         instruction.second.transform->getLocalToWorld().getColumnMajor(uniforms.model_to_world);
 
-        // TODO: update per-object uniforms (common buffer, stored in draw instruction)
-        memcpy(uniform_buffers[offset + frame_index]->getMappedMemory(), &uniforms, sizeof(CommonUniforms));
-        offset += MAX_FRAMES_IN_FLIGHT;
-
-        // TODO: update per-material uniforms, but only once! or maybe the per-material uniforms should only update when a parameter changes...?
+        memcpy(instruction.second.descriptor_buffers[frame_index]->getMappedMemory(), &uniforms, sizeof(CommonUniforms));
     }
 }
 

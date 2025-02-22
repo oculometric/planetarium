@@ -104,41 +104,49 @@ PTImage* PTMaterial::getTextureParam(std::string name) const
 void PTMaterial::setFloatParam(std::string name, float val)
 {
     uniforms[name] = MaterialParam(val);
+    updateUniformBuffers();
 }
 
 void PTMaterial::setVec2Param(std::string name, PTVector2f val)
 {
     uniforms[name] = MaterialParam(val);
+    updateUniformBuffers();
 }
 
 void PTMaterial::setVec3Param(std::string name, PTVector3f val)
 {
     uniforms[name] = MaterialParam(val);
+    updateUniformBuffers();
 }
 
 void PTMaterial::setVec4Param(std::string name, PTVector4f val)
 {
     uniforms[name] = MaterialParam(val);
+    updateUniformBuffers();
 }
 
 void PTMaterial::setIntParam(std::string name, int val)
 {
     uniforms[name] = MaterialParam(val);
+    updateUniformBuffers();
 }
 
 void PTMaterial::setMat3Param(std::string name, PTMatrix3f val)
 {
     uniforms[name] = MaterialParam(val);
+    updateUniformBuffers();
 }
 
 void PTMaterial::setMat4Param(std::string name, PTMatrix4f val)
 {
     uniforms[name] = MaterialParam(val);
+    updateUniformBuffers();
 }
 
 void PTMaterial::setTextureParam(std::string name, PTImage* val)
 {
     uniforms[name] = MaterialParam(val);
+    updateUniformBuffers();
 }
 
 PTMaterial::PTMaterial(VkDevice _device, VkDescriptorPool _descriptor_pool, PTRenderPass* _render_pass, PTSwapchain* swapchain, PTShader* _shader, std::map<std::string, MaterialParam> params, VkBool32 depth_write, VkBool32 depth_test, VkCompareOp depth_op, VkCullModeFlags culling, VkPolygonMode polygon_mode)
@@ -150,7 +158,8 @@ PTMaterial::PTMaterial(VkDevice _device, VkDescriptorPool _descriptor_pool, PTRe
     render_pass = _render_pass;
     pipeline = PTResourceManager::get()->createPipeline(shader, render_pass, swapchain, depth_write, depth_test, depth_op, culling, VK_FRONT_FACE_COUNTER_CLOCKWISE, polygon_mode, { });
 
-    std::array<VkDescriptorSetLayout, MAX_FRAMES_IN_FLIGHT> layouts(getShader()->getDescriptorSetLayout());
+    std::array<VkDescriptorSetLayout, MAX_FRAMES_IN_FLIGHT> layouts;
+    layouts.fill(getShader()->getDescriptorSetLayout());
     VkDescriptorSetAllocateInfo set_allocation_info{ };
     set_allocation_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     set_allocation_info.descriptorPool = descriptor_pool;
@@ -161,7 +170,6 @@ PTMaterial::PTMaterial(VkDevice _device, VkDescriptorPool _descriptor_pool, PTRe
         throw runtime_error("unable to allocate descriptor sets");
 
     // FIXME: the shader should be allowed to have multiple descriptor sets, and we should set them all up (APART FROM THE COMMON ONE). this requires converting the descriptor_buffers and descriptor_sets to arrays, and allocating MAX_FRAMES_IN_FLIGHT sets for each descriptor
-    // TODO: shader needs to know the size of its descriptor buffers, and its binding indexes
     VkDeviceSize buffer_size = getShader()->getDescriptorBufferSize();
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
@@ -189,6 +197,8 @@ PTMaterial::PTMaterial(VkDevice _device, VkDescriptorPool _descriptor_pool, PTRe
     addDependency(shader, true);
     addDependency(render_pass, true);
     addDependency(pipeline, false);
+
+    updateUniformBuffers();
 }
 
 PTMaterial::~PTMaterial()

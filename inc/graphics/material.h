@@ -91,8 +91,7 @@ public:
     void updateUniformBuffers() const;
 
 private:
-    // TODO: i also want a way to configure outputs from materials as well (what buffers they draw into? ie configuring the renderpass and pipeline attachments)
-    // TODO: there should also be a way to specify special bindings for material parameters, like special textures (e.g the screen texture)
+    // TODO: there should be a way to specify special bindings for material parameters, like special textures (e.g the screen texture)
     PTMaterial(VkDevice _device, VkDescriptorPool _descriptor_pool, PTRenderPass* _render_pass, PTSwapchain* swapchain, PTShader* _shader, std::map<std::string, MaterialParam> params, VkBool32 depth_write, VkBool32 depth_test, VkCompareOp depth_op, VkCullModeFlags culling, VkPolygonMode polygon_mode);
     PTMaterial(std::string load_path); // TODO: loading material from file
     ~PTMaterial();
