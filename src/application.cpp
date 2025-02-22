@@ -142,21 +142,10 @@ void PTApplication::initVulkan()
     swapchain = PTResourceManager::get()->createSwapchain(surface, width, height);
     debugLog("    done.");
 
-    // initialise a basic pipeline
-    //debugLog("    loading demo shader...");
-    //demo_shader = PTResourceManager::get()->createShader("demo");
-    //debugLog("    done.");
-    //debugLog("    creating demo render pass...");
-    //PTRenderPassAttachment attachment;
-    //attachment.format = swapchain->getImageFormat();
-    //demo_render_pass = PTResourceManager::get()->createRenderPass({ attachment }, true);
-    //debugLog("    done.");
-    //debugLog("    constructing pipelines...");
-    //demo_pipeline = PTResourceManager::get()->createPipeline(demo_shader, demo_render_pass, swapchain, VK_TRUE, VK_TRUE, VK_COMPARE_OP_LESS, VK_CULL_MODE_BACK_BIT, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_POLYGON_MODE_FILL, { });
-    //debug_pipeline = PTResourceManager::get()->createPipeline(demo_shader, demo_render_pass, swapchain, VK_TRUE, VK_TRUE, VK_COMPARE_OP_LESS, VK_CULL_MODE_NONE, VK_FRONT_FACE_COUNTER_CLOCKWISE, VK_POLYGON_MODE_LINE, { });
-    debugLog("    creating default material");
-    default_material = PTResourceManager::get()->createMaterial(swapchain, PTResourceManager::get()->createShader("demo"), { }, VK_TRUE, VK_TRUE, VK_COMPARE_OP_LESS, VK_CULL_MODE_BACK_BIT, VK_POLYGON_MODE_FILL);
-    debugLog("    done.");
+    debugLog("    creating render pass...");
+    PTRenderPassAttachment attachment;
+    attachment.format = swapchain->getImageFormat();
+    render_pass = PTResourceManager::get()->createRenderPass({ attachment }, true);
 
     createCommandPoolAndBuffers();
 
@@ -167,6 +156,10 @@ void PTApplication::initVulkan()
     createUniformBuffers();
 
     createDescriptorPoolAndSets();
+
+    debugLog("    creating default material");
+    default_material = PTResourceManager::get()->createMaterial(swapchain, descriptor_pool, render_pass, PTResourceManager::get()->createShader("demo"), { }, VK_TRUE, VK_TRUE, VK_COMPARE_OP_LESS, VK_CULL_MODE_BACK_BIT, VK_POLYGON_MODE_FILL);
+    debugLog("    done.");
 
     createSyncObjects();
 
@@ -240,12 +233,8 @@ void PTApplication::deinitVulkan()
 
     vkDestroyDescriptorPool(device, descriptor_pool, nullptr);
 
-    // debug_pipeline->removeReferencer();
-    // demo_pipeline->removeReferencer();
-    // demo_shader->removeReferencer();
-    // demo_render_pass->removeReferencer();
-
     default_material->removeReferencer();
+    render_pass->removeReferencer();
 
     swapchain->removeReferencer();
 
@@ -530,36 +519,21 @@ void PTApplication::createDescriptorPoolAndSets()
     if (vkCreateDescriptorPool(device, &pool_create_info, nullptr, &descriptor_pool) != VK_SUCCESS)
         throw runtime_error("unable to create descriptor pool");
 
-    // TODO: remove this
-    // vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT * MAX_OBJECTS, demo_shader->getDescriptorSetLayout());
-    // VkDescriptorSetAllocateInfo set_allocation_info{ };
-    // set_allocation_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    // set_allocation_info.descriptorPool = descriptor_pool;
-    // set_allocation_info.descriptorSetCount = MAX_FRAMES_IN_FLIGHT * MAX_OBJECTS;
-    // set_allocation_info.pSetLayouts = layouts.data();
+    VkDescriptorSetLayoutBinding transform_binding{ };
+    transform_binding.binding = 0;
+    transform_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    transform_binding.descriptorCount = 1;
+    transform_binding.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS;
 
-    // descriptor_sets.resize(MAX_FRAMES_IN_FLIGHT * MAX_OBJECTS);
-    // if (vkAllocateDescriptorSets(device, &set_allocation_info, descriptor_sets.data()) != VK_SUCCESS)
-    //     throw runtime_error("unable to allocate descriptor sets");
-    
-    // for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT * MAX_OBJECTS; i++)
-    // {
-    //     VkDescriptorBufferInfo buffer_info{ };
-    //     buffer_info.buffer = uniform_buffers[i]->getBuffer();
-    //     buffer_info.offset = 0;
-    //     buffer_info.range = sizeof(CommonUniforms);
+    vector<VkDescriptorSetLayoutBinding> bindings = { transform_binding };
 
-    //     VkWriteDescriptorSet write_set{ };
-    //     write_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    //     write_set.dstSet = descriptor_sets[i];
-    //     write_set.dstBinding = 0;
-    //     write_set.dstArrayElement = 0;
-    //     write_set.descriptorCount = 1;
-    //     write_set.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    //     write_set.pBufferInfo = &buffer_info;
+    VkDescriptorSetLayoutCreateInfo layout_create_info{ };
+    layout_create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layout_create_info.bindingCount = static_cast<uint32_t>(bindings.size());
+    layout_create_info.pBindings = bindings.data();
 
-    //     vkUpdateDescriptorSets(device, 1, &write_set, 0, nullptr);
-    // }
+    if (vkCreateDescriptorSetLayout(device, &layout_create_info, nullptr, &common_buffer_layout) != VK_SUCCESS)
+        throw runtime_error("unable to create common buffer descriptor set layout");
 }
 
 void PTApplication::createSyncObjects()
@@ -590,7 +564,6 @@ void PTApplication::createSyncObjects()
 
 void PTApplication::drawFrame(uint32_t frame_index)
 {
-    //debugLog("starting frame " + to_string(frame_index));
     updateUniformBuffers(frame_index);
 
     // TODO: move the following into appropriate functions, this is just a test
@@ -616,6 +589,13 @@ void PTApplication::drawFrame(uint32_t frame_index)
 
     vkResetFences(device, 1, &in_flight_fences[frame_index]);
 
+    // before we start drawing, make a list of draw requests, sorted by priority, then by material, then by mesh
+    vector<DrawRequest> sorted_queue;
+    sorted_queue.reserve(draw_queue.size());
+    for (auto p : draw_queue)
+        sorted_queue.push_back(p.second);
+    sort(sorted_queue.begin(), sorted_queue.end(), DrawRequest::compare);
+
     vkResetCommandBuffer(command_buffers[frame_index], 0);
 
     VkCommandBufferBeginInfo command_buffer_begin_info{ };
@@ -625,7 +605,6 @@ void PTApplication::drawFrame(uint32_t frame_index)
 
     if (vkBeginCommandBuffer(command_buffers[frame_index], &command_buffer_begin_info) != VK_SUCCESS)
         throw std::runtime_error("unable to begin recording command buffer");
-
 
     VkViewport viewport{ };
     viewport.x = 0.0f;
@@ -641,11 +620,9 @@ void PTApplication::drawFrame(uint32_t frame_index)
     scissor.extent = swapchain->getExtent();
     vkCmdSetScissor(command_buffers[frame_index], 0, 1, &scissor);
 
-    // TODO: replace this with all the things, sort by material to minimise switches between render pass and pipeline
-
     VkRenderPassBeginInfo render_pass_begin_info{ };
     render_pass_begin_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    render_pass_begin_info.renderPass = demo_render_pass->getRenderPass();
+    render_pass_begin_info.renderPass = render_pass->getRenderPass();
     render_pass_begin_info.framebuffer = framebuffers[image_index];
     render_pass_begin_info.renderArea.offset = { 0, 0 };
     render_pass_begin_info.renderArea.extent = swapchain->getExtent();
@@ -655,28 +632,34 @@ void PTApplication::drawFrame(uint32_t frame_index)
     render_pass_begin_info.clearValueCount = static_cast<uint32_t>(clear_values.size());
     render_pass_begin_info.pClearValues = clear_values.data();
 
-    PTPipeline* pipeline = debug_mode ? debug_pipeline : demo_pipeline;
-
     vkCmdBeginRenderPass(command_buffers[frame_index], &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
-    vkCmdBindPipeline(command_buffers[frame_index], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->getPipeline());
 
-    uint32_t offset = 0;
-    for (auto instruction : draw_queue)
+    PTMaterial* mat = nullptr;
+    PTMesh* mesh = nullptr;
+    for (auto instruction : sorted_queue)
     {
-        if (instruction.second.mesh == nullptr)
+        if (instruction.material != mat)
         {
-            offset += MAX_FRAMES_IN_FLIGHT;
-            continue;
+            // for each material, bind the shader and pipeline, and the material-specific descriptor set
+            mat = instruction.material;
+            vkCmdBindPipeline(command_buffers[frame_index], VK_PIPELINE_BIND_POINT_GRAPHICS, mat->getPipeline()->getPipeline());
+            vector<VkDescriptorSet> material_descriptor_sets = mat->getDescriptorSets(frame_index);
+            vkCmdBindDescriptorSets(command_buffers[frame_index], VK_PIPELINE_BIND_POINT_GRAPHICS, mat->getPipeline()->getLayout(), 0, static_cast<uint32_t>(material_descriptor_sets.size()), material_descriptor_sets.data(), 0, nullptr);
         }
 
-        VkBuffer vertex_buffers[] = { instruction.second.mesh->getVertexBuffer() };
-        VkDeviceSize offsets[] = { 0 };
-        vkCmdBindVertexBuffers(command_buffers[frame_index], 0, 1, vertex_buffers, offsets);
-        vkCmdBindIndexBuffer(command_buffers[frame_index], instruction.second.mesh->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT16);
-        vkCmdBindDescriptorSets(command_buffers[frame_index], VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->getLayout(), 0, 1, &descriptor_sets[frame_index + offset], 0, nullptr);
-        vkCmdDrawIndexed(command_buffers[frame_index], static_cast<uint32_t>(instruction.second.mesh->getIndexCount()), 1, 0, 0, 0);
+        if (instruction.mesh != mesh)
+        {
+            // for each mesh, bind the vertex and index buffers
+            mesh = instruction.mesh;
+            VkBuffer vertex_buffers[] = { mesh->getVertexBuffer() };
+            VkDeviceSize offsets[] = { 0 };
+            vkCmdBindVertexBuffers(command_buffers[frame_index], 0, 1, vertex_buffers, offsets);
+            vkCmdBindIndexBuffer(command_buffers[frame_index], mesh->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT16);
+        }
 
-        offset += MAX_FRAMES_IN_FLIGHT;
+        // for each object, bind the object-specific common descriptor set, then draw indexed
+        vkCmdBindDescriptorSets(command_buffers[frame_index], VK_PIPELINE_BIND_POINT_GRAPHICS, mat->getPipeline()->getLayout(), 0, 1, &(instruction.descriptor_sets[frame_index]), 0, nullptr);
+        vkCmdDrawIndexed(command_buffers[frame_index], static_cast<uint32_t>(mesh->getIndexCount()), 1, 0, 0, 0);
     }
 
     vkCmdEndRenderPass(command_buffers[frame_index]);
@@ -911,9 +894,7 @@ void PTApplication::addDrawRequest(PTNode* owner, PTMesh* mesh, PTMaterial* mate
     request.material =  (material == nullptr) ? default_material : material;
     request.transform = (target_transform == nullptr) ? owner->getTransform() : target_transform;
 
-    // FIXME: we also need to allocate descriptor sets for the common buffer. in fact, we should just read all the descriptor set layouts from the shader (using reflection)
-
-    std::array<VkDescriptorSetLayout, MAX_FRAMES_IN_FLIGHT> layouts(request.material->getShader()->getDescriptorSetLayout());
+    std::array<VkDescriptorSetLayout, MAX_FRAMES_IN_FLIGHT> layouts{ common_buffer_layout };
     VkDescriptorSetAllocateInfo set_allocation_info{ };
     set_allocation_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     set_allocation_info.descriptorPool = descriptor_pool;
@@ -923,8 +904,7 @@ void PTApplication::addDrawRequest(PTNode* owner, PTMesh* mesh, PTMaterial* mate
     if (vkAllocateDescriptorSets(device, &set_allocation_info, request.descriptor_sets.data()) != VK_SUCCESS)
         throw runtime_error("unable to allocate descriptor sets");
 
-    // TODO: shader needs to know the size of its descriptor buffer, and its binding index
-    VkDeviceSize buffer_size = request.material->getShader()->getDescriptorBufferSize();
+    VkDeviceSize buffer_size = sizeof(CommonUniforms);
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
@@ -938,7 +918,7 @@ void PTApplication::addDrawRequest(PTNode* owner, PTMesh* mesh, PTMaterial* mate
         VkWriteDescriptorSet write_set{ };
         write_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         write_set.dstSet = request.descriptor_sets[i];
-        write_set.dstBinding = request.material->getShader()->getDescriptorBufferBinding();
+        write_set.dstBinding = 0;
         write_set.dstArrayElement = 0;
         write_set.descriptorCount = 1;
         write_set.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -952,7 +932,8 @@ void PTApplication::addDrawRequest(PTNode* owner, PTMesh* mesh, PTMaterial* mate
 
 void PTApplication::removeAllDrawRequests(PTNode* owner)
 {
-    // FIXME: destroy the descriptor buffers, and the descriptor sets
+    // FIXME: destroy buffers and descriptor sets
+    static_assert(false);
     draw_queue.erase(owner);
 }
 
@@ -973,16 +954,18 @@ void PTApplication::updateUniformBuffers(uint32_t frame_index)
 
     uniforms.viewport_size = PTVector2f{ (float)swapchain->getExtent().width, (float)swapchain->getExtent().height };
 
-    uint32_t offset = 0;
+    // uint32_t offset = 0;
     for (auto instruction : draw_queue)
     {
         // TODO: fix this for the new system
-        if (instruction.second.transform != nullptr)
-            instruction.second.transform->getLocalToWorld().getColumnMajor(uniforms.model_to_world);
-        else
-            PTMatrix4f().getColumnMajor(uniforms.model_to_world);
+        static_assert(false);
+        instruction.second.transform->getLocalToWorld().getColumnMajor(uniforms.model_to_world);
+
+        // TODO: update per-object uniforms (common buffer, stored in draw instruction)
         memcpy(uniform_buffers[offset + frame_index]->getMappedMemory(), &uniforms, sizeof(CommonUniforms));
         offset += MAX_FRAMES_IN_FLIGHT;
+
+        // TODO: update per-material uniforms, but only once! or maybe the per-material uniforms should only update when a parameter changes...?
     }
 }
 
@@ -1067,4 +1050,9 @@ void PTApplication::destroyDebugUtilsMessenger(VkInstance instance, VkDebugUtils
     auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
     if (func != nullptr)
         func(instance, debugMessenger, pAllocator);
+}
+
+bool PTApplication::DrawRequest::compare(const DrawRequest& a, const DrawRequest& b)
+{
+    return (a.material->getPriority() <= b.material->getPriority()) && (a.material <= b.material) && (a.mesh <= b.mesh);
 }

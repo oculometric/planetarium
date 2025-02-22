@@ -4,14 +4,15 @@
 #include <string>
 #include <map>
 
+#include "constant.h"
 #include "resource.h"
+#include "shader.h"
 #include "ptmath.h"
 
 class PTImage;
 class PTBuffer;
 class PTRenderPass;
 class PTPipeline;
-class PTShader;
 class PTSwapchain;
 
 class PTMaterial : public PTResource
@@ -46,6 +47,9 @@ private:
     PTShader* shader = nullptr;
     PTRenderPass* render_pass = nullptr;
     PTPipeline* pipeline = nullptr;
+    VkDescriptorPool descriptor_pool = VK_NULL_HANDLE;
+    std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> descriptor_sets;
+    std::array<PTBuffer*, MAX_FRAMES_IN_FLIGHT> descriptor_buffers;
 
     int priority = 0;
     std::string origin_path;
@@ -60,6 +64,7 @@ public:
     inline PTShader* getShader() const { return shader; }
     inline PTRenderPass* getRenderPass() const { return render_pass; }
     inline PTPipeline* getPipeline() const { return pipeline; }
+    std::vector<VkDescriptorSet> getDescriptorSets(uint32_t frame_index) const;
 
     inline int getPriority() const { return priority; }
     inline void setPriority(int p) { priority = p; }
@@ -82,13 +87,13 @@ public:
     void setMat4Param(std::string name, PTMatrix4f val);
     void setTextureParam(std::string name, PTImage* val);
 
-    // TODO: materials should handle updating their own uniform buffer
-    void updateUniformBuffer(PTBuffer* buffer) const;
+    // TODO: materials should handle updating their own uniform buffers
+    void updateUniformBuffers() const;
 
 private:
     // TODO: i also want a way to configure outputs from materials as well (what buffers they draw into? ie configuring the renderpass and pipeline attachments)
     // TODO: there should also be a way to specify special bindings for material parameters, like special textures (e.g the screen texture)
-    PTMaterial(VkDevice _device, PTSwapchain* swapchain, PTShader* _shader, std::map<std::string, MaterialParam> params, VkBool32 depth_write, VkBool32 depth_test, VkCompareOp depth_op, VkCullModeFlags culling, VkPolygonMode polygon_mode);
+    PTMaterial(VkDevice _device, VkDescriptorPool _descriptor_pool, PTRenderPass* _render_pass, PTSwapchain* swapchain, PTShader* _shader, std::map<std::string, MaterialParam> params, VkBool32 depth_write, VkBool32 depth_test, VkCompareOp depth_op, VkCullModeFlags culling, VkPolygonMode polygon_mode);
     PTMaterial(std::string load_path); // TODO: loading material from file
     ~PTMaterial();
 };

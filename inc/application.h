@@ -8,6 +8,7 @@
 #include <array>
 #include <chrono>
 
+#include "constant.h"
 #include "graphics/physical_device.h"
 #include "math/ptmath.h"
 
@@ -31,8 +32,6 @@ struct CommonUniforms
     PTVector2f viewport_size;
 };
 
-const uint32_t MAX_FRAMES_IN_FLIGHT = 2;
-
 class PTApplication
 {
 private:
@@ -44,6 +43,8 @@ private:
         PTMaterial* material = nullptr;
         std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> descriptor_sets;
         std::array<PTBuffer*, MAX_FRAMES_IN_FLIGHT> descriptor_buffers;
+
+        static bool compare(const DrawRequest& a, const DrawRequest& b);
     };
 
 public:
@@ -73,22 +74,18 @@ private:
 
     VkCommandPool command_pool = VK_NULL_HANDLE;
     std::vector<VkCommandBuffer> command_buffers;
+    
     VkDescriptorPool descriptor_pool = VK_NULL_HANDLE;
-    //std::vector<VkDescriptorSet> descriptor_sets;
     
     std::vector<VkSemaphore> image_available_semaphores;
     std::vector<VkSemaphore> render_finished_semaphores;
     std::vector<VkFence> in_flight_fences;
 
-    PTMaterial* default_material = nullptr; // TODO: assign default material
-    //PTRenderPass* demo_render_pass = nullptr;
-    //PTPipeline* demo_pipeline = nullptr;
-    //PTPipeline* debug_pipeline = nullptr;
-    //PTShader* demo_shader = nullptr;
+    VkDescriptorSetLayout common_buffer_layout = VK_NULL_HANDLE;
+    PTMaterial* default_material = nullptr;
+    PTRenderPass* render_pass = nullptr;
 
     std::multimap<PTNode*, DrawRequest> draw_queue;
-
-    std::vector<PTBuffer*> uniform_buffers;
 
     PTImage* depth_image = nullptr;
     VkImageView depth_image_view = VK_NULL_HANDLE;
