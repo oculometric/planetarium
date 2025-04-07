@@ -135,7 +135,6 @@ void PTShader::createDescriptorSetLayout()
 
 void PTShader::destroyShaderModules()
 {
-    vkDestroyDescriptorSetLayout(device, descriptor_set_layout, nullptr);
     vkDestroyShaderModule(device, vertex_shader, nullptr);
     vkDestroyShaderModule(device, fragment_shader, nullptr);
 }

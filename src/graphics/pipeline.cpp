@@ -29,6 +29,34 @@ PTPipeline::PTPipeline(VkDevice _device, PTShader* _shader, PTRenderPass* _rende
     dynamic_states.push_back(VK_DYNAMIC_STATE_VIEWPORT);
     dynamic_states.push_back(VK_DYNAMIC_STATE_SCISSOR);
 
+    viewport = VkViewport{ };
+    viewport.x = 0.0f;
+    viewport.y = 0.0f;
+    viewport.width = (float)_swapchain->getExtent().width;
+    viewport.height = (float)_swapchain->getExtent().height;
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+
+    scissor = VkRect2D{ };
+    scissor.offset = { 0, 0 };
+    scissor.extent = _swapchain->getExtent();
+
+    VkDescriptorSetLayout descriptor_set_layout = shader->getDescriptorSetLayout();
+    VkPipelineLayoutCreateInfo pipeline_layout_create_info{ };
+    pipeline_layout_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipeline_layout_create_info.setLayoutCount = 1;
+    pipeline_layout_create_info.pSetLayouts = &descriptor_set_layout;
+    pipeline_layout_create_info.pushConstantRangeCount = 0;
+    pipeline_layout_create_info.pPushConstantRanges = nullptr;
+
+    if (vkCreatePipelineLayout(device, &pipeline_layout_create_info, nullptr, &layout) != VK_SUCCESS)
+        throw runtime_error("unable to create pipeline layout");
+
+    createPipeline();
+}
+
+void PTPipeline::createPipeline()
+{
     VkPipelineDynamicStateCreateInfo dynamic_state_create_info{ };
     dynamic_state_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
     dynamic_state_create_info.dynamicStateCount = static_cast<uint32_t>(dynamic_states.size());
@@ -58,18 +86,6 @@ PTPipeline::PTPipeline(VkDevice _device, PTShader* _shader, PTRenderPass* _rende
     input_assembly_create_info.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     input_assembly_create_info.primitiveRestartEnable = VK_FALSE;
 
-    viewport = VkViewport{ };
-    viewport.x = 0.0f;
-    viewport.y = 0.0f;
-    viewport.width = (float)_swapchain->getExtent().width;
-    viewport.height = (float)_swapchain->getExtent().height;
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
-
-    scissor = VkRect2D{ };
-    scissor.offset = { 0, 0 };
-    scissor.extent = _swapchain->getExtent();
-
     VkPipelineViewportStateCreateInfo viewport_state_create_info{ };
     viewport_state_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
     viewport_state_create_info.viewportCount = 1;
@@ -98,17 +114,6 @@ PTPipeline::PTPipeline(VkDevice _device, PTShader* _shader, PTRenderPass* _rende
     multisampling_create_info.pSampleMask = nullptr;
     multisampling_create_info.alphaToCoverageEnable = VK_FALSE;
     multisampling_create_info.alphaToOneEnable = VK_FALSE;
-
-    VkDescriptorSetLayout descriptor_set_layout = shader->getDescriptorSetLayout();
-    VkPipelineLayoutCreateInfo pipeline_layout_create_info{ };
-    pipeline_layout_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipeline_layout_create_info.setLayoutCount = 1;
-    pipeline_layout_create_info.pSetLayouts = &descriptor_set_layout;
-    pipeline_layout_create_info.pushConstantRangeCount = 0;
-    pipeline_layout_create_info.pPushConstantRanges = nullptr;
-
-    if (vkCreatePipelineLayout(device, &pipeline_layout_create_info, nullptr, &layout) != VK_SUCCESS)
-        throw runtime_error("unable to create pipeline layout");
 
     vector<VkPipelineShaderStageCreateInfo> shader_stages = shader->getStageCreateInfo();
 
@@ -143,7 +148,6 @@ PTPipeline::PTPipeline(VkDevice _device, PTShader* _shader, PTRenderPass* _rende
     pipeline_create_info.basePipelineHandle = VK_NULL_HANDLE;
     pipeline_create_info.basePipelineIndex = -1;
 
-
     if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipeline_create_info, nullptr, &pipeline) != VK_SUCCESS)
         throw runtime_error("unable to create to create graphics pipeline");
 }
@@ -155,4 +159,33 @@ PTPipeline::~PTPipeline()
 
     removeDependency(shader);
     removeDependency(render_pass);
+}
+
+void PTPipeline::setDepthParams(VkBool32 write, VkBool32 test, VkCompareOp op)
+{
+    vkDestroyPipeline(device, pipeline, nullptr);
+
+    depth_write = write;
+    depth_test = test;
+    depth_op = op;
+
+    createPipeline();
+}
+
+void PTPipeline::setCulling(VkCullModeFlags cull)
+{
+    vkDestroyPipeline(device, pipeline, nullptr);
+
+    culling = cull;
+
+    createPipeline();
+}
+
+void PTPipeline::setPolygonMode(VkPolygonMode mode)
+{
+    vkDestroyPipeline(device, pipeline, nullptr);
+
+    polygon_mode = mode;
+
+    createPipeline();
 }

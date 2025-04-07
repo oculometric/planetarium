@@ -47,6 +47,7 @@ private:
     int width;
     int height;
     bool window_resized = false;
+    int state = 0;
 
     GLFWwindow* window = nullptr;
     VkInstance instance = VK_NULL_HANDLE;
@@ -113,6 +114,11 @@ public:
     void removeAllDrawRequests(PTNode* owner);
 
     float getAspectRatio() const;
+
+    void beginEditLock();
+    void endEditLock();
+    void beginDrawLock();
+    void endDrawLock();
 
 private:
     void initWindow();

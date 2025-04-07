@@ -36,6 +36,8 @@ private:
 
     PTPipeline(VkDevice _device, PTShader* _shader, PTRenderPass* _render_pass, PTSwapchain* _swapchain, VkBool32 _depth_write, VkBool32 _depth_test, VkCompareOp _depth_op, VkCullModeFlags _culling, VkFrontFace _winding_order, VkPolygonMode _polygon_mode, std::vector<VkDynamicState> _dynamic_states);
 
+    void createPipeline();
+
     ~PTPipeline();
 
 public:
@@ -60,7 +62,6 @@ public:
     inline VkFrontFace getWindingOrder() const { return winding_order; }
     inline VkPolygonMode getPolygonMode() const { return polygon_mode; }
 
-    // TODO: setters for these, which recreate the pipeline resources
     void setDepthParams(VkBool32 write, VkBool32 test, VkCompareOp op);
     void setCulling(VkCullModeFlags cull);
     void setPolygonMode(VkPolygonMode mode);

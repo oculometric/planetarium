@@ -4,22 +4,27 @@
 
 - [ ] improve mesh draw call queueing system to allow for unlimited objects and choice of shader/render pass/pipeline
       - [x] specify the transform pointer to track
-      - [ ] organise objects by material (i.e. the non-common uniform buffer is all the same)
-      - [ ] draw objects with indexed descriptor sets?
+      - [x] organise objects by material (i.e. the non-common uniform buffer is all the same)
+      - [x] draw objects with indexed descriptor sets?
       - [x] descriptor set pool needs to be able to support dynamic numbers of different descriptor set layouts
       - [x] store allocated descriptor sets on the object draw-request (create when the draw-request is created, destroy when the draw-request is removed)
-      - [ ] alternatively, just submit multiple command buffers to the queue
-      - [ ] material specifies the shader, pipeline, descriptor set layout, descriptor set values, textures
-- [ ] pipeline updating
-- [ ] swapchain resizing
-- [ ] implement proper shader config and reflection, and checking this when creating render passes
-- [ ] common uniforms should carry and object id
+      - [x] material specifies the shader, pipeline, descriptor set layout, descriptor set values, textures
+- [ ] material system
+      - [ ] ability to specify the buffers when creating a shader (5)
+      - [ ] shader definition file (groups shader code along with uniform spec?)
+      - [ ] read material from file                       (6)
+      - [ ] implement proper shader config and reflection, and checking this when creating render passes
+      - [ ] texture descriptors
+      - [ ] respect priority system                       (4)
+- [ ] runtime shader compilation                          (3)
+- [ ] common uniforms should carry an object id          (2)
+- [ ] mesh data updating      
 
 ## Engine Stuff
 
-- [ ] show debug axes of objects currently hovered over (this should be a new Node type)
 - [ ] make float isDown and bool wasPressed and bool wasReleased functions for each keyboard key
 - [ ] better way of specifying which keyboard key to check the state of (A vs a, etc)
+- [ ] show debug axes of objects currently hovered over (this should be a new Node type)
 - [ ] cross platform controller support
 - [ ] mouse input support
 - [ ] UI system (use STUI to generate charbufs, then pass it into a shader maybe????)
@@ -33,6 +38,7 @@
 
 ## Art Stuff
 
+- [ ] graphite shader import
 - [ ] planet generation based on parameters
 - [ ] planet art shaders
 - [ ] stylised post-processing
@@ -43,6 +49,7 @@
 ## Misc
 
 - [ ] array handling for deserialiser argument parsing
+- [ ] actual error handling?
 
 ## Completed
 - [x] make physical device stuff its own file (finding swapchain info, supported features, etc)
@@ -85,3 +92,6 @@
 - [x] make custom node type creation easier and more fluid (template, # defines, way of checking type of instance. also, make the makefile search for node types and import them)
 - [x] move functional code out of scene
 - [x] add ability to read vertex colours from OBJ files
+- [x] swapchain resizing
+- [x] pipeline updating
+- [x] synchronisation for renderer state!

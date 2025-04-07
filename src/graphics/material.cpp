@@ -76,12 +76,12 @@ PTMaterial::PTMaterial(VkDevice _device, VkDescriptorPool _descriptor_pool, PTRe
 
 PTMaterial::~PTMaterial()
 {
+    vkFreeDescriptorSets(device, descriptor_pool, descriptor_sets.size(), descriptor_sets.data());
     for (auto collection : descriptor_buffers)
     {
         for (auto pair : collection)
             removeDependency(pair.second);
     }
-    vkFreeDescriptorSets(device, descriptor_pool, descriptor_sets.size(), descriptor_sets.data());
 
     removeDependency(render_pass);
     removeDependency(shader);

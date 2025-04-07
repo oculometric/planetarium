@@ -228,8 +228,6 @@ void PTApplication::deinitVulkan()
     for (auto framebuffer : framebuffers)
         vkDestroyFramebuffer(device, framebuffer, nullptr);
 
-    vkDestroyDescriptorPool(device, descriptor_pool, nullptr);
-
     default_material->removeReferencer();
     render_pass->removeReferencer();
 
@@ -239,6 +237,8 @@ void PTApplication::deinitVulkan()
     depth_image->removeReferencer();
 
     PTResourceManager::deinit();
+
+    vkDestroyDescriptorPool(device, descriptor_pool, nullptr);
 
     vkDestroyDevice(device, nullptr);
 
@@ -451,7 +451,7 @@ void PTApplication::createFramebuffers()
         framebuffer_create_info.height = swapchain->getExtent().height;
         framebuffer_create_info.layers = 1;
 
-        if (vkCreateFramebuffer(device, &framebuffer_create_info, nullptr, &framebuffers[i]) != VK_SUCCESS) // FIXME: why segmentation fault???
+        if (vkCreateFramebuffer(device, &framebuffer_create_info, nullptr, &framebuffers[i]) != VK_SUCCESS)
             throw std::runtime_error("unable to create framebuffer");
     }
 
@@ -498,6 +498,7 @@ void PTApplication::createDescriptorPoolAndSets()
     pool_create_info.maxSets = MAX_FRAMES_IN_FLIGHT * MAX_OBJECTS;
     pool_create_info.poolSizeCount = 1;
     pool_create_info.pPoolSizes = &pool_size;
+    pool_create_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
     if (vkCreateDescriptorPool(device, &pool_create_info, nullptr, &descriptor_pool) != VK_SUCCESS)
         throw runtime_error("unable to create descriptor pool");
@@ -593,6 +594,8 @@ void PTApplication::drawFrame(uint32_t frame_index)
     clear_values[1].depthStencil = { 1.0f, 0 };
     render_pass_begin_info.clearValueCount = static_cast<uint32_t>(clear_values.size());
     render_pass_begin_info.pClearValues = clear_values.data();
+
+    beginDrawLock();
     
     if (vkBeginCommandBuffer(command_buffers[frame_index], &command_buffer_begin_info) != VK_SUCCESS)
         throw runtime_error("unable to begin recording command buffer");
@@ -664,7 +667,6 @@ void PTApplication::drawFrame(uint32_t frame_index)
     if (result == VK_ERROR_OUT_OF_DATE_KHR)
     {
         debugLog("swapchain out of date during present~");
-        // FIXME: need to signal the image_available semaphore regardless
         resizeSwapchain();
     }
     else if (window_resized)
@@ -674,6 +676,9 @@ void PTApplication::drawFrame(uint32_t frame_index)
     }
     else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
         throw runtime_error("unable to present swapchain image");
+
+    vkWaitForFences(device, 1, &in_flight_fences[frame_index], VK_TRUE, UINT64_MAX);
+    endDrawLock();
 }
 
 void PTApplication::resizeSwapchain()
@@ -893,24 +898,62 @@ void PTApplication::addDrawRequest(PTNode* owner, PTMesh* mesh, PTMaterial* mate
         vkUpdateDescriptorSets(device, 1, &write_set, 0, nullptr);
     }
 
+    beginEditLock();
+
     draw_queue.emplace(owner, request);
+
+    endEditLock();
 }
 
 void PTApplication::removeAllDrawRequests(PTNode* owner)
 {
+    beginEditLock();
+
     for (auto[itr, range_end] = draw_queue.equal_range(owner); itr != range_end; ++itr)
     {
+        vkFreeDescriptorSets(device, descriptor_pool, itr->second.descriptor_sets.size(), itr->second.descriptor_sets.data());
         for (PTBuffer* buf : itr->second.descriptor_buffers)
             buf->removeReferencer();
-        vkFreeDescriptorSets(device, descriptor_pool, itr->second.descriptor_sets.size(), itr->second.descriptor_sets.data());
     }
 
     draw_queue.erase(owner);
+
+    endEditLock();
 }
 
 float PTApplication::getAspectRatio() const
 {
     return (float)swapchain->getExtent().width / (float)swapchain->getExtent().height;
+}
+
+void PTApplication::beginEditLock()
+{
+    while (state < 0);
+
+    state++;
+}
+
+void PTApplication::endEditLock()
+{
+    if (state <= 0)
+        throw runtime_error("cannot end edit lock! there is no edit lock active!");
+
+    state--;
+}
+
+void PTApplication::beginDrawLock()
+{
+    while (state != 0);
+
+    state = -1;
+}
+
+void PTApplication::endDrawLock()
+{
+    if (state != -1)
+        throw runtime_error("cannot end draw lock! there is no draw lock active!");
+    
+    state = 0;
 }
 
 void PTApplication::updateUniformBuffers(uint32_t frame_index)
