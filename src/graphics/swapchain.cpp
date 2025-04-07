@@ -161,4 +161,30 @@ void PTSwapchain::resize(VkSurfaceKHR surface, int size_x, int size_y)
 
     if (vkCreateSwapchainKHR(target_device, &swap_chain_create_info, nullptr, &swapchain) != VK_SUCCESS)
         throw runtime_error("unable to create swap chain");
+
+    // collect swapchain images
+    vkGetSwapchainImagesKHR(target_device, swapchain, &image_count, nullptr);
+    images.resize(image_count);
+    vkGetSwapchainImagesKHR(target_device, swapchain, &image_count, images.data());
+
+    // create swapchain image views
+    image_views.resize(images.size());
+    for (size_t i = 0; i < images.size(); i++)
+    {
+        VkImageViewCreateInfo view_create_info{ };
+        view_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        view_create_info.image = images[i];
+        view_create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        view_create_info.format = image_format;
+        view_create_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        view_create_info.subresourceRange.baseMipLevel = 0;
+        view_create_info.subresourceRange.levelCount = 1;
+        view_create_info.subresourceRange.baseArrayLayer = 0;
+        view_create_info.subresourceRange.layerCount = 1;
+
+        VkImageView image_view;
+        if (vkCreateImageView(target_device, &view_create_info, nullptr, &image_view) != VK_SUCCESS)
+            throw runtime_error("unable to create texture image view");
+        image_views[i] = image_view;
+    }
 }
