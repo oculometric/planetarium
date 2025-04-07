@@ -45,7 +45,7 @@ public:
     PTShader* createShader(std::string shader_path_stub, bool force_duplicate = false);
     PTSwapchain* createSwapchain(VkSurfaceKHR surface, int window_x, int window_y);
     PTMaterial* createMaterial(std::string material_path, PTSwapchain* swapchain); // TODO: load material from file (deserialise)
-    PTMaterial* createMaterial(PTSwapchain* swapchain, VkDescriptorPool descriptor_pool, PTRenderPass* _render_pass, PTShader* _shader, std::map<std::string, PTMaterial::MaterialParam> params, VkBool32 depth_write, VkBool32 depth_test, VkCompareOp depth_op, VkCullModeFlags culling, VkPolygonMode polygon_mode);
+    PTMaterial* createMaterial(PTSwapchain* swapchain, VkDescriptorPool descriptor_pool, PTRenderPass* _render_pass, PTShader* _shader, VkBool32 depth_write, VkBool32 depth_test, VkCompareOp depth_op, VkCullModeFlags culling, VkPolygonMode polygon_mode);
 
     template<class T>
     T* createNode(PTDeserialiser::ArgMap arguments);

@@ -18,29 +18,6 @@ class PTSwapchain;
 class PTMaterial : public PTResource
 {
 public:
-    struct MaterialParam
-    {
-        PTVector4f vec_val{ 0, 0, 0, 0 };
-        int int_val = 0;
-        PTMatrix4f mat_val;
-        PTImage* tex_val = nullptr;
-
-        PTShader::UniformType type;
-
-        inline MaterialParam() { }
-        inline MaterialParam(float val) { vec_val = PTVector4f{ val, 0, 0, 0 }; type = PTShader::UniformType::FLOAT; }
-        inline MaterialParam(PTVector2f val) { vec_val = PTVector4f{ val.x, val.y, 0, 0 }; type = PTShader::UniformType::VEC2; }
-        inline MaterialParam(PTVector3f val) { vec_val = PTVector4f{ val.x, val.y, val.z, 0 }; type = PTShader::UniformType::VEC3; }
-        inline MaterialParam(PTVector4f val) { vec_val = PTVector4f{ val.x, val.y, val.z, val.w }; type = PTShader::UniformType::VEC4; }
-        inline MaterialParam(int val) { int_val = val; type = PTShader::UniformType::INT; }
-        inline MaterialParam(PTMatrix3f val) { mat_val = PTMatrix4f{ val.x_0, val.y_0, val.z_0, 0,
-                                                                     val.x_1, val.y_1, val.z_1, 0,
-                                                                     val.x_2, val.y_2, val.z_2, 0,
-                                                                     0,       0,       0,       1 }; type = PTShader::UniformType::MAT3; }
-        inline MaterialParam(PTMatrix4f val) { mat_val = val; type = PTShader::UniformType::MAT4; }
-        inline MaterialParam(PTImage* val) { tex_val = val; type = PTShader::UniformType::TEXTURE; }
-    };
-
     friend class PTResourceManager;
 private:
     VkDevice device = VK_NULL_HANDLE;
@@ -49,11 +26,10 @@ private:
     PTPipeline* pipeline = nullptr;
     VkDescriptorPool descriptor_pool = VK_NULL_HANDLE;
     std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> descriptor_sets;
-    std::array<PTBuffer*, MAX_FRAMES_IN_FLIGHT> descriptor_buffers;
+    std::array<std::map<uint16_t, PTBuffer*>, MAX_FRAMES_IN_FLIGHT> descriptor_buffers;
 
     int priority = 0;
     std::string origin_path;
-    std::map<std::string, MaterialParam> uniforms;
 
 public:
     PTMaterial(const PTMaterial& other) = delete;
@@ -64,36 +40,41 @@ public:
     inline PTShader* getShader() const { return shader; }
     inline PTRenderPass* getRenderPass() const { return render_pass; }
     inline PTPipeline* getPipeline() const { return pipeline; }
-    std::vector<VkDescriptorSet> getDescriptorSets(uint32_t frame_index) const;
+    VkDescriptorSet getDescriptorSet(uint32_t frame_index) const;
 
     inline int getPriority() const { return priority; }
     inline void setPriority(int p) { priority = p; }
 
-    float getFloatParam(std::string name) const;
-    PTVector2f getVec2Param(std::string name) const;
-    PTVector3f getVec3Param(std::string name) const;
-    PTVector4f getVec4Param(std::string name) const;
-    int getIntParam(std::string name) const;
-    PTMatrix3f getMat3Param(std::string name) const;
-    PTMatrix4f getMat4Param(std::string name) const;
-    PTImage* getTextureParam(std::string name) const;
+    template <typename T>
+    inline void setUniform(uint16_t bind_point, T data);
 
-    void setFloatParam(std::string name, float val);
-    void setVec2Param(std::string name, PTVector2f val);
-    void setVec3Param(std::string name, PTVector3f val);
-    void setVec4Param(std::string name, PTVector4f val);
-    void setIntParam(std::string name, int val);
-    void setMat3Param(std::string name, PTMatrix3f val);
-    void setMat4Param(std::string name, PTMatrix4f val);
-    void setTextureParam(std::string name, PTImage* val);
-
-    void updateUniformBuffers() const;
+    template <typename T>
+    inline T getUniform(uint16_t bind_point);
 
 private:
-    // TODO: there should be a way to specify special bindings for material parameters, like special textures (e.g the screen texture)
-    PTMaterial(VkDevice _device, VkDescriptorPool _descriptor_pool, PTRenderPass* _render_pass, PTSwapchain* swapchain, PTShader* _shader, std::map<std::string, MaterialParam> params, VkBool32 depth_write, VkBool32 depth_test, VkCompareOp depth_op, VkCullModeFlags culling, VkPolygonMode polygon_mode);
+    PTMaterial(VkDevice _device, VkDescriptorPool _descriptor_pool, PTRenderPass* _render_pass, PTSwapchain* swapchain, PTShader* _shader, VkBool32 depth_write, VkBool32 depth_test, VkCompareOp depth_op, VkCullModeFlags culling, VkPolygonMode polygon_mode);
     PTMaterial(std::string load_path); // TODO: loading material from file
     ~PTMaterial();
 };
+
+template <typename T>
+inline void PTMaterial::setUniform(uint16_t bind_point, T data)
+{
+    uint32_t buf_size = descriptor_buffers[0][bind_point]->getSize();
+    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    {
+        void* target = descriptor_buffers[i][bind_point]->map();
+        memcpy(target, &data, buf_size);
+    }
+}
+
+template <typename T>
+inline T PTMaterial::getUniform(uint16_t bind_point)
+{
+    uint32_t buf_size = descriptor_buffers[0][bind_point]->getSize();
+    T data;
+    void* target = descriptor_buffers[0][bind_point]->map();
+    memcpy(&data, target, buf_size);
+}
 
 // TODO: add path-loaded-from as a property for shaders and meshes

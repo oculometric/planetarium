@@ -10,7 +10,6 @@
 
 #include "constant.h"
 #include "graphics/physical_device.h"
-#include "math/ptmath.h"
 
 class PTScene;
 class PTNode;
@@ -23,14 +22,6 @@ class PTImage;
 class PTMesh;
 class PTTransform;
 class PTMaterial;
-
-struct CommonUniforms
-{
-    float model_to_world[16];
-    float world_to_view[16];
-    float view_to_clip[16];
-    PTVector2f viewport_size;
-};
 
 class PTApplication
 {
@@ -81,7 +72,6 @@ private:
     std::vector<VkSemaphore> render_finished_semaphores;
     std::vector<VkFence> in_flight_fences;
 
-    VkDescriptorSetLayout common_buffer_layout = VK_NULL_HANDLE;
     PTMaterial* default_material = nullptr;
     PTRenderPass* render_pass = nullptr;
 

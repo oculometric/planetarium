@@ -158,7 +158,7 @@ void PTApplication::initVulkan()
     debugLog("    creating default material");
     // TODO: convert this
     //default_material = PTResourceManager::get()->createMaterial("default.ptmat", swapchain);
-    default_material = PTResourceManager::get()->createMaterial(swapchain, descriptor_pool, render_pass, PTResourceManager::get()->createShader("demo"), { }, VK_TRUE, VK_TRUE, VK_COMPARE_OP_LESS, VK_CULL_MODE_BACK_BIT, VK_POLYGON_MODE_FILL);
+    default_material = PTResourceManager::get()->createMaterial(swapchain, descriptor_pool, render_pass, PTResourceManager::get()->createShader("demo"), VK_TRUE, VK_TRUE, VK_COMPARE_OP_LESS, VK_CULL_MODE_BACK_BIT, VK_POLYGON_MODE_FILL);
     debugLog("    done.");
 
     createSyncObjects();
@@ -451,7 +451,7 @@ void PTApplication::createFramebuffers()
         framebuffer_create_info.height = swapchain->getExtent().height;
         framebuffer_create_info.layers = 1;
 
-        if (vkCreateFramebuffer(device, &framebuffer_create_info, nullptr, &framebuffers[i]) != VK_SUCCESS)
+        if (vkCreateFramebuffer(device, &framebuffer_create_info, nullptr, &framebuffers[i]) != VK_SUCCESS) // FIXME: why segmentation fault???
             throw std::runtime_error("unable to create framebuffer");
     }
 
@@ -501,22 +501,6 @@ void PTApplication::createDescriptorPoolAndSets()
 
     if (vkCreateDescriptorPool(device, &pool_create_info, nullptr, &descriptor_pool) != VK_SUCCESS)
         throw runtime_error("unable to create descriptor pool");
-
-    VkDescriptorSetLayoutBinding transform_binding{ };
-    transform_binding.binding = 0;
-    transform_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    transform_binding.descriptorCount = 1;
-    transform_binding.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS;
-
-    vector<VkDescriptorSetLayoutBinding> bindings = { transform_binding };
-
-    VkDescriptorSetLayoutCreateInfo layout_create_info{ };
-    layout_create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layout_create_info.bindingCount = static_cast<uint32_t>(bindings.size());
-    layout_create_info.pBindings = bindings.data();
-
-    if (vkCreateDescriptorSetLayout(device, &layout_create_info, nullptr, &common_buffer_layout) != VK_SUCCESS)
-        throw runtime_error("unable to create common buffer descriptor set layout");
 }
 
 void PTApplication::createSyncObjects()
@@ -626,7 +610,7 @@ void PTApplication::drawFrame(uint32_t frame_index)
             // for each material, bind the shader and pipeline, and the material-specific descriptor set
             mat = instruction.material;
             vkCmdBindPipeline(command_buffers[frame_index], VK_PIPELINE_BIND_POINT_GRAPHICS, mat->getPipeline()->getPipeline());
-            vector<VkDescriptorSet> material_descriptor_sets = mat->getDescriptorSets(frame_index);
+            vector<VkDescriptorSet> material_descriptor_sets = { mat->getDescriptorSet(frame_index) };
             vkCmdBindDescriptorSets(command_buffers[frame_index], VK_PIPELINE_BIND_POINT_GRAPHICS, mat->getPipeline()->getLayout(), 0, static_cast<uint32_t>(material_descriptor_sets.size()), material_descriptor_sets.data(), 0, nullptr);
         }
 
@@ -707,6 +691,7 @@ void PTApplication::resizeSwapchain()
 
     for (auto framebuffer : framebuffers)
         vkDestroyFramebuffer(device, framebuffer, nullptr);
+    framebuffers.clear();
 
     vkDestroyImageView(device, depth_image_view, nullptr);
     depth_image->removeReferencer();
@@ -875,7 +860,7 @@ void PTApplication::addDrawRequest(PTNode* owner, PTMesh* mesh, PTMaterial* mate
     request.transform = (target_transform == nullptr) ? owner->getTransform() : target_transform;
 
     std::array<VkDescriptorSetLayout, MAX_FRAMES_IN_FLIGHT> layouts;
-    layouts.fill(common_buffer_layout);
+    layouts.fill(request.material->getShader()->getDescriptorSetLayout());
     VkDescriptorSetAllocateInfo set_allocation_info{ };
     set_allocation_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     set_allocation_info.descriptorPool = descriptor_pool;
@@ -890,7 +875,7 @@ void PTApplication::addDrawRequest(PTNode* owner, PTMesh* mesh, PTMaterial* mate
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
         request.descriptor_buffers[i] = PTResourceManager::get()->createBuffer(buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-        
+
         VkDescriptorBufferInfo buffer_info{ };
         buffer_info.buffer = request.descriptor_buffers[i]->getBuffer();
         buffer_info.offset = 0;
@@ -899,7 +884,7 @@ void PTApplication::addDrawRequest(PTNode* owner, PTMesh* mesh, PTMaterial* mate
         VkWriteDescriptorSet write_set{ };
         write_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
         write_set.dstSet = request.descriptor_sets[i];
-        write_set.dstBinding = 0;
+        write_set.dstBinding = COMMON_UNIFORM_BINDING;
         write_set.dstArrayElement = 0;
         write_set.descriptorCount = 1;
         write_set.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -944,7 +929,7 @@ void PTApplication::updateUniformBuffers(uint32_t frame_index)
     {
         instruction.second.transform->getLocalToWorld().getColumnMajor(uniforms.model_to_world);
 
-        memcpy(instruction.second.descriptor_buffers[frame_index]->getMappedMemory(), &uniforms, sizeof(CommonUniforms));
+        memcpy(instruction.second.descriptor_buffers[frame_index]->map(), &uniforms, sizeof(CommonUniforms));
     }
 }
 

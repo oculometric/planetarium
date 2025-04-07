@@ -1,5 +1,6 @@
 #include "shader.h"
 
+#include "constant.h"
 #include <fstream>
 
 #include "spirv_reflect.h"
@@ -13,6 +14,8 @@ PTShader::PTShader(VkDevice _device, const string shader_path_stub)
     if (readFromFile(shader_path_stub, vert, frag))
         createShaderModules(vert, frag);
     
+    descriptor_bindings.push_back(UniformDescriptor{ "Common", 0, sizeof(CommonUniforms) });
+    // TODO: check if any existing descriptor bindings bind to 0, and discard them if so
     createDescriptorSetLayout();
 }
 
@@ -46,12 +49,12 @@ PTShader::~PTShader()
 
 size_t PTShader::getDescriptorCount() const
 {
-    return descriptor_bindings_and_sizes.size();
+    return descriptor_bindings.size();
 }
 
-std::pair<uint32_t, std::pair<VkDeviceSize, VkDeviceSize>> PTShader::getDescriptorBinding(size_t index) const
+PTShader::UniformDescriptor PTShader::getDescriptorBinding(size_t index) const
 {
-    return descriptor_bindings_and_sizes[index];
+    return descriptor_bindings[index];
 }
 
 bool PTShader::readFromFile(const string shader_path_stub, vector<char>& vertex_code, vector<char>& fragment_code)
@@ -108,17 +111,18 @@ void PTShader::createShaderModules(const vector<char>& vertex_code, const vector
 
 void PTShader::createDescriptorSetLayout()
 {
-    SpvReflectShaderModule reflect_module;
-    if (spvReflectCreateShaderModule(  ))// TODO: here/.....
-    // TODO: make this conform according to the actual shaders! i.e. for each uniform buffer binding, generate a descriptor set layout binding
-    // FIXME: replace this with reflection stuff
-    VkDescriptorSetLayoutBinding transform_binding{ };
-    transform_binding.binding = 0;
-    transform_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    transform_binding.descriptorCount = 1;
-    transform_binding.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS;
+    vector<VkDescriptorSetLayoutBinding> bindings = { };
 
-    vector<VkDescriptorSetLayoutBinding> bindings = { transform_binding };
+    for (UniformDescriptor descriptor : descriptor_bindings)
+    {
+        VkDescriptorSetLayoutBinding binding{ };
+        binding.binding = descriptor.bind_point;
+        binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; // TODO: implement texture descriptors
+        binding.descriptorCount = 1;
+        binding.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS;
+
+        bindings.push_back(binding);
+    }
 
     VkDescriptorSetLayoutCreateInfo layout_create_info{ };
     layout_create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
