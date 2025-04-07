@@ -2,22 +2,16 @@
 
 ## Vulkan Stuff
 
-- [ ] improve mesh draw call queueing system to allow for unlimited objects and choice of shader/render pass/pipeline
-      - [x] specify the transform pointer to track
-      - [x] organise objects by material (i.e. the non-common uniform buffer is all the same)
-      - [x] draw objects with indexed descriptor sets?
-      - [x] descriptor set pool needs to be able to support dynamic numbers of different descriptor set layouts
-      - [x] store allocated descriptor sets on the object draw-request (create when the draw-request is created, destroy when the draw-request is removed)
-      - [x] material specifies the shader, pipeline, descriptor set layout, descriptor set values, textures
 - [ ] material system
-      - [ ] ability to specify the buffers when creating a shader (5)
+      - [ ] ability to specify the buffers when creating a shader (2)
       - [ ] shader definition file (groups shader code along with uniform spec?)
-      - [ ] read material from file                       (6)
+      - [ ] read material from file                       (3)
       - [ ] implement proper shader config and reflection, and checking this when creating render passes
       - [ ] texture descriptors
-      - [ ] respect priority system                       (4)
-- [ ] runtime shader compilation                          (3)
+      - [ ] respect priority system                       (1)
+- [ ] runtime shader compilation                          (4)
 - [ ] mesh data updating      
+- [ ] add uniform buffer for scene-constants (screen size, time)
 
 ## Engine Stuff
 
@@ -95,3 +89,10 @@
 - [x] pipeline updating
 - [x] synchronisation for renderer state!
 - [x] common uniforms should carry an object id
+- [x] improve mesh draw call queueing system to allow for unlimited objects and choice of shader/render pass/pipeline
+      - [x] specify the transform pointer to track
+      - [x] organise objects by material (i.e. the non-common uniform buffer is all the same)
+      - [x] draw objects with indexed descriptor sets?
+      - [x] descriptor set pool needs to be able to support dynamic numbers of different descriptor set layouts
+      - [x] store allocated descriptor sets on the object draw-request (create when the draw-request is created, destroy when the draw-request is removed)
+      - [x] material specifies the shader, pipeline, descriptor set layout, descriptor set values, textures
