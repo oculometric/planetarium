@@ -11,6 +11,8 @@ layout(location = 4) in vec2 vert_uv;
     mat4 world_to_view; \
     mat4 view_to_clip; \
     vec2 viewport_size; \
+    uint object_id; \
+    float time; \
 } uniforms;
 
 #define VARYING_COMMON(io) layout(location = 0) io CommonVaryings \

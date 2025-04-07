@@ -12,4 +12,6 @@ struct CommonUniforms
     float world_to_view[16];
     float view_to_clip[16];
     PTVector2f viewport_size;
+    uint32_t object_id;
+    float time;
 };

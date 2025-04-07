@@ -23,6 +23,12 @@ class PTMesh;
 class PTTransform;
 class PTMaterial;
 
+#ifdef _WIN32
+typedef std::chrono::steady_clock clocktype;
+#else
+typedef std::chrono::system_clock clocktype;
+#endif
+
 class PTApplication
 {
 private:
@@ -86,11 +92,8 @@ private:
         (char*)VK_KHR_SWAPCHAIN_EXTENSION_NAME
     };
 
-#ifdef _WIN32
-    std::chrono::steady_clock::time_point last_frame_start;
-#else
-    std::chrono::system_clock::time_point last_frame_start;
-#endif
+    clocktype::time_point last_frame_start;
+    clocktype::time_point program_start;
     uint32_t frame_time_running_mean_us;
 
     PTScene* current_scene = nullptr;

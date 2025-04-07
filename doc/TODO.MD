@@ -17,7 +17,6 @@
       - [ ] texture descriptors
       - [ ] respect priority system                       (4)
 - [ ] runtime shader compilation                          (3)
-- [ ] common uniforms should carry an object id          (2)
 - [ ] mesh data updating      
 
 ## Engine Stuff
@@ -95,3 +94,4 @@
 - [x] swapchain resizing
 - [x] pipeline updating
 - [x] synchronisation for renderer state!
+- [x] common uniforms should carry an object id

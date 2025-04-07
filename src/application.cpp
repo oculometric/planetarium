@@ -76,6 +76,7 @@ void PTApplication::start()
     initVulkan();
     initController();
 
+    program_start = chrono::high_resolution_clock::now();
     current_scene = PTResourceManager::get()->createScene("res/demo.ptscn");
 
     mainLoop();
@@ -967,10 +968,13 @@ void PTApplication::updateUniformBuffers(uint32_t frame_index)
     view_to_clip.getColumnMajor(uniforms.view_to_clip);
 
     uniforms.viewport_size = PTVector2f{ (float)swapchain->getExtent().width, (float)swapchain->getExtent().height };
+    chrono::duration<float> since = chrono::high_resolution_clock::now() - program_start;
+    uniforms.time = since.count();
 
     for (auto instruction : draw_queue)
     {
         instruction.second.transform->getLocalToWorld().getColumnMajor(uniforms.model_to_world);
+        uniforms.object_id = (uint32_t)((size_t)instruction.first);
 
         memcpy(instruction.second.descriptor_buffers[frame_index]->map(), &uniforms, sizeof(CommonUniforms));
     }
