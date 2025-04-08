@@ -160,6 +160,7 @@ void PTApplication::initVulkan()
     // TODO: convert this
     //default_material = PTResourceManager::get()->createMaterial("default.ptmat", swapchain);
     default_material = PTResourceManager::get()->createMaterial(swapchain, descriptor_pool, render_pass, PTResourceManager::get()->createShader("demo"), VK_TRUE, VK_TRUE, VK_COMPARE_OP_LESS, VK_CULL_MODE_BACK_BIT, VK_POLYGON_MODE_FILL);
+    default_material->setUniform(1, PTVector4f{ 1.0f, 0.0f, 1.0f, 1.0f });
     debugLog("    done.");
 
     createSyncObjects();
@@ -614,8 +615,6 @@ void PTApplication::drawFrame(uint32_t frame_index)
             // for each material, bind the shader and pipeline, and the material-specific descriptor set
             mat = instruction.material;
             vkCmdBindPipeline(command_buffers[frame_index], VK_PIPELINE_BIND_POINT_GRAPHICS, mat->getPipeline()->getPipeline());
-            vector<VkDescriptorSet> material_descriptor_sets = { mat->getDescriptorSet(frame_index) };
-            vkCmdBindDescriptorSets(command_buffers[frame_index], VK_PIPELINE_BIND_POINT_GRAPHICS, mat->getPipeline()->getLayout(), 0, static_cast<uint32_t>(material_descriptor_sets.size()), material_descriptor_sets.data(), 0, nullptr);
         }
 
         if (instruction.mesh != mesh)
@@ -895,6 +894,8 @@ void PTApplication::addDrawRequest(PTNode* owner, PTMesh* mesh, PTMaterial* mate
         write_set.descriptorCount = 1;
         write_set.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
         write_set.pBufferInfo = &buffer_info;
+
+        request.material->applySetWrites(request.descriptor_sets[i]);
 
         vkUpdateDescriptorSets(device, 1, &write_set, 0, nullptr);
     }

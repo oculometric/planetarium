@@ -25,8 +25,7 @@ private:
     PTRenderPass* render_pass = nullptr;
     PTPipeline* pipeline = nullptr;
     VkDescriptorPool descriptor_pool = VK_NULL_HANDLE;
-    std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> descriptor_sets;
-    std::array<std::map<uint16_t, PTBuffer*>, MAX_FRAMES_IN_FLIGHT> descriptor_buffers;
+    std::map<uint16_t, PTBuffer*> descriptor_buffers;
 
     int priority = 0;
     std::string origin_path;
@@ -40,7 +39,8 @@ public:
     inline PTShader* getShader() const { return shader; }
     inline PTRenderPass* getRenderPass() const { return render_pass; }
     inline PTPipeline* getPipeline() const { return pipeline; }
-    VkDescriptorSet getDescriptorSet(uint32_t frame_index) const;
+    inline PTBuffer* getDescriptorBuffer(uint16_t binding) { return descriptor_buffers[binding]; }
+    void applySetWrites(VkDescriptorSet descriptor_set);
 
     inline int getPriority() const { return priority; }
     inline void setPriority(int p) { priority = p; }
@@ -60,20 +60,17 @@ private:
 template <typename T>
 inline void PTMaterial::setUniform(uint16_t bind_point, T data)
 {
-    uint32_t buf_size = descriptor_buffers[0][bind_point]->getSize();
-    for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-    {
-        void* target = descriptor_buffers[i][bind_point]->map();
-        memcpy(target, &data, buf_size);
-    }
+    uint32_t buf_size = descriptor_buffers[bind_point]->getSize();
+    void* target = descriptor_buffers[bind_point]->map();
+    memcpy(target, &data, buf_size);
 }
 
 template <typename T>
 inline T PTMaterial::getUniform(uint16_t bind_point)
 {
-    uint32_t buf_size = descriptor_buffers[0][bind_point]->getSize();
+    uint32_t buf_size = descriptor_buffers[bind_point]->getSize();
     T data;
-    void* target = descriptor_buffers[0][bind_point]->map();
+    void* target = descriptor_buffers[bind_point]->map();
     memcpy(&data, target, buf_size);
 }
 

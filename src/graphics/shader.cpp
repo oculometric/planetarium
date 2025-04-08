@@ -15,7 +15,8 @@ PTShader::PTShader(VkDevice _device, const string shader_path_stub)
         createShaderModules(vert, frag);
     
     descriptor_bindings.push_back(UniformDescriptor{ "Common", 0, sizeof(CommonUniforms) });
-    // TODO: check if any existing descriptor bindings bind to 0, and discard them if so
+    descriptor_bindings.push_back(UniformDescriptor{ "Test", 1, 256 }); // FIXME: remove this
+    // TODO: check if any incoming descriptor bindings bind to 0, and discard them if so
     createDescriptorSetLayout();
 }
 

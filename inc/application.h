@@ -32,7 +32,6 @@ typedef std::chrono::system_clock clocktype;
 class PTApplication
 {
 private:
-    // TODO: draw queue ordering must respect material priority
     struct DrawRequest
     {
         PTMesh* mesh = nullptr;

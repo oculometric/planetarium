@@ -8,10 +8,10 @@
       - [ ] read material from file                       (3)
       - [ ] implement proper shader config and reflection, and checking this when creating render passes
       - [ ] texture descriptors
-      - [ ] respect priority system                       (1)
+      - [x] respect priority system
 - [ ] runtime shader compilation                          (4)
 - [ ] mesh data updating      
-- [ ] add uniform buffer for scene-constants (screen size, time)
+- [ ] add uniform buffer for scene-constants (screen size, time, lights)
 
 ## Engine Stuff
 

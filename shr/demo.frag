@@ -3,6 +3,12 @@
 #include "common.glsl"
 
 UNIFORM_COMMON
+
+layout(binding = 1) uniform MaterialProperties
+{
+    vec3 colour;
+} properties;
+
 VARYING_COMMON(in)
 FRAGMENT_OUTPUTS
 
@@ -14,7 +20,7 @@ const float pixel_size = 1.0f;
 void main()
 {
     float brightness = clamp(dot(-sun_direction, varyings.world_normal), 0, 1);
-    vec3 surface = (varyings.colour + 0.1f) * brightness;
+    vec3 surface = (properties.colour + 0.1f) * brightness;
 
     vec3 scaled = surface * divs;
     float val = (float(int(gl_FragCoord.x / pixel_size) % 2 == int(gl_FragCoord.y / pixel_size) % 2) + 1.0) / 3.0;
