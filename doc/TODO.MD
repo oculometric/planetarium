@@ -12,6 +12,7 @@
 - [ ] runtime shader compilation                          (4)
 - [ ] mesh data updating      
 - [ ] add a fuck ton of comments everywhere
+- [ ] change the way PTInput initialises to match PTResourceManager
 
 ## Engine Stuff
 

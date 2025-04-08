@@ -284,17 +284,16 @@ PTResourceManager::~PTResourceManager()
     {
         auto iter = resources.begin();
         auto end = resources.end();
-        while ((*iter).second->reference_counter != 0 && iter != end)
+        while (iter != end && (*iter).second->reference_counter != 0)
             iter++;
-        
-        if (iter != end || (*iter).second->reference_counter == 0)
-        {
-            debugLog("    unloading resource " + (*iter).first);
-            resources.erase(iter);
-            delete (*iter).second;
-        }
-        else
+
+        if (iter == end)
             break;
+        
+        debugLog("    unloading resource " + (*iter).first);
+        PTResource* res = (*iter).second;
+        resources.erase(iter);
+        delete res;
     }
 
     if (!resources.empty())

@@ -41,9 +41,9 @@ varyings.normal = vert_normal; \
 varyings.tangent = vert_tangent; \
 varyings.bitangent = cross(varyings.normal, varyings.tangent); \
 varyings.uv = vert_uv; \
-varyings.world_position = (uniforms.model_to_world * vec4(varyings.position, 1.0)).xyz; \
-varyings.world_normal = (normalize(uniforms.model_to_world * vec4(varyings.normal, 0.0))).xyz; \
-gl_Position = uniforms.view_to_clip * uniforms.world_to_view * vec4(varyings.world_position, 1.0f);
+varyings.world_position = (transform.model_to_world * vec4(varyings.position, 1.0)).xyz; \
+varyings.world_normal = (normalize(transform.model_to_world * vec4(varyings.normal, 0.0))).xyz; \
+gl_Position = transform.view_to_clip * transform.world_to_view * vec4(varyings.world_position, 1.0f);
 
 #define FRAGMENT_OUTPUTS layout(location = 0) out vec4 frag_colour; \
 layout(location = 1) out vec3 frag_normal;

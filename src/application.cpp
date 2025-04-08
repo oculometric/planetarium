@@ -163,7 +163,7 @@ void PTApplication::initVulkan()
     // TODO: convert this
     //default_material = PTResourceManager::get()->createMaterial("res/default.ptmat", swapchain, render_pass);
     default_material = PTResourceManager::get()->createMaterial(swapchain, render_pass, PTResourceManager::get()->createShader("demo"), VK_TRUE, VK_TRUE, VK_COMPARE_OP_LESS, VK_CULL_MODE_BACK_BIT, VK_POLYGON_MODE_FILL);
-    default_material->setUniform(1, PTVector4f{ 1.0f, 0.0f, 1.0f, 1.0f });
+    default_material->setUniform(2, PTVector4f{ 1.0f, 0.0f, 1.0f, 1.0f });
     debugLog("    done.");
 
     createSyncObjects();
@@ -226,6 +226,7 @@ void PTApplication::deinitVulkan()
         vkDestroySemaphore(device, image_available_semaphores[i], nullptr);
         vkDestroySemaphore(device, render_finished_semaphores[i], nullptr);
         vkDestroyFence(device, in_flight_fences[i], nullptr);
+        scene_uniform_buffers[i]->removeReferencer();
     }
     
     vkDestroyCommandPool(device, command_pool, nullptr);
@@ -893,17 +894,15 @@ void PTApplication::addDrawRequest(PTNode* owner, PTMesh* mesh, PTMaterial* mate
     if (vkAllocateDescriptorSets(device, &set_allocation_info, request.descriptor_sets.data()) != VK_SUCCESS)
         throw runtime_error("unable to allocate descriptor sets");
 
-    VkDeviceSize buffer_size = sizeof(TransformUniforms);
-
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
-        request.descriptor_buffers[i] = PTResourceManager::get()->createBuffer(buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        request.descriptor_buffers[i] = PTResourceManager::get()->createBuffer(sizeof(TransformUniforms), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
         {
             VkDescriptorBufferInfo buffer_info{ };
             buffer_info.buffer = request.descriptor_buffers[i]->getBuffer();
             buffer_info.offset = 0;
-            buffer_info.range = buffer_size;
+            buffer_info.range = sizeof(TransformUniforms);
 
             VkWriteDescriptorSet write_set{ };
             write_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -921,7 +920,7 @@ void PTApplication::addDrawRequest(PTNode* owner, PTMesh* mesh, PTMaterial* mate
             VkDescriptorBufferInfo buffer_info{ };
             buffer_info.buffer = scene_uniform_buffers[i]->getBuffer();
             buffer_info.offset = 0;
-            buffer_info.range = buffer_size;
+            buffer_info.range = sizeof(SceneUniforms);
 
             VkWriteDescriptorSet write_set{ };
             write_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -1114,5 +1113,5 @@ void PTApplication::destroyDebugUtilsMessenger(VkInstance instance, VkDebugUtils
 
 bool PTApplication::DrawRequest::compare(const DrawRequest& a, const DrawRequest& b)
 {
-    return (a.material->getPriority() <= b.material->getPriority()) && (a.material <= b.material) && (a.mesh <= b.mesh);
+    return (a.material->getPriority() < b.material->getPriority()) && (a.material < b.material) && (a.mesh < b.mesh);
 }
