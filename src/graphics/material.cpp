@@ -23,7 +23,8 @@ PTMaterial::PTMaterial(VkDevice _device, PTRenderPass* _render_pass, PTSwapchain
     for (size_t b = 0; b < descriptors; b++)
     {
         auto binding_info = getShader()->getDescriptorBinding(b);
-        if (binding_info.bind_point == COMMON_UNIFORM_BINDING)
+        if (binding_info.bind_point == TRANSFORM_UNIFORM_BINDING
+		 || binding_info.bind_point == SCENE_UNIFORM_BINDING)
             continue;
 
         PTBuffer* buffer = PTResourceManager::get()->createBuffer(binding_info.size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
@@ -43,8 +44,9 @@ void PTMaterial::applySetWrites(VkDescriptorSet descriptor_set)
     for (size_t b = 0; b < descriptors; b++)
     {
         auto binding_info = getShader()->getDescriptorBinding(b);
-        if (binding_info.bind_point == COMMON_UNIFORM_BINDING)
-            continue;
+        if (binding_info.bind_point == TRANSFORM_UNIFORM_BINDING
+		 || binding_info.bind_point == SCENE_UNIFORM_BINDING)
+			   continue;
 
         VkDescriptorBufferInfo buffer_info{ };
         buffer_info.buffer = descriptor_buffers[binding_info.bind_point]->getBuffer();

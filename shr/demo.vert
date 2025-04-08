@@ -3,7 +3,10 @@
 #include "common.glsl"
 
 VERTEX_INPUTS
-UNIFORM_COMMON
+
+UNIFORM_TRANSFORM
+UNIFORM_SCENE
+
 VARYING_COMMON(out)
 
 void main()

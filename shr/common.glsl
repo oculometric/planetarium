@@ -5,15 +5,21 @@ layout(location = 3) in vec3 vert_tangent; \
 layout(location = 4) in vec2 vert_uv;
 
 // TODO: add lighting
-#define UNIFORM_COMMON layout(binding = 0) uniform CommonUniforms \
+#define UNIFORM_TRANSFORM layout(binding = 0) uniform TransformUniforms \
 { \
     mat4 model_to_world; \
     mat4 world_to_view; \
     mat4 view_to_clip; \
-    vec2 viewport_size; \
     uint object_id; \
+} transform;
+
+#define UNIFORM_SCENE layout(binding = 1) uniform SceneUniforms \
+{ \
+	vec2 viewport_size; \
     float time; \
-} uniforms;
+} scene;
+
+#define UNIFORM_OFFSET 2
 
 #define VARYING_COMMON(io) layout(location = 0) io CommonVaryings \
 { \

@@ -14,8 +14,10 @@ PTShader::PTShader(VkDevice _device, const string shader_path_stub)
     if (readFromFile(shader_path_stub, vert, frag))
         createShaderModules(vert, frag);
     
-    descriptor_bindings.push_back(UniformDescriptor{ "Common", 0, sizeof(CommonUniforms) });
+    descriptor_bindings.push_back(UniformDescriptor{ "TransformUniforms", TRANSFORM_UNIFORM_BINDING, sizeof(TransformUniforms) });
+    descriptor_bindings.push_back(UniformDescriptor{ "SceneUniforms", SCENE_UNIFORM_BINDING, sizeof(SceneUniforms) });
     descriptor_bindings.push_back(UniformDescriptor{ "Test", 1, 256 }); // FIXME: remove this
+	// TODO: reflect these into existence
     // TODO: check if any incoming descriptor bindings bind to 0, and discard them if so
     createDescriptorSetLayout();
 }

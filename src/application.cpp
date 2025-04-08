@@ -511,6 +511,11 @@ void PTApplication::createDescriptorPoolAndSets()
     pool_create_info.pPoolSizes = &pool_size;
     pool_create_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
+    VkDeviceSize buffer_size = sizeof(SceneUniforms);
+
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+        scene_uniform_buffers[i] = PTResourceManager::get()->createBuffer(buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
     if (vkCreateDescriptorPool(device, &pool_create_info, nullptr, &descriptor_pool) != VK_SUCCESS)
         throw runtime_error("unable to create descriptor pool");
 }
@@ -888,29 +893,49 @@ void PTApplication::addDrawRequest(PTNode* owner, PTMesh* mesh, PTMaterial* mate
     if (vkAllocateDescriptorSets(device, &set_allocation_info, request.descriptor_sets.data()) != VK_SUCCESS)
         throw runtime_error("unable to allocate descriptor sets");
 
-    VkDeviceSize buffer_size = sizeof(CommonUniforms);
+    VkDeviceSize buffer_size = sizeof(TransformUniforms);
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
         request.descriptor_buffers[i] = PTResourceManager::get()->createBuffer(buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-        VkDescriptorBufferInfo buffer_info{ };
-        buffer_info.buffer = request.descriptor_buffers[i]->getBuffer();
-        buffer_info.offset = 0;
-        buffer_info.range = buffer_size;
+        {
+            VkDescriptorBufferInfo buffer_info{ };
+            buffer_info.buffer = request.descriptor_buffers[i]->getBuffer();
+            buffer_info.offset = 0;
+            buffer_info.range = buffer_size;
 
-        VkWriteDescriptorSet write_set{ };
-        write_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        write_set.dstSet = request.descriptor_sets[i];
-        write_set.dstBinding = COMMON_UNIFORM_BINDING;
-        write_set.dstArrayElement = 0;
-        write_set.descriptorCount = 1;
-        write_set.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        write_set.pBufferInfo = &buffer_info;
+            VkWriteDescriptorSet write_set{ };
+            write_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            write_set.dstSet = request.descriptor_sets[i];
+            write_set.dstBinding = TRANSFORM_UNIFORM_BINDING;
+            write_set.dstArrayElement = 0;
+            write_set.descriptorCount = 1;
+            write_set.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            write_set.pBufferInfo = &buffer_info;
+
+            vkUpdateDescriptorSets(device, 1, &write_set, 0, nullptr);
+        }
+
+        {
+            VkDescriptorBufferInfo buffer_info{ };
+            buffer_info.buffer = scene_uniform_buffers[i]->getBuffer();
+            buffer_info.offset = 0;
+            buffer_info.range = buffer_size;
+
+            VkWriteDescriptorSet write_set{ };
+            write_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            write_set.dstSet = request.descriptor_sets[i];
+            write_set.dstBinding = SCENE_UNIFORM_BINDING;
+            write_set.dstArrayElement = 0;
+            write_set.descriptorCount = 1;
+            write_set.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            write_set.pBufferInfo = &buffer_info;
+
+            vkUpdateDescriptorSets(device, 1, &write_set, 0, nullptr);
+        }
 
         request.material->applySetWrites(request.descriptor_sets[i]);
-
-        vkUpdateDescriptorSets(device, 1, &write_set, 0, nullptr);
     }
 
     beginEditLock();
@@ -973,24 +998,34 @@ void PTApplication::endDrawLock()
 
 void PTApplication::updateUniformBuffers(uint32_t frame_index)
 {
-    CommonUniforms uniforms;
-
-    PTMatrix4f world_to_view;
-    PTMatrix4f view_to_clip;
-    current_scene->getCameraMatrix(getAspectRatio(), world_to_view, view_to_clip);
-    world_to_view.getColumnMajor(uniforms.world_to_view);
-    view_to_clip.getColumnMajor(uniforms.view_to_clip);
-
-    uniforms.viewport_size = PTVector2f{ (float)swapchain->getExtent().width, (float)swapchain->getExtent().height };
-    chrono::duration<float> since = chrono::high_resolution_clock::now() - program_start;
-    uniforms.time = since.count();
-
-    for (auto instruction : draw_queue)
     {
-        instruction.second.transform->getLocalToWorld().getColumnMajor(uniforms.model_to_world);
-        uniforms.object_id = (uint32_t)((size_t)instruction.first);
+        // update transforms of each draw request
+        TransformUniforms uniforms;
 
-        memcpy(instruction.second.descriptor_buffers[frame_index]->map(), &uniforms, sizeof(CommonUniforms));
+        PTMatrix4f world_to_view;
+        PTMatrix4f view_to_clip;
+        current_scene->getCameraMatrix(getAspectRatio(), world_to_view, view_to_clip);
+        world_to_view.getColumnMajor(uniforms.world_to_view);
+        view_to_clip.getColumnMajor(uniforms.view_to_clip);
+
+        for (auto instruction : draw_queue)
+        {
+            instruction.second.transform->getLocalToWorld().getColumnMajor(uniforms.model_to_world);
+            uniforms.object_id = (uint32_t)((size_t)instruction.first);
+
+            memcpy(instruction.second.descriptor_buffers[frame_index]->map(), &uniforms, instruction.second.descriptor_buffers[frame_index]->getSize());
+        }
+    }
+
+    {
+        // update scene uniforms
+        SceneUniforms uniforms;
+
+        uniforms.viewport_size = PTVector2f{ (float)swapchain->getExtent().width, (float)swapchain->getExtent().height };
+        chrono::duration<float> since = chrono::high_resolution_clock::now() - program_start;
+        uniforms.time = since.count();
+
+        memcpy(scene_uniform_buffers[frame_index]->map(), &uniforms, scene_uniform_buffers[frame_index]->getSize());
     }
 }
 

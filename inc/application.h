@@ -66,6 +66,7 @@ private:
 
     PTSwapchain* swapchain = nullptr;
     std::vector<VkFramebuffer> framebuffers;
+    std::array<PTBuffer*, MAX_FRAMES_IN_FLIGHT> scene_uniform_buffers;
 
     std::map<PTQueueFamily, VkQueue> queues;
 

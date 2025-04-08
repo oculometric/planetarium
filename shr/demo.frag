@@ -2,9 +2,10 @@
 
 #include "common.glsl"
 
-UNIFORM_COMMON
+UNIFORM_TRANSFORM
+UNIFORM_SCENE
 
-layout(binding = 1) uniform MaterialProperties
+layout(binding = UNIFORM_OFFSET + 0) uniform MaterialProperties
 {
     vec3 colour;
 } properties;

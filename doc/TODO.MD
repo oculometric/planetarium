@@ -11,7 +11,7 @@
       - [x] respect priority system
 - [ ] runtime shader compilation                          (4)
 - [ ] mesh data updating      
-- [ ] add uniform buffer for scene-constants (screen size, time, lights)    (1)
+- [ ] add a fuck ton of comments everywhere
 
 ## Engine Stuff
 
@@ -96,3 +96,4 @@
       - [x] descriptor set pool needs to be able to support dynamic numbers of different descriptor set layouts
       - [x] store allocated descriptor sets on the object draw-request (create when the draw-request is created, destroy when the draw-request is removed)
       - [x] material specifies the shader, pipeline, descriptor set layout, descriptor set values, textures
+- [x] add uniform buffer for scene-constants (screen size, time, lights)
