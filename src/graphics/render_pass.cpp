@@ -50,7 +50,7 @@ PTRenderPass::PTRenderPass(VkDevice _device, vector<PTRenderPassAttachment> _att
     depth_attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
     VkAttachmentReference depth_attachment_ref{ };
-    depth_attachment_ref.attachment = 1;
+    depth_attachment_ref.attachment = index;
     depth_attachment_ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
     VkSubpassDescription subpass{ };

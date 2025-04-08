@@ -117,14 +117,17 @@ void PTPipeline::createPipeline()
 
     vector<VkPipelineShaderStageCreateInfo> shader_stages = shader->getStageCreateInfo();
 
-    VkPipelineColorBlendAttachmentState colour_blend_attachment = render_pass->getAttachments()[0].blend_state;
+    auto attachments = render_pass->getAttachments();
+    vector<VkPipelineColorBlendAttachmentState> colour_blend_attachments;
+    for (auto attachment : attachments)
+        colour_blend_attachments.push_back(attachment.blend_state);
 
     VkPipelineColorBlendStateCreateInfo colour_blend_create_info{ };
     colour_blend_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     colour_blend_create_info.logicOpEnable = VK_FALSE;
     colour_blend_create_info.logicOp = VK_LOGIC_OP_COPY;
-    colour_blend_create_info.attachmentCount = 1;
-    colour_blend_create_info.pAttachments = &colour_blend_attachment;
+    colour_blend_create_info.attachmentCount = static_cast<uint32_t>(colour_blend_attachments.size());
+    colour_blend_create_info.pAttachments = colour_blend_attachments.data();
     colour_blend_create_info.blendConstants[0] = 0.0f;
     colour_blend_create_info.blendConstants[1] = 0.0f;
     colour_blend_create_info.blendConstants[2] = 0.0f;

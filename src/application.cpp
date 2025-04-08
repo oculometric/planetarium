@@ -144,9 +144,12 @@ void PTApplication::initVulkan()
     debugLog("    done.");
 
     debugLog("    creating render pass...");
-    PTRenderPassAttachment attachment;
-    attachment.format = swapchain->getImageFormat();
-    render_pass = PTResourceManager::get()->createRenderPass({ attachment }, true);
+    PTRenderPassAttachment colour_att;
+    colour_att.format = swapchain->getImageFormat();
+    PTRenderPassAttachment normal_att;
+    normal_att.format = VK_FORMAT_R16G16B16A16_SNORM;
+    normal_att.final_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    render_pass = PTResourceManager::get()->createRenderPass({ colour_att, normal_att }, true);
 
     createCommandPoolAndBuffers();
 
@@ -158,8 +161,8 @@ void PTApplication::initVulkan()
 
     debugLog("    creating default material");
     // TODO: convert this
-    //default_material = PTResourceManager::get()->createMaterial("default.ptmat", swapchain);
-    default_material = PTResourceManager::get()->createMaterial(swapchain, descriptor_pool, render_pass, PTResourceManager::get()->createShader("demo"), VK_TRUE, VK_TRUE, VK_COMPARE_OP_LESS, VK_CULL_MODE_BACK_BIT, VK_POLYGON_MODE_FILL);
+    //default_material = PTResourceManager::get()->createMaterial("res/default.ptmat", swapchain, render_pass);
+    default_material = PTResourceManager::get()->createMaterial(swapchain, render_pass, PTResourceManager::get()->createShader("demo"), VK_TRUE, VK_TRUE, VK_COMPARE_OP_LESS, VK_CULL_MODE_BACK_BIT, VK_POLYGON_MODE_FILL);
     default_material->setUniform(1, PTVector4f{ 1.0f, 0.0f, 1.0f, 1.0f });
     debugLog("    done.");
 
@@ -237,6 +240,9 @@ void PTApplication::deinitVulkan()
 
     vkDestroyImageView(device, depth_image_view, nullptr);
     depth_image->removeReferencer();
+
+    vkDestroyImageView(device, normal_image_view, nullptr);
+    normal_image->removeReferencer();
 
     PTResourceManager::deinit();
 
@@ -442,12 +448,12 @@ void PTApplication::createFramebuffers()
 
     for (uint32_t i = 0; i < swapchain->getImageCount(); i++)
     {
-        VkImageView attachments[] = { swapchain->getImageView(i), depth_image_view };
+        VkImageView attachments[] = { swapchain->getImageView(i), normal_image_view, depth_image_view };
 
         VkFramebufferCreateInfo framebuffer_create_info{ };
         framebuffer_create_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         framebuffer_create_info.renderPass = render_pass->getRenderPass();
-        framebuffer_create_info.attachmentCount = 2;
+        framebuffer_create_info.attachmentCount = 3;
         framebuffer_create_info.pAttachments = attachments;
         framebuffer_create_info.width = swapchain->getExtent().width;
         framebuffer_create_info.height = swapchain->getExtent().height;
@@ -487,6 +493,9 @@ void PTApplication::createDepthResources()
 {
     depth_image = PTResourceManager::get()->createImage(swapchain->getExtent(), VK_FORMAT_D32_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     depth_image_view = depth_image->createImageView(VK_IMAGE_ASPECT_DEPTH_BIT);
+
+    normal_image = PTResourceManager::get()->createImage(swapchain->getExtent(), VK_FORMAT_R16G16B16A16_SNORM, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    normal_image_view = normal_image->createImageView(VK_IMAGE_ASPECT_COLOR_BIT);
 }
 
 void PTApplication::createDescriptorPoolAndSets()
@@ -591,9 +600,10 @@ void PTApplication::drawFrame(uint32_t frame_index)
     render_pass_begin_info.framebuffer = framebuffers[image_index];
     render_pass_begin_info.renderArea.offset = { 0, 0 };
     render_pass_begin_info.renderArea.extent = swapchain->getExtent();
-    array<VkClearValue, 2> clear_values{ };
+    array<VkClearValue, 3> clear_values{ };
     clear_values[0].color = { { 1.0f, 0.0f, 1.0f, 1.0f } };
-    clear_values[1].depthStencil = { 1.0f, 0 };
+    clear_values[1].color = { { 0.0f, 0.0f, 0.0f, 1.0f } };
+    clear_values[2].depthStencil = { 1.0f, 0 };
     render_pass_begin_info.clearValueCount = static_cast<uint32_t>(clear_values.size());
     render_pass_begin_info.pClearValues = clear_values.data();
 
@@ -700,6 +710,9 @@ void PTApplication::resizeSwapchain()
 
     vkDestroyImageView(device, depth_image_view, nullptr);
     depth_image->removeReferencer();
+
+    vkDestroyImageView(device, normal_image_view, nullptr);
+    normal_image->removeReferencer();
 
     glfwGetFramebufferSize(window, &width, &height);
     while (width == 0 || height == 0)

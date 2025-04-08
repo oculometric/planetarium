@@ -37,9 +37,9 @@ PTResourceManager* PTResourceManager::get()
 
 PTBuffer* PTResourceManager::createBuffer(VkDeviceSize buffer_size, VkBufferUsageFlags usage_flags, VkMemoryPropertyFlags memory_flags)
 {
-    string identifier = "buffer-" + to_string((size_t)device) + '-' + to_string((size_t)physical_device.getDevice()) + '-' + to_string(buffer_size) + '-' + to_string(usage_flags) + '-' + to_string(memory_flags);
-
     PTBuffer* buf = new PTBuffer(device, physical_device, buffer_size, usage_flags, memory_flags);
+    string identifier = "buffer-" + to_string((size_t)buf);
+
     resources.emplace(identifier, buf);
 
     buf->addReferencer();
@@ -49,9 +49,9 @@ PTBuffer* PTResourceManager::createBuffer(VkDeviceSize buffer_size, VkBufferUsag
 
 PTImage* PTResourceManager::createImage(VkExtent2D size, VkFormat _format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties)
 {
-    string identifier = "image-" + to_string((size_t)device) + '-' + to_string((size_t)physical_device.getDevice()) + '-' + to_string(size.width) + '-' + to_string(size.height) + '-' + to_string(_format) + '-' + to_string(tiling) + '-' + to_string(usage) + '-' + to_string(properties);
-    
     PTImage* img = new PTImage(device, physical_device, size, _format, tiling, usage, properties);
+    string identifier = "image-" + to_string((size_t)img);
+
     resources.emplace(identifier, img);
 
     img->addReferencer();
@@ -61,9 +61,9 @@ PTImage* PTResourceManager::createImage(VkExtent2D size, VkFormat _format, VkIma
 
 PTImage* PTResourceManager::createImage(std::string texture_file, bool force_duplicate)
 {
-    string identifier = "image-" + to_string((size_t)device) + '-' + to_string((size_t)physical_device.getDevice()) + '-' + texture_file;
-
+    string identifier = "image-" + texture_file;
     PTImage* img = nullptr;
+
     if (!force_duplicate)
         img = tryGetExistingResource<PTImage>(identifier);
     if (img == nullptr)
@@ -76,9 +76,9 @@ PTImage* PTResourceManager::createImage(std::string texture_file, bool force_dup
 
 PTMesh* PTResourceManager::createMesh(std::string file_name, bool force_duplicate)
 {
-    string identifier = "mesh-" + to_string((size_t)device) + '-' + to_string((size_t)physical_device.getDevice()) + '-' + file_name;
-
+    string identifier = "mesh-" + file_name;
     PTMesh* me = nullptr;
+
     if (!force_duplicate)
         me = tryGetExistingResource<PTMesh>(identifier);
     if (me == nullptr)
@@ -91,9 +91,9 @@ PTMesh* PTResourceManager::createMesh(std::string file_name, bool force_duplicat
 
 PTMesh* PTResourceManager::createMesh(std::vector<PTVertex> vertices, std::vector<uint16_t> indices)
 {
-    string identifier = "mesh-" + to_string((size_t)device) + '-' + to_string((size_t)physical_device.getDevice()) + '-' + to_string(vertices.size()) + '-' + to_string(indices.size());
-
     PTMesh* me = new PTMesh(device, physical_device, vertices, indices);
+    string identifier = "mesh-" + to_string((size_t)me);
+
     resources.emplace(identifier, me);
 
     me->addReferencer();
@@ -103,9 +103,9 @@ PTMesh* PTResourceManager::createMesh(std::vector<PTVertex> vertices, std::vecto
 
 PTPipeline* PTResourceManager::createPipeline(PTShader* shader, PTRenderPass* render_pass, PTSwapchain* swapchain, VkBool32 depth_write, VkBool32 depth_test, VkCompareOp depth_op, VkCullModeFlags culling, VkFrontFace winding_order, VkPolygonMode polygon_mode, std::vector<VkDynamicState> dynamic_states)
 {
-    string identifier = "pipeline-" + to_string((size_t)device) + '-' + to_string((size_t)shader) + '-' + to_string((size_t)render_pass) + '-' + to_string((size_t)swapchain) + '-' + to_string(depth_write) + '-' + to_string(depth_test) + '-' + to_string(depth_op) + '-' + to_string(culling) + '-' + to_string(winding_order) + '-' + to_string(polygon_mode) + '-' + to_string(dynamic_states.size());
-    
     PTPipeline* pipe = new PTPipeline(device, shader, render_pass, swapchain, depth_write, depth_test, depth_op, culling, winding_order, polygon_mode, dynamic_states);
+    string identifier = "pipeline-" + to_string((size_t)pipe);
+    
     resources.emplace(identifier, pipe);
 
     pipe->addReferencer();
@@ -115,9 +115,9 @@ PTPipeline* PTResourceManager::createPipeline(PTShader* shader, PTRenderPass* re
 
 PTRenderPass* PTResourceManager::createRenderPass(std::vector<PTRenderPassAttachment> attachments, bool enable_depth)
 {
-    string identifier = "renderpass-" + to_string((size_t)device) + '-' + to_string(attachments.size()) + '-' + to_string(enable_depth);
-
     PTRenderPass* rp = new PTRenderPass(device, attachments, enable_depth);
+    string identifier = "renderpass-" + to_string((size_t)rp);
+    
     resources.emplace(identifier, rp);
 
     rp->addReferencer();
@@ -127,9 +127,9 @@ PTRenderPass* PTResourceManager::createRenderPass(std::vector<PTRenderPassAttach
 
 PTShader* PTResourceManager::createShader(std::string shader_path_stub, bool force_duplicate)
 {
-    string identifier = "shader-" + to_string((size_t)device) + '-' + shader_path_stub;
-
+    string identifier = "shader-" + shader_path_stub;
     PTShader* sh = nullptr;
+
     if (!force_duplicate)
         sh = tryGetExistingResource<PTShader>(identifier);
     if (sh == nullptr)
@@ -142,7 +142,7 @@ PTShader* PTResourceManager::createShader(std::string shader_path_stub, bool for
 
 PTSwapchain* PTResourceManager::createSwapchain(VkSurfaceKHR surface, int window_x, int window_y)
 {
-    string identifier = "swapchain-" + '-' + to_string((size_t)device) + '-' + to_string((size_t)physical_device.getDevice()) + '-' + to_string((size_t)surface) + '-' + to_string(window_x) + '-' + to_string(window_y);
+    string identifier = "swapchain-" + to_string((size_t)surface) + '-' + to_string(window_x) + '-' + to_string(window_y);
 
     PTSwapchain* sc = new PTSwapchain(device, physical_device, surface, window_x, window_y);
     resources.emplace(identifier, sc);
@@ -152,11 +152,49 @@ PTSwapchain* PTResourceManager::createSwapchain(VkSurfaceKHR surface, int window
     return sc;
 }
 
-PTMaterial* PTResourceManager::createMaterial(PTSwapchain* swapchain, VkDescriptorPool descriptor_pool, PTRenderPass* _render_pass, PTShader* _shader, VkBool32 depth_write, VkBool32 depth_test, VkCompareOp depth_op, VkCullModeFlags culling, VkPolygonMode polygon_mode)
+PTMaterial* PTResourceManager::createMaterial(std::string material_path, PTSwapchain* swapchain, PTRenderPass* _render_pass, bool force_duplicate)
 {
-    string identifier = "material-" + '-' + to_string((size_t)device) + '-' + to_string((size_t)_shader);
+    string identifier = "material-" + material_path;
+    PTMaterial* mt = nullptr;
 
-    PTMaterial* mt = new PTMaterial(device, descriptor_pool, _render_pass, swapchain, _shader, depth_write, depth_test, depth_op, culling, polygon_mode);
+    if (!force_duplicate)
+        mt = tryGetExistingResource<PTMaterial>(identifier);
+    if (mt == nullptr)
+    {
+        ifstream file(material_path, ios::ate);
+        if (!file.is_open())
+            return nullptr;
+
+        size_t size = file.tellg();
+        string text;
+        text.resize(size, ' ');
+        file.seekg(0);
+        file.read(text.data(), size);
+
+        string shader_path;
+        VkBool32 depth_write;
+        VkBool32 depth_test;
+        VkCompareOp depth_op;
+        VkCullModeFlags culling;
+        VkPolygonMode polygon_mode;
+        //PTDeserialiser::deserialiseMaterial(text, shader_path, depth_write, depth_test, depth_op, culling, polygon_mode); // TODO: this function should extract the relevant info from the material
+        // TODO: extract uniform values from the material too, and apply them!
+        PTShader* shader = createShader(shader_path);
+        mt = new PTMaterial(device, _render_pass, swapchain, shader, depth_write, depth_test, depth_op, culling, polygon_mode);
+        shader->removeReferencer();
+
+        resources.emplace(identifier, mt);
+    }
+
+    mt->addReferencer();
+
+    return mt;
+}
+
+PTMaterial* PTResourceManager::createMaterial(PTSwapchain* swapchain, PTRenderPass* _render_pass, PTShader* _shader, VkBool32 depth_write, VkBool32 depth_test, VkCompareOp depth_op, VkCullModeFlags culling, VkPolygonMode polygon_mode)
+{
+    PTMaterial* mt = new PTMaterial(device, _render_pass, swapchain, _shader, depth_write, depth_test, depth_op, culling, polygon_mode);
+    string identifier = "material-" + '-' + to_string((size_t)mt) + '-' + to_string((size_t)_shader);
     resources.emplace(identifier, mt);
 
     mt->addReferencer();
@@ -167,8 +205,8 @@ PTMaterial* PTResourceManager::createMaterial(PTSwapchain* swapchain, VkDescript
 PTScene* PTResourceManager::createScene(string file_name, bool force_duplicate)
 {
     string identifier = "scene-" + file_name;
-    
     PTScene* scene = nullptr;
+
     if (!force_duplicate)
         scene = tryGetExistingResource<PTScene>(identifier);
     if (scene == nullptr)
@@ -214,7 +252,7 @@ PTResource* PTResourceManager::createGeneric(string type, vector<PTDeserialiser:
 
         return createImage(args[0].s_val);
     }
-    // TODO: add other resource types as we go
+    // TODO: add other resource types as we go (material, shader)
 
     return nullptr;
 }

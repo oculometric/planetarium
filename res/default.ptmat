@@ -1,0 +1,10 @@
+Resource(shader, "demo") : shader;
+Resource(image, "demo.bmp") : albedo;
+
+Depth(operation = 0, test = 1, write = 1);
+
+Shader(resource = @shader);
+
+Uniform(binding = 1, /* etc */);
+
+// TODO: finish the material file spec!!

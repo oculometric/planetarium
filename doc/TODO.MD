@@ -11,7 +11,7 @@
       - [x] respect priority system
 - [ ] runtime shader compilation                          (4)
 - [ ] mesh data updating      
-- [ ] add uniform buffer for scene-constants (screen size, time, lights)
+- [ ] add uniform buffer for scene-constants (screen size, time, lights)    (1)
 
 ## Engine Stuff
 

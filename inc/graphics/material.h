@@ -52,10 +52,11 @@ public:
     inline T getUniform(uint16_t bind_point);
 
 private:
-    PTMaterial(VkDevice _device, VkDescriptorPool _descriptor_pool, PTRenderPass* _render_pass, PTSwapchain* swapchain, PTShader* _shader, VkBool32 depth_write, VkBool32 depth_test, VkCompareOp depth_op, VkCullModeFlags culling, VkPolygonMode polygon_mode);
-    PTMaterial(std::string load_path); // TODO: loading material from file
+    PTMaterial(VkDevice _device, PTRenderPass* _render_pass, PTSwapchain* swapchain, PTShader* _shader, VkBool32 depth_write, VkBool32 depth_test, VkCompareOp depth_op, VkCullModeFlags culling, VkPolygonMode polygon_mode);
     ~PTMaterial();
 };
+
+#include "buffer.h"
 
 template <typename T>
 inline void PTMaterial::setUniform(uint16_t bind_point, T data)
@@ -74,4 +75,4 @@ inline T PTMaterial::getUniform(uint16_t bind_point)
     memcpy(&data, target, buf_size);
 }
 
-// TODO: add path-loaded-from as a property for shaders and meshes
+// TODO: add path-loaded-from as a property for materials, shaders, images and meshes

@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <map>
+#include <vulkan/vulkan.h>
 
 #include "vector4.h"
 #include "vector3.h"
@@ -185,6 +186,7 @@ public:
     static std::pair<std::string, PTResource*> deserialiseResourceDescriptor(const std::vector<Token>& tokens, size_t& first_token, PTScene* scene, const std::string& content);
     static PTNode* deserialiseObject(const std::vector<Token>& tokens, size_t& first_token, PTScene* scene, const std::string& content);
     static void deserialiseScene(PTScene* scene, const std::string& content);
+    static void deserialiseMaterial(const std::string& text, std::string& shader_path, VkBool32& depth_write, VkBool32& depth_test, VkCompareOp& depth_op, VkCullModeFlags& culling, VkPolygonMode& polygon_mode); // TODO: this
 
 private:
     static inline TokenType getType(const char c);

@@ -86,6 +86,9 @@ private:
     PTImage* depth_image = nullptr;
     VkImageView depth_image_view = VK_NULL_HANDLE;
 
+    PTImage* normal_image = nullptr;
+    VkImageView normal_image_view = VK_NULL_HANDLE;
+
     static constexpr char* required_device_extensions[1] =
     {
         (char*)VK_KHR_SWAPCHAIN_EXTENSION_NAME
