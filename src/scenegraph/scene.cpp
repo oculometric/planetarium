@@ -12,18 +12,23 @@ using namespace std;
 
 PTScene::PTScene()
 {
+    // the root must always exist
     root = instantiate<PTNode>("root");
     camera = nullptr;
 }
 
 PTScene::~PTScene()
 {
+    // no longer depend on the nodes in the scene
     for (auto node : all_nodes)
         removeDependency(node.second);
+
+    // clear references to root and camera, and all nodes
     root = nullptr;
     camera = nullptr;
     all_nodes.clear();
     
+    // remove dependencies on resources we were potentially using
     for (auto res : referenced_resources)
         removeDependency(res.second);
     referenced_resources.clear();
@@ -31,6 +36,7 @@ PTScene::~PTScene()
 
 vector<PTNode*> PTScene::getNodes() const
 {
+    // copy all the nodes into a list
     vector<PTNode*> nodes;
     nodes.reserve(all_nodes.size());
     for (auto pair : all_nodes)

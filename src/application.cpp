@@ -149,7 +149,7 @@ void PTApplication::initVulkan()
     PTRenderPassAttachment normal_att;
     normal_att.format = VK_FORMAT_R16G16B16A16_SNORM;
     normal_att.final_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    render_pass = PTResourceManager::get()->createRenderPass({ colour_att, normal_att }, true);
+    render_pass = PTResourceManager::get()->createRenderPass({ colour_att, normal_att });
 
     createCommandPoolAndBuffers();
 

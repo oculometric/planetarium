@@ -10,7 +10,7 @@ class PTSwapchain : public PTResource
 {
     friend class PTResourceManager;
 private:
-    VkDevice target_device = VK_NULL_HANDLE;
+    VkDevice device = VK_NULL_HANDLE;
 
     VkSwapchainKHR swapchain = VK_NULL_HANDLE;
     VkSurfaceFormatKHR surface_format;
@@ -24,7 +24,7 @@ private:
     std::vector<VkImage> images;
     std::vector<VkImageView> image_views;
 
-    PTSwapchain(VkDevice device, PTPhysicalDevice& physical_device, VkSurfaceKHR surface, int window_x, int window_y);
+    PTSwapchain(VkDevice _device, PTPhysicalDevice& physical_device, VkSurfaceKHR surface, int window_x, int window_y);
 
     ~PTSwapchain();
 
@@ -44,4 +44,8 @@ public:
     inline VkImageView getImageView(uint32_t index) const { return image_views[index]; }
 
     void resize(VkSurfaceKHR surface, int size_x, int size_y);
+   
+private:
+    void createSwapchain(VkSurfaceKHR surface);
+    void collectImages();
 };

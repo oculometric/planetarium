@@ -52,8 +52,7 @@ inline T* PTScene::instantiate(std::string name, PTDeserialiser::ArgMap argument
     PTNode* node = PTResourceManager::get()->createNode<T>(arguments);
     node->scene = this;
     node->name = name;
-    addDependency(node);
-    node->removeReferencer();
+    addDependency(node, false);
 
     all_nodes.emplace(name, node);
     

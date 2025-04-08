@@ -32,7 +32,7 @@ private:
     VkRenderPass render_pass = VK_NULL_HANDLE;
     std::vector<PTRenderPassAttachment> attachments;
 
-    PTRenderPass(VkDevice _device, std::vector<PTRenderPassAttachment> _attachments = { }, bool enable_depth = true);
+    PTRenderPass(VkDevice _device, std::vector<PTRenderPassAttachment> _attachments = { });
 
     ~PTRenderPass();
 
