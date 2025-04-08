@@ -26,12 +26,14 @@ vector<VkPipelineShaderStageCreateInfo> PTShader::getStageCreateInfo() const
 {
     vector<VkPipelineShaderStageCreateInfo> infos;
 
+    // vertex shader info
     VkPipelineShaderStageCreateInfo vert_stage_create_info{ };
     vert_stage_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     vert_stage_create_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
     vert_stage_create_info.module = vertex_shader;
     vert_stage_create_info.pName = "main";
 
+    // fragment shader info
     VkPipelineShaderStageCreateInfo frag_stage_create_info{ };
     frag_stage_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     frag_stage_create_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
@@ -46,8 +48,10 @@ vector<VkPipelineShaderStageCreateInfo> PTShader::getStageCreateInfo() const
 
 PTShader::~PTShader()
 {
+    // destroy the layout and the blobs
     vkDestroyDescriptorSetLayout(device, descriptor_set_layout, nullptr);
-    destroyShaderModules();
+    vkDestroyShaderModule(device, vertex_shader, nullptr);
+    vkDestroyShaderModule(device, fragment_shader, nullptr);
 }
 
 size_t PTShader::getDescriptorCount() const
@@ -64,6 +68,9 @@ bool PTShader::readFromFile(const string shader_path_stub, vector<char>& vertex_
 {
     ifstream vert_file, frag_file;
 
+    // TODO: load a text shader, compile it, and then load shader blobs from it (also, extract the descriptor set layout)
+    
+    // open vertex and frag shader files (precompiled)
     vert_file.open(shader_path_stub + "_vert.spv", ios::ate | ios::binary);
     if (!vert_file.is_open())
         throw runtime_error("unable to open vertex shader for " + shader_path_stub);
@@ -74,6 +81,7 @@ bool PTShader::readFromFile(const string shader_path_stub, vector<char>& vertex_
         throw runtime_error("unable to open fragment shader for " + shader_path_stub);
     }
 
+    // clear and resize the vertex and fragment buffers
     vertex_code.clear();
     fragment_code.clear();
     size_t vert_size = (size_t)vert_file.tellg();
@@ -81,6 +89,7 @@ bool PTShader::readFromFile(const string shader_path_stub, vector<char>& vertex_
     vertex_code.resize(vert_size);
     fragment_code.resize(frag_size);
 
+    // read the entirety of both files
     vert_file.seekg(0);
     frag_file.seekg(0);
 
@@ -95,6 +104,7 @@ bool PTShader::readFromFile(const string shader_path_stub, vector<char>& vertex_
 
 void PTShader::createShaderModules(const vector<char>& vertex_code, const vector<char>& fragment_code)
 {
+    // turn a block of bytes into vertex buffer
     VkShaderModuleCreateInfo vert_create_info{ };
     vert_create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     vert_create_info.codeSize = vertex_code.size();
@@ -103,6 +113,7 @@ void PTShader::createShaderModules(const vector<char>& vertex_code, const vector
     if (vkCreateShaderModule(device, &vert_create_info, nullptr, &vertex_shader) != VK_SUCCESS)
         throw std::runtime_error("unable to create vertex shader module");
 
+    // turn a block of bytes into a frag buffer
     VkShaderModuleCreateInfo frag_create_info{ };
     frag_create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     frag_create_info.codeSize = fragment_code.size();
@@ -116,6 +127,8 @@ void PTShader::createDescriptorSetLayout()
 {
     vector<VkDescriptorSetLayoutBinding> bindings = { };
 
+    // go through all the descriptor bindings which are listed (currently only uniform buffers are supported)
+    // and create descriptor set layout bindings
     for (UniformDescriptor descriptor : descriptor_bindings)
     {
         VkDescriptorSetLayoutBinding binding{ };
@@ -127,6 +140,7 @@ void PTShader::createDescriptorSetLayout()
         bindings.push_back(binding);
     }
 
+    // create the descriptor set layout. i'm so so very tired of those three words
     VkDescriptorSetLayoutCreateInfo layout_create_info{ };
     layout_create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     layout_create_info.bindingCount = static_cast<uint32_t>(bindings.size());
@@ -134,10 +148,4 @@ void PTShader::createDescriptorSetLayout()
 
     if (vkCreateDescriptorSetLayout(device, &layout_create_info, nullptr, &descriptor_set_layout) != VK_SUCCESS)
         throw runtime_error("unable to create descriptor set layout");
-}
-
-void PTShader::destroyShaderModules()
-{
-    vkDestroyShaderModule(device, vertex_shader, nullptr);
-    vkDestroyShaderModule(device, fragment_shader, nullptr);
 }

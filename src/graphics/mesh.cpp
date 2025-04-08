@@ -11,6 +11,7 @@ using namespace std;
 
 VkVertexInputBindingDescription PTMesh::getVertexBindingDescription()
 {
+    // create a vertex binding description. this will always be the same for all meshes and shaders
     VkVertexInputBindingDescription description{ };
     description.binding = 0;
     description.stride = sizeof(PTVertex);
@@ -23,26 +24,31 @@ array<VkVertexInputAttributeDescription, 5> PTMesh::getVertexAttributeDescriptio
 {
     array<VkVertexInputAttributeDescription, 5> descriptions{ };
 
+    // position attribute (`vert_position` in common.hlsl)
     descriptions[0].binding = 0;
     descriptions[0].location = 0;
     descriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
     descriptions[0].offset = offsetof(PTVertex, position);
 
+    // colour attribute (`vert_colour` in common.hlsl)
     descriptions[1].binding = 0;
     descriptions[1].location = 1;
     descriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
     descriptions[1].offset = offsetof(PTVertex, colour);
 
+    // normal attribute (`vert_normal` in common.hlsl)
     descriptions[2].binding = 0;
     descriptions[2].location = 2;
     descriptions[2].format = VK_FORMAT_R32G32B32_SFLOAT;
     descriptions[2].offset = offsetof(PTVertex, normal);
 
+    // tangent attribute (`vert_tangent` in common.hlsl)
     descriptions[3].binding = 0;
     descriptions[3].location = 3;
     descriptions[3].format = VK_FORMAT_R32G32B32_SFLOAT;
     descriptions[3].offset = offsetof(PTVertex, tangent);
 
+    // uv attribute (`vert_uv` in common.hlsl)
     descriptions[4].binding = 0;
     descriptions[4].location = 4;
     descriptions[4].format = VK_FORMAT_R32G32_SFLOAT;
@@ -58,6 +64,7 @@ PTMesh::PTMesh(VkDevice _device, const PTPhysicalDevice& physical_device, std::s
     vector<PTVertex> verts;
     vector<uint16_t> inds;
 
+    // read file into the vectors (parse OBJ), then create vertex and index buffers from the data
     readFileToBuffers(file_name, verts, inds);
     createVertexBuffers(physical_device, verts, inds);
 }
@@ -65,12 +72,14 @@ PTMesh::PTMesh(VkDevice _device, const PTPhysicalDevice& physical_device, std::s
 PTMesh::PTMesh(VkDevice _device, const PTPhysicalDevice& physical_device, std::vector<PTVertex> vertices, std::vector<uint16_t> indices)
 {
     device = _device;
-
+    
+    // create vertex and index buffers directly from vectors
     createVertexBuffers(physical_device, vertices, indices);
 }
 
 PTMesh::~PTMesh()
 {
+    // release the buffers!!!
     removeDependency(index_buffer);
     removeDependency(vertex_buffer);
 }
@@ -317,6 +326,7 @@ void PTMesh::createVertexBuffers(const PTPhysicalDevice& physical_device, std::v
 
     index_count = indices.size();
 
+    // depend on the buffers, but don't increase ref counter (buffers are created above)
     addDependency(vertex_buffer, false);
     addDependency(index_buffer, false);
 

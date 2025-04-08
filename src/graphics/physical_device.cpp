@@ -2,14 +2,19 @@
 
 std::vector<PTPhysicalDevice> PTPhysicalDevice::enumerateDevices(VkInstance instance, VkSurfaceKHR surface)
 {
-    uint32_t device_count = 0;
     std::vector<PTPhysicalDevice> devices;
+
+    // query the total number of physical devices available
+    uint32_t device_count = 0;
     vkEnumeratePhysicalDevices(instance, &device_count, nullptr);
     if (device_count == 0)
         return devices;
 
+    // enumerate available physical devices
     std::vector<VkPhysicalDevice> physical_devices(device_count);
     vkEnumeratePhysicalDevices(instance, &device_count, physical_devices.data());
+
+    // go through them and generate a physical device wrapper for the information
     for (VkPhysicalDevice found_device : physical_devices)
     {
         PTPhysicalDevice dev;
