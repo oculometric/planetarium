@@ -4,7 +4,7 @@
 
 using namespace std;
 
-PTRenderPass::PTRenderPass(VkDevice _device, vector<PTRenderPassAttachment> _attachments)
+PTRenderPass::PTRenderPass(VkDevice _device, vector<Attachment> _attachments)
 {
     device = _device;
     attachments = _attachments;
@@ -17,7 +17,7 @@ PTRenderPass::PTRenderPass(VkDevice _device, vector<PTRenderPassAttachment> _att
     vector<VkAttachmentReference> colour_attachment_refs = { };
 
     uint32_t index = 0;
-    for (const PTRenderPassAttachment& attachment_info : attachments)
+    for (const Attachment& attachment_info : attachments)
     {
         // add a colour attachment corresponding to the information given
         VkAttachmentDescription attachment{ };

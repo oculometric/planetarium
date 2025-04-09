@@ -14,6 +14,7 @@
 
 - [ ] make input run on its own thread
 - [ ] make float isDown and bool wasPressed and bool wasReleased functions for each keyboard key
+- [ ] separate graphics stuff into RenderingServer (simplify Application)
 - [ ] better way of specifying which keyboard key to check the state of (A vs a, etc)
 - [ ] show debug axes of objects currently hovered over (this should be a new Node type)
 - [ ] cross platform controller support
@@ -26,7 +27,6 @@
 - [ ] live shader editor
 - [ ] COMPILED node editing
 - [ ] 3d reconstruction using meshing/shared topology solving (i.e. you draw some geometry from one view, then you draw some from another view and say what's what, then the engine solves the relative orientations of the view and the vertices)
-- [ ] separate graphics stuff into RenderingServer (simplify Application)
 
 ## Art Stuff
 
