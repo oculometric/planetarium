@@ -75,6 +75,8 @@
     <ClCompile Include="src\scenegraph\node.cpp" />
     <ClCompile Include="src\scenegraph\scene.cpp" />
     <ClCompile Include="src\scenegraph\transform.cpp" />
+    <ClCompile Include="src\spirv_reflect.c" />
+    <ClCompile Include="src\spirv_reflect.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="FORMATTING.md" />

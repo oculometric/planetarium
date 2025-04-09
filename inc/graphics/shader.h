@@ -14,7 +14,7 @@ public:
     {
         std::string identifier;
         uint16_t bind_point;
-        uint16_t size;
+        uint32_t size;
     };
 
     friend class PTResourceManager;
@@ -48,4 +48,6 @@ private:
     bool readFromFile(std::string shader_path_stub, std::vector<char>& vertex_code, std::vector<char>& fragment_code); // FIXME: add a way to pass in/add bindings
     void createShaderModules(const std::vector<char>& vertex_code, const std::vector<char>& fragment_code);
     void createDescriptorSetLayout();
+    bool hasDescriptorWithBinding(uint16_t binding, UniformDescriptor& out, size_t& index);
+    void insertDescriptor(UniformDescriptor descriptor);
 };

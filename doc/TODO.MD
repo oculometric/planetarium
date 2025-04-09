@@ -4,7 +4,7 @@
 
 - [ ] material system
       - [ ] read material from file                       (3)
-      - [ ] implement proper shader reflection            (2)
+      - [x] implement proper shader reflection
       - [ ] texture descriptors                           (1)
       - [x] respect priority system
 - [ ] runtime shader compilation                          (4)

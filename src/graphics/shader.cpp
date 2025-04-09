@@ -13,12 +13,10 @@ PTShader::PTShader(VkDevice _device, const string shader_path_stub)
     device = _device;
     if (readFromFile(shader_path_stub, vert, frag))
         createShaderModules(vert, frag);
-    
+
+    // these bindings should always be binding 0 and 1, and should always be present
     descriptor_bindings.push_back(UniformDescriptor{ "TransformUniforms", TRANSFORM_UNIFORM_BINDING, sizeof(TransformUniforms) });
     descriptor_bindings.push_back(UniformDescriptor{ "SceneUniforms", SCENE_UNIFORM_BINDING, sizeof(SceneUniforms) });
-    descriptor_bindings.push_back(UniformDescriptor{ "Test", 2, 256 }); // FIXME: remove this
-	// TODO: reflect these into existence
-    // TODO: check if any incoming descriptor bindings bind to 0, and discard them if so
     createDescriptorSetLayout();
 }
 
@@ -113,6 +111,17 @@ void PTShader::createShaderModules(const vector<char>& vertex_code, const vector
     if (vkCreateShaderModule(device, &vert_create_info, nullptr, &vertex_shader) != VK_SUCCESS)
         throw std::runtime_error("unable to create vertex shader module");
 
+    // extract a list of descriptor bindings from the vertex shader
+    SpvReflectShaderModule reflect;
+    spvReflectCreateShaderModule(vertex_code.size(), vertex_code.data(), &reflect);
+    for (size_t i = 0; i < reflect.descriptor_binding_count; i++)
+    {
+        SpvReflectDescriptorBinding binding = reflect.descriptor_bindings[i];
+        UniformDescriptor descriptor{ binding.name, static_cast<uint16_t>(binding.binding), binding.block.padded_size };
+        insertDescriptor(descriptor);
+    }
+    spvReflectDestroyShaderModule(&reflect);
+
     // turn a block of bytes into a frag buffer
     VkShaderModuleCreateInfo frag_create_info{ };
     frag_create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
@@ -121,6 +130,16 @@ void PTShader::createShaderModules(const vector<char>& vertex_code, const vector
 
     if (vkCreateShaderModule(device, &frag_create_info, nullptr, &fragment_shader) != VK_SUCCESS)
         throw std::runtime_error("unable to create fragment shader module");
+
+    // extract a list of descriptor bindings from the fragment shader
+    spvReflectCreateShaderModule(fragment_code.size(), fragment_code.data(), &reflect);
+    for (size_t i = 0; i < reflect.descriptor_binding_count; i++)
+    {
+        SpvReflectDescriptorBinding binding = reflect.descriptor_bindings[i];
+        UniformDescriptor descriptor{ binding.name, static_cast<uint16_t>(binding.binding), binding.block.padded_size };
+        insertDescriptor(descriptor);
+    }
+    spvReflectDestroyShaderModule(&reflect);
 }
 
 void PTShader::createDescriptorSetLayout()
@@ -148,4 +167,38 @@ void PTShader::createDescriptorSetLayout()
 
     if (vkCreateDescriptorSetLayout(device, &layout_create_info, nullptr, &descriptor_set_layout) != VK_SUCCESS)
         throw runtime_error("unable to create descriptor set layout");
+}
+
+bool PTShader::hasDescriptorWithBinding(uint16_t binding, UniformDescriptor& out, size_t& index)
+{
+    index = 0;
+    for (UniformDescriptor descriptor : descriptor_bindings)
+    {
+        if (descriptor.bind_point == binding)
+        {
+            out = descriptor;
+            return true;
+        }
+        index++;
+    }
+    return false;
+}
+
+void PTShader::insertDescriptor(UniformDescriptor descriptor)
+{
+    if (descriptor.bind_point == TRANSFORM_UNIFORM_BINDING
+     || descriptor.bind_point == SCENE_UNIFORM_BINDING)
+        return;
+    UniformDescriptor existing;
+    size_t index;
+    if (hasDescriptorWithBinding(descriptor.bind_point, existing, index))
+    {
+        // TODO: check that they are the same type here (texture vs uniform, throw error if they aren't)
+        debugLog("WARNING: during shader " + string("NONAME") + " loading, multiple descriptors found bound to " + to_string(descriptor.bind_point) + ". i will overwrite with the larger one");
+        if (existing.size < descriptor.size)
+            descriptor_bindings[index] = descriptor;
+
+        return;
+    }
+    descriptor_bindings.push_back(descriptor);
 }
