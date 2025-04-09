@@ -324,7 +324,7 @@ void PTMesh::createVertexBuffers(const PTPhysicalDevice& physical_device, std::v
     index_buffer = PTResourceManager::get()->createBuffer(size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     staging_buffer->copyTo(index_buffer, size);
 
-    index_count = indices.size();
+    index_count = static_cast<uint32_t>(indices.size());
 
     // depend on the buffers, but don't increase ref counter (buffers are created above)
     addDependency(vertex_buffer, false);

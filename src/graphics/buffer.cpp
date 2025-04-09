@@ -13,6 +13,7 @@ PTBuffer::PTBuffer(VkDevice _device, PTPhysicalDevice physical_device, VkDeviceS
 
     device = _device;
     
+    // create the buffer itself
     VkBufferCreateInfo buffer_create_info{ };
     buffer_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     buffer_create_info.size = size;
@@ -22,9 +23,11 @@ PTBuffer::PTBuffer(VkDevice _device, PTPhysicalDevice physical_device, VkDeviceS
     if (vkCreateBuffer(device, &buffer_create_info, nullptr, &buffer) != VK_SUCCESS)
         throw runtime_error("unable to construct buffer");
     
+    // check the memory requirements for the buffer
     VkMemoryRequirements memory_requirements;
     vkGetBufferMemoryRequirements(device, buffer, &memory_requirements);
 
+    // allocate memory and bind it to the buffer
     VkMemoryAllocateInfo allocate_info{ };
     allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocate_info.allocationSize = memory_requirements.size;
@@ -38,9 +41,11 @@ PTBuffer::PTBuffer(VkDevice _device, PTPhysicalDevice physical_device, VkDeviceS
 
 void* PTBuffer::map(VkMemoryMapFlags mapping_flags)
 {
+    // if it's already mapped, just return
     if (mapped_memory != nullptr)
         return mapped_memory;
 
+    // otherwie, map it and return the pointer
     vkMapMemory(device, device_memory, 0, size, mapping_flags, &mapped_memory);
 
     return mapped_memory;
@@ -48,15 +53,18 @@ void* PTBuffer::map(VkMemoryMapFlags mapping_flags)
 
 void PTBuffer::unmap()
 {
+    // if not mapped, do nothing
     if (mapped_memory == nullptr)
         return;
 
+    // otherwise, unmap and unreference
     vkUnmapMemory(device, device_memory);
     mapped_memory = nullptr;
 }
 
 void PTBuffer::copyTo(PTBuffer* destination, VkDeviceSize length, VkDeviceSize source_offset, VkDeviceSize destination_offset)
 {
+    // create, and execute, a copy command
     VkCommandBuffer copy_command_buffer = PTApplication::get()->beginTransientCommands();
 
     VkBufferCopy copy_command{ };
@@ -71,6 +79,7 @@ void PTBuffer::copyTo(PTBuffer* destination, VkDeviceSize length, VkDeviceSize s
 
 uint32_t PTBuffer::findMemoryType(uint32_t type_bits, VkMemoryPropertyFlags properties, PTPhysicalDevice physical_device)
 {
+    // figure out what type of memory fits the requirements
     VkPhysicalDeviceMemoryProperties memory_properties;
     vkGetPhysicalDeviceMemoryProperties(physical_device.getDevice(), &memory_properties);
 
@@ -82,9 +91,10 @@ uint32_t PTBuffer::findMemoryType(uint32_t type_bits, VkMemoryPropertyFlags prop
 
 PTBuffer::~PTBuffer()
 {
-    if (mapped_memory != nullptr)
-        unmap();
+    // make sure we're unmapped
+    unmap();
 
+    // destroy the buffer and free associated memory
     vkDestroyBuffer(device, buffer, nullptr);
     vkFreeMemory(device, device_memory, nullptr);
 }

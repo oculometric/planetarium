@@ -61,7 +61,9 @@ private:
 template <typename T>
 inline void PTMaterial::setUniform(uint16_t bind_point, T data)
 {
-    uint32_t buf_size = descriptor_buffers[bind_point]->getSize();
+    uint32_t buf_size = static_cast<uint32_t>(descriptor_buffers[bind_point]->getSize());
+    uint32_t data_size = static_cast<uint32_t>(sizeof(T));
+    if (data_size < buf_size) buf_size = data_size;
     void* target = descriptor_buffers[bind_point]->map();
     memcpy(target, &data, buf_size);
 }

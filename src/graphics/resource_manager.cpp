@@ -171,12 +171,12 @@ PTMaterial* PTResourceManager::createMaterial(std::string material_path, PTSwapc
         file.seekg(0);
         file.read(text.data(), size);
 
-        string shader_path;
-        VkBool32 depth_write;
-        VkBool32 depth_test;
-        VkCompareOp depth_op;
-        VkCullModeFlags culling;
-        VkPolygonMode polygon_mode;
+        string shader_path = "demo"; // TODO: this should point to the default shader
+        VkBool32 depth_write = VK_TRUE;
+        VkBool32 depth_test = VK_TRUE;
+        VkCompareOp depth_op = VK_COMPARE_OP_LESS;
+        VkCullModeFlags culling = VK_CULL_MODE_BACK_BIT;
+        VkPolygonMode polygon_mode = VK_POLYGON_MODE_FILL;
         //PTDeserialiser::deserialiseMaterial(text, shader_path, depth_write, depth_test, depth_op, culling, polygon_mode); // TODO: this function should extract the relevant info from the material
         // TODO: extract uniform values from the material too, and apply them!
         PTShader* shader = createShader(shader_path);

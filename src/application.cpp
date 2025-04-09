@@ -950,7 +950,7 @@ void PTApplication::removeAllDrawRequests(PTNode* owner)
 
     for (auto[itr, range_end] = draw_queue.equal_range(owner); itr != range_end; ++itr)
     {
-        vkFreeDescriptorSets(device, descriptor_pool, itr->second.descriptor_sets.size(), itr->second.descriptor_sets.data());
+        vkFreeDescriptorSets(device, descriptor_pool, static_cast<uint32_t>(itr->second.descriptor_sets.size()), itr->second.descriptor_sets.data());
         for (PTBuffer* buf : itr->second.descriptor_buffers)
             buf->removeReferencer();
     }

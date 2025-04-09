@@ -6,7 +6,7 @@ using namespace std;
 
 inline uint32_t clamp(uint32_t x, uint32_t mini, uint32_t maxi)
 {
-    float y = x > maxi ? maxi : x;
+    uint32_t y = x > maxi ? maxi : x;
     return (y < mini) ? mini : y;
 }
 
@@ -108,7 +108,7 @@ void PTSwapchain::createSwapchain(VkSurfaceKHR surface)
     swap_chain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
     if (sharing_mode == VK_SHARING_MODE_CONCURRENT)
     {
-        swap_chain_create_info.queueFamilyIndexCount = queue_families.size();
+        swap_chain_create_info.queueFamilyIndexCount = static_cast<uint32_t>(queue_families.size());
         swap_chain_create_info.pQueueFamilyIndices = queue_families.data();
     }
     swap_chain_create_info.imageSharingMode = sharing_mode;

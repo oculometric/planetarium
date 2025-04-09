@@ -12,6 +12,17 @@
 - [ ] runtime shader compilation                          (4)
 - [ ] mesh data updating      
 - [ ] add a fuck ton of comments everywhere
+	- [ ] application
+	- [x] buffer
+	- [x] camera node
+	- [ ] debug
+	- [ ] deserialiser
+	- [x] fly camera node
+	- [ ] gamepad
+	- [ ] gizmo node
+	- [ ] resource manager
+	- [ ] transform
+	- [ ] all header files
 - [ ] change the way PTInput initialises to match PTResourceManager
 
 ## Engine Stuff
