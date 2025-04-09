@@ -4,19 +4,20 @@
 #include <vector>
 #include <map>
 
-enum PTQueueFamily
-{
-    GRAPHICS,
-    PRESENT
-};
-
 class PTPhysicalDevice
 {
+public:
+	enum QueueFamily
+	{
+		GRAPHICS,
+		PRESENT
+	};
+
 private:
     VkPhysicalDevice device = VK_NULL_HANDLE;
     VkPhysicalDeviceProperties properties = { };
     VkPhysicalDeviceFeatures features = { };
-    std::map<PTQueueFamily, uint32_t> queue_families;
+    std::map<QueueFamily, uint32_t> queue_families;
     std::vector<VkExtensionProperties> extensions;
     VkSurfaceCapabilitiesKHR swapchain_capabilities = { };
     std::vector<VkSurfaceFormatKHR> swapchain_formats;
