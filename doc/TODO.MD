@@ -3,14 +3,12 @@
 ## Vulkan Stuff
 
 - [ ] material system
-      - [ ] ability to specify the buffers when creating a shader (2)
-      - [ ] shader definition file (groups shader code along with uniform spec?)
       - [ ] read material from file                       (3)
-      - [ ] implement proper shader config and reflection, and checking this when creating render passes
-      - [ ] texture descriptors
+      - [ ] implement proper shader reflection            (2)
+      - [ ] texture descriptors                           (1)
       - [x] respect priority system
 - [ ] runtime shader compilation                          (4)
-- [ ] mesh data updating      
+- [ ] mesh data updating                                  (5)
 - [ ] add a fuck ton of comments everywhere
 	- [ ] application
 	- [x] buffer
@@ -23,7 +21,7 @@
 	- [ ] resource manager
 	- [ ] transform
 	- [ ] all header files
-- [ ] change the way PTInput initialises to match PTResourceManager
+- [ ] change the way PTInput initialises to match PTResourceManager (0)
 
 ## Engine Stuff
 
