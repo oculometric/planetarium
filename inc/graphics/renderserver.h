@@ -6,6 +6,7 @@
 #include <map>
 #include <vector>
 #include <array>
+#include <thread>
 
 #include "constant.h"
 #include "physical_device.h"
@@ -42,11 +43,12 @@ public:
 	bool debug_mode = false;
 
 private:
+	bool should_stop = false;
+	std::thread mainloop_thread;
+
 	bool wants_screenshot = false;
-    bool should_stop = false;
-    int width;
-    int height;
     bool window_resized = false;
+
     int state = 0;
 
     VkInstance instance = VK_NULL_HANDLE;

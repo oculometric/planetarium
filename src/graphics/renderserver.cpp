@@ -239,14 +239,14 @@ PTRenderServer::PTRenderServer(GLFWwindow* window, vector<const char*> glfw_exte
 {
 	initVulkan(window, glfw_extensions);
 
-	// TODO: start render server mainloop on a new thread
+	should_stop = false;
+	mainloop_thread = thread(&PTRenderServer::mainLoop, this);
 }
 
 PTRenderServer::~PTRenderServer()
 {
 	should_stop = true;
-	
-	// TODO: join the render thread
+	mainloop_thread.join();
 
 	deinitVulkan();
 }
@@ -294,6 +294,24 @@ void PTRenderServer::initVulkan(GLFWwindow* window, vector<const char*> glfw_ext
     default_material->setUniform(2, PTVector4f{ 1.0f, 0.0f, 1.0f, 1.0f });
 
    debugLog("done.");
+}
+
+void PTRenderServer::mainLoop()
+{
+	int frame_total_number = 0;
+    uint32_t frame_index = 0;
+	while (!should_stop)
+	{
+        drawFrame(frame_index);
+
+		if (wants_screenshot)
+            takeScreenshot(frame_index);
+
+		frame_index = (frame_index + 1) % MAX_FRAMES_IN_FLIGHT;
+		frame_total_number++;
+	}
+
+    vkDeviceWaitIdle(device);
 }
 
 void PTRenderServer::deinitVulkan()
