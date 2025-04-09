@@ -16,12 +16,13 @@ struct PTKeyState
 
 class PTInput
 {
-    friend class PTApplication;
 private:
     std::array<PTGamepad, 4> gamepads;
     std::map<int, PTKeyState> key_states;
 
 public:
+    static void init();
+    static void deinit();
     static PTInput* get();
 
     bool getButtonState(PTGamepad::Button button, uint8_t gamepad) const;
@@ -39,9 +40,10 @@ public:
     PTInput operator=(PTInput& other) = delete;
     PTInput operator=(PTInput&& other) = delete;
 
+    void pollGamepads(); // TODO: make input run on its own thread
+
 private:
     PTInput();
-    void pollGamepads();
 
     void translate(int key, int action, int mods);
 };

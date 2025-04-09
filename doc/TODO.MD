@@ -9,22 +9,10 @@
       - [x] respect priority system
 - [ ] runtime shader compilation                          (4)
 - [ ] mesh data updating                                  (5)
-- [ ] add a fuck ton of comments everywhere
-	- [ ] application
-	- [x] buffer
-	- [x] camera node
-	- [ ] debug
-	- [ ] deserialiser
-	- [x] fly camera node
-	- [ ] gamepad
-	- [ ] gizmo node
-	- [ ] resource manager
-	- [ ] transform
-	- [ ] all header files
-- [ ] change the way PTInput initialises to match PTResourceManager (0)
 
 ## Engine Stuff
 
+- [ ] make input run on its own thread
 - [ ] make float isDown and bool wasPressed and bool wasReleased functions for each keyboard key
 - [ ] better way of specifying which keyboard key to check the state of (A vs a, etc)
 - [ ] show debug axes of objects currently hovered over (this should be a new Node type)
@@ -38,6 +26,7 @@
 - [ ] live shader editor
 - [ ] COMPILED node editing
 - [ ] 3d reconstruction using meshing/shared topology solving (i.e. you draw some geometry from one view, then you draw some from another view and say what's what, then the engine solves the relative orientations of the view and the vertices)
+- [ ] separate graphics stuff into RenderingServer (simplify Application)
 
 ## Art Stuff
 
@@ -51,6 +40,18 @@
 
 ## Misc
 
+- [ ] add a fuck ton of comments everywhere
+	- [ ] application
+	- [x] buffer
+	- [x] camera node
+	- [ ] debug
+	- [ ] deserialiser
+	- [x] fly camera node
+	- [ ] gamepad
+	- [ ] gizmo node
+	- [ ] resource manager
+	- [ ] transform
+	- [ ] all header files
 - [ ] array handling for deserialiser argument parsing
 - [ ] actual error handling?
 
@@ -107,3 +108,4 @@
       - [x] store allocated descriptor sets on the object draw-request (create when the draw-request is created, destroy when the draw-request is removed)
       - [x] material specifies the shader, pipeline, descriptor set layout, descriptor set values, textures
 - [x] add uniform buffer for scene-constants (screen size, time, lights)
+- [x] change the way PTInput initialises to match PTResourceManager

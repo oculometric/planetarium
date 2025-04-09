@@ -28,6 +28,7 @@ void PTResourceManager::deinit()
         return;
     
     delete resource_manager;
+    resource_manager = nullptr;
 }
 
 PTResourceManager* PTResourceManager::get()

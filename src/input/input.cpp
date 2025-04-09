@@ -6,6 +6,23 @@ using namespace std;
 
 PTInput* input_manager = nullptr;
 
+void PTInput::init()
+{
+    if (input_manager != nullptr)
+        return;
+
+    input_manager = new PTInput();
+}
+
+void PTInput::deinit()
+{
+    if (input_manager == nullptr)
+        return;
+
+    delete input_manager;
+    input_manager = nullptr;
+}
+
 PTInput* PTInput::get()
 {
     return input_manager;
@@ -58,11 +75,6 @@ PTKeyState PTInput::getKeyState(int key) const
 
 PTInput::PTInput()
 {
-    if (input_manager != nullptr)
-        throw runtime_error("attempt to create duplicate input manager");
-
-    input_manager = this;
-
     for (uint8_t i = 0; i < 4; i++)
         gamepads[i] = PTGamepad(i);
 }

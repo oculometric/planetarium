@@ -174,7 +174,7 @@ void PTApplication::initVulkan()
 void PTApplication::initController()
 {
     glfwSetKeyCallback(window, keyboardCallback);
-    PTInput* _ = new PTInput();
+    PTInput::init();
 }
 
 void PTApplication::mainLoop()
@@ -211,7 +211,7 @@ void PTApplication::mainLoop()
 
 void PTApplication::deinitController()
 {
-    delete PTInput::get();
+    PTInput::deinit();
 }
 
 void PTApplication::deinitVulkan()
