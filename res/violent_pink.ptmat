@@ -1,0 +1,11 @@
+Resource(shader, "demo") : shader;
+
+Culling(mode = "NONE");
+Polygon(mode = "LINE");
+
+Shader(resource = @shader);
+
+Uniform(binding = 2)
+{
+    [ 1.0, 0.0, 1.0, 1.0 ]     // colour
+};

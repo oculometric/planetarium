@@ -420,10 +420,16 @@ void PTDeserialiser::deserialiseScene(PTScene* scene, const std::string& content
         
         if (tokens[statement_first].s_value == "Resource")
         {
+            size_t tmp_first = statement_first;
             auto res = deserialiseResourceDescriptor(tokens, statement_first, res_map, content);
-            res_map[res.first] = res.second;
-            scene->addResource(res.first, res.second);
-            res.second->removeReferencer();
+            if (res.second == nullptr)
+                debugLog("resource '" + res.first + "' with type " + tokens[tmp_first + 2].s_value + " could not be loaded");
+            else
+            {
+                res_map[res.first] = res.second;
+                scene->addResource(res.first, res.second);
+                res.second->removeReferencer();
+            }
         }
         else
         {

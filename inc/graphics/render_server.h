@@ -105,6 +105,9 @@ public:
     void addDrawRequest(PTNode* owner, PTMesh* mesh, PTMaterial* material = nullptr, PTTransform* target_transform = nullptr);
     void removeAllDrawRequests(PTNode* owner);
 
+    inline PTSwapchain* getSwapchain() const { return swapchain; }
+    inline PTRenderPass* getRenderPass() const { return render_pass; }
+
     void beginEditLock();
     void endEditLock();
     void beginDrawLock();

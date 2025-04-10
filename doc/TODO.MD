@@ -9,11 +9,10 @@
       - [x] respect priority system
 - [ ] runtime shader compilation                          (2)
 - [ ] mesh data updating
-- [ ] support materials loading as a scene resource       (1)
 
 ## Engine Stuff
 
-- [ ] make input run on its own thread                    (0)
+- [ ] make input run on its own thread                    (5)
 - [ ] make float isDown and bool wasPressed and bool wasReleased functions for each keyboard key
 - [ ] better way of specifying which keyboard key to check the state of (A vs a, etc)
 - [ ] show debug axes of objects currently hovered over (this should be a new Node type)
@@ -110,3 +109,5 @@
 - [x] add uniform buffer for scene-constants (screen size, time, lights)
 - [x] change the way PTInput initialises to match PTResourceManager
 - [x] separate graphics stuff into RenderingServer (simplify Application)
+- [x] support materials loading as a scene resource
+- [x] allow materials on meshes

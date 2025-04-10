@@ -209,6 +209,8 @@ PTScene* PTResourceManager::createScene(string file_name, bool force_duplicate)
     return scene;
 }
 
+#include "render_server.h"
+
 PTResource* PTResourceManager::createGeneric(string type, vector<PTDeserialiser::Argument> args)
 {
     if (type == "mesh")
@@ -238,7 +240,15 @@ PTResource* PTResourceManager::createGeneric(string type, vector<PTDeserialiser:
         
         return createShader(args[0].s_val);
     }
-    // TODO: add other resource types as we go (material)
+    else if (type == "material")
+    {
+        if (args.size() < 1)
+            return nullptr;
+        if (args[0].type != PTDeserialiser::ArgType::STRING_ARG)
+            return nullptr;
+        
+        return createMaterial(args[0].s_val, PTRenderServer::get()->getSwapchain(), PTRenderServer::get()->getRenderPass());
+    }
 
     return nullptr;
 }

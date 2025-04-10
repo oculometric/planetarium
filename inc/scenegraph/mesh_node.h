@@ -2,6 +2,7 @@
 
 #include "node.h"
 
+class PTMaterial;
 class PTMesh;
 
 class PTMeshNode : public PTNode
@@ -9,12 +10,14 @@ class PTMeshNode : public PTNode
     friend class PTResourceManager;
 private:
     PTMesh* mesh_data = nullptr;
-    // TODO: materials, including set function
+    PTMaterial* material = nullptr;
 
 protected:
     PTMeshNode(PTDeserialiser::ArgMap arguments);
-
-    void setMesh(PTMesh* _mesh_data);
-
     ~PTMeshNode();
+    
+    inline PTMesh* getMesh() const { return mesh_data; }
+    inline PTMaterial* getMaterial() const { return material; }
+    void setMesh(PTMesh* _mesh_data);
+    void setMaterial(PTMaterial* _material);
 };
