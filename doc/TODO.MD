@@ -3,16 +3,16 @@
 ## Vulkan Stuff
 
 - [ ] material system
-      - [ ] read material from file                       (3)
+      - [ ] read material from file                       (1)
       - [x] implement proper shader reflection
-      - [ ] texture descriptors                           (1)
+      - [ ] texture descriptors                           (3)
       - [x] respect priority system
-- [ ] runtime shader compilation                          (4)
-- [ ] mesh data updating                                  (5)
+- [ ] runtime shader compilation                          (2)
+- [ ] mesh data updating
 
 ## Engine Stuff
 
-- [ ] make input run on its own thread
+- [ ] make input run on its own thread                    (0)
 - [ ] make float isDown and bool wasPressed and bool wasReleased functions for each keyboard key
 - [ ] better way of specifying which keyboard key to check the state of (A vs a, etc)
 - [ ] show debug axes of objects currently hovered over (this should be a new Node type)
