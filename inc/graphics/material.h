@@ -28,6 +28,7 @@ private:
     std::map<uint16_t, PTBuffer*> descriptor_buffers;
 
     int priority = 0;
+
     std::string origin_path;
 
 public:
@@ -79,5 +80,3 @@ inline T PTMaterial::getUniform(uint16_t bind_point)
     void* target = descriptor_buffers[bind_point]->map();
     memcpy(&data, target, buf_size);
 }
-
-// TODO: add path-loaded-from as a property for materials, shaders, images and meshes

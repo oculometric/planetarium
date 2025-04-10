@@ -20,10 +20,7 @@ private:
     VkImageUsageFlags usage;
     VkImageLayout layout;
 
-    PTImage(VkDevice _device, PTPhysicalDevice physical_device, VkExtent2D _size, VkFormat _format, VkImageTiling _tiling, VkImageUsageFlags _usage, VkMemoryPropertyFlags properties);
-    PTImage(VkDevice _device, PTPhysicalDevice physical_device, std::string texture_file);
-
-    ~PTImage();
+    std::string origin_path;
 
 public:
     PTImage() = delete;
@@ -47,5 +44,10 @@ public:
     static void transitionImageLayout(VkImage image, VkImageLayout old_layout, VkImageLayout new_layout, VkCommandBuffer cmd = VK_NULL_HANDLE);
 
 private:
+    PTImage(VkDevice _device, PTPhysicalDevice physical_device, VkExtent2D _size, VkFormat _format, VkImageTiling _tiling, VkImageUsageFlags _usage, VkMemoryPropertyFlags properties);
+    PTImage(VkDevice _device, std::string texture_path, PTPhysicalDevice physical_device);
+
+    ~PTImage();
+
     void createImage(PTPhysicalDevice physical_device, VkExtent2D _size, VkFormat _format, VkImageTiling _tiling, VkImageUsageFlags _usage, VkMemoryPropertyFlags properties);
 };

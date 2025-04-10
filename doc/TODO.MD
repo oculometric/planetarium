@@ -3,12 +3,13 @@
 ## Vulkan Stuff
 
 - [ ] material system
-      - [ ] read material from file                       (1)
+      - [x] read material from file
       - [x] implement proper shader reflection
       - [ ] texture descriptors                           (3)
       - [x] respect priority system
 - [ ] runtime shader compilation                          (2)
 - [ ] mesh data updating
+- [ ] support materials loading as a scene resource       (1)
 
 ## Engine Stuff
 

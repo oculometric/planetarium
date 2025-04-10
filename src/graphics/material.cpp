@@ -41,11 +41,12 @@ static map<string, VkPolygonMode> polygon_modes =
     { "POINT", VK_POLYGON_MODE_POINT }
 };
 
-PTMaterial::PTMaterial(VkDevice _device, std::string material_path, PTRenderPass* _render_pass, PTSwapchain* swapchain)
+PTMaterial::PTMaterial(VkDevice _device, string material_path, PTRenderPass* _render_pass, PTSwapchain* swapchain)
 {
     device = _device;
     origin_path = material_path;
     render_pass = _render_pass;
+    origin_path = material_path;
 
     ifstream file(material_path, ios::ate);
     if (!file.is_open())
@@ -58,8 +59,8 @@ PTMaterial::PTMaterial(VkDevice _device, std::string material_path, PTRenderPass
     file.read(text.data(), size);
 
     PTDeserialiser::MaterialParams params;
-    std::vector<PTDeserialiser::UniformParam> uniforms;
-    std::map<uint16_t, PTImage*> textures;
+    vector<PTDeserialiser::UniformParam> uniforms;
+    map<uint16_t, PTImage*> textures;
     PTDeserialiser::deserialiseMaterial(text, params, shader, uniforms, textures);
 
     initialiseMaterial(swapchain, params.depth_write, params.depth_test, 

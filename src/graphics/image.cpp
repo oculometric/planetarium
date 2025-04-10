@@ -16,9 +16,10 @@ PTImage::PTImage(VkDevice _device, PTPhysicalDevice physical_device, VkExtent2D 
     createImage(physical_device, _size, _format, _tiling, _usage, properties);
 }
 
-PTImage::PTImage(VkDevice _device, PTPhysicalDevice physical_device, string texture_file)
+PTImage::PTImage(VkDevice _device, string texture_path, PTPhysicalDevice physical_device)
 {
     device = _device;
+    origin_path = texture_path;
     // TODO: load an image to a memory buffer from the file
     //OLImage texture(texture_file);
     VkDeviceSize image_size = 0;//texture.getSize().x * texture.getSize().y * 4;

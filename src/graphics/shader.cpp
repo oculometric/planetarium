@@ -9,6 +9,8 @@ using namespace std;
 
 PTShader::PTShader(VkDevice _device, const string shader_path_stub)
 {
+    origin_path = shader_path_stub;
+
     vector<char> vert, frag;
     device = _device;
     if (readFromFile(shader_path_stub, vert, frag))

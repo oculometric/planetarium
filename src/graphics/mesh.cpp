@@ -57,19 +57,20 @@ array<VkVertexInputAttributeDescription, 5> PTMesh::getVertexAttributeDescriptio
     return descriptions;
 }
 
-PTMesh::PTMesh(VkDevice _device, const PTPhysicalDevice& physical_device, std::string file_name)
+PTMesh::PTMesh(VkDevice _device, std::string mesh_path, const PTPhysicalDevice& physical_device)
 {
     device = _device;
+    origin_path = mesh_path;
 
     vector<PTVertex> verts;
     vector<uint16_t> inds;
 
     // read file into the vectors (parse OBJ), then create vertex and index buffers from the data
-    readFileToBuffers(file_name, verts, inds);
+    readFileToBuffers(mesh_path, verts, inds);
     createVertexBuffers(physical_device, verts, inds);
 }
 
-PTMesh::PTMesh(VkDevice _device, const PTPhysicalDevice& physical_device, std::vector<PTVertex> vertices, std::vector<uint16_t> indices)
+PTMesh::PTMesh(VkDevice _device, std::vector<PTVertex> vertices, std::vector<uint16_t> indices, const PTPhysicalDevice& physical_device)
 {
     device = _device;
     

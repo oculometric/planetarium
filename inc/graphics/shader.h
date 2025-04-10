@@ -26,6 +26,8 @@ private:
 
     VkDescriptorSetLayout descriptor_set_layout = VK_NULL_HANDLE;
     std::vector<UniformDescriptor> descriptor_bindings;
+
+    std::string origin_path;
     
 public:
     PTShader() = delete;
@@ -45,7 +47,7 @@ private:
 
     ~PTShader();
 
-    bool readFromFile(std::string shader_path_stub, std::vector<char>& vertex_code, std::vector<char>& fragment_code); // FIXME: add a way to pass in/add bindings
+    bool readFromFile(std::string shader_path_stub, std::vector<char>& vertex_code, std::vector<char>& fragment_code);
     void createShaderModules(const std::vector<char>& vertex_code, const std::vector<char>& fragment_code);
     void createDescriptorSetLayout();
     bool hasDescriptorWithBinding(uint16_t binding, UniformDescriptor& out, size_t& index);
