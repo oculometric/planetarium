@@ -13,6 +13,33 @@
 
 using namespace std;
 
+static map<string, VkCompareOp> depth_ops =
+{
+    { "NEVER", VK_COMPARE_OP_NEVER },
+    { "LESS", VK_COMPARE_OP_LESS },
+    { "EQUAL", VK_COMPARE_OP_EQUAL },
+    { "LESS_OR_EQUAL", VK_COMPARE_OP_LESS_OR_EQUAL },
+    { "GREATER", VK_COMPARE_OP_GREATER },
+    { "NOT_EQUAL", VK_COMPARE_OP_NOT_EQUAL },
+    { "GREATER_OR_EQUAL", VK_COMPARE_OP_GREATER_OR_EQUAL },
+    { "ALWAYS", VK_COMPARE_OP_ALWAYS }
+};
+
+static map<string, VkCullModeFlags> cull_modes =
+{
+    { "BACK", VK_CULL_MODE_BACK_BIT },
+    { "FRONT", VK_CULL_MODE_FRONT_BIT },
+    { "NONE", VK_CULL_MODE_NONE },
+    { "BOTH", VK_CULL_MODE_FRONT_AND_BACK }
+};
+
+static map<string, VkPolygonMode> polygon_modes =
+{
+    { "FILL", VK_POLYGON_MODE_FILL },
+    { "LINE", VK_POLYGON_MODE_LINE },
+    { "POINT", VK_POLYGON_MODE_POINT }
+};
+
 PTMaterial::PTMaterial(VkDevice _device, std::string material_path, PTRenderPass* _render_pass, PTSwapchain* swapchain)
 {
     device = _device;
@@ -29,17 +56,18 @@ PTMaterial::PTMaterial(VkDevice _device, std::string material_path, PTRenderPass
     file.seekg(0);
     file.read(text.data(), size);
 
-    // TODO: deserialise params, shader, and uniform/textures
+
     PTDeserialiser::MaterialParams params;
-    std::string shader_path;
     std::vector<PTDeserialiser::UniformParam> uniforms;
-    std::map<uint16_t, PTResource*> textures;
-    PTDeserialiser::deserialiseMaterial(text, params, shader_path, uniforms, textures);
+    std::map<uint16_t, PTImage*> textures;
+    PTDeserialiser::deserialiseMaterial(text, params, shader, uniforms, textures);
 
-    shader = PTResourceManager::get()->createShader(shader_path, false);
+    initialiseMaterial(swapchain, params.depth_write, params.depth_test, 
+        depth_ops.contains(params.depth_op) ? depth_ops[params.depth_op] : VK_COMPARE_OP_LESS, 
+        cull_modes.contains(params.culling) ? cull_modes[params.culling] : VK_CULL_MODE_BACK_BIT, 
+        polygon_modes.contains(params.polygon_mode) ? polygon_modes[params.polygon_mode] : VK_POLYGON_MODE_FILL);
+
     
-    initialiseMaterial(swapchain, params.depth_write, params.depth_test, params.depth_op, params.culling, params.polygon_mode);
-
     // TODO: apply uniforms and textures
 }
 

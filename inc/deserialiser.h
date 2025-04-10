@@ -3,7 +3,6 @@
 #include <vector>
 #include <string>
 #include <map>
-#include <vulkan/vulkan.h>
 
 #include "vector4.h"
 #include "vector3.h"
@@ -13,6 +12,8 @@ class PTResource;
 class PTNode;
 class PTScene;
 class PTMaterial;
+class PTShader;
+class PTImage;
 
 class PTDeserialiser
 {
@@ -180,14 +181,34 @@ public:
     };
 
     typedef std::map<std::string, PTDeserialiser::Argument> ArgMap;
+    
+    typedef std::map<std::string, PTResource*> ResourceMap;
+    
+    struct MaterialParams
+    {
+        bool depth_write;
+        bool depth_test;
+        std::string depth_op;
+        std::string culling;
+        std::string polygon_mode;
+    };
+
+    struct UniformParam
+    {
+        uint16_t binding;
+        size_t offset;
+        std::string identifier;
+        Argument value;
+    };
 
 public:
 	static std::vector<Token> tokenise(const std::string& content);
     static std::vector<Token> prune(const std::vector<Token>& tokens);
-    static std::pair<std::string, PTResource*> deserialiseResourceDescriptor(const std::vector<Token>& tokens, size_t& first_token, PTScene* scene, const std::string& content);
-    static PTNode* deserialiseObject(const std::vector<Token>& tokens, size_t& first_token, PTScene* scene, const std::string& content);
+    static std::pair<std::string, PTResource*> deserialiseResourceDescriptor(const std::vector<Token>& tokens, size_t& first_token, ResourceMap& res_map, const std::string& content);
+    static PTNode* deserialiseObject(const std::vector<Token>& tokens, size_t& first_token, PTScene* scene, ResourceMap& res_map, const std::string& content);
     static void deserialiseScene(PTScene* scene, const std::string& content);
-    static void deserialiseMaterial(const std::string& content, MaterialParams& params, std::string& shader_path, std::vector<UniformParam>& uniforms, std::map<uint16_t, PTResource*>& textures); // TODO: this
+    static std::vector<std::pair<std::string, Argument>> deserialiseStatement(const std::vector<Token>& tokens, size_t& first_token, bool allow_unnamed, bool allow_named, ResourceMap& res_map, const std::string& content);
+    static void deserialiseMaterial(const std::string& content, MaterialParams& params, PTShader*& shader, std::vector<UniformParam>& uniforms, std::map<uint16_t, PTImage*>& textures); // TODO: this
 
 private:
     static inline TokenType getType(const char c);
@@ -200,8 +221,8 @@ private:
 
     static size_t findClosingBracket(const std::vector<Token>& tokens, size_t open_index, bool allow_semicolons, const std::string& content);
 
-    static Argument compileArgument(const std::vector<Token>& tokens, PTScene* scene, const std::string& content);
-    static std::pair<std::string, Argument> compileNamedArgument(const std::vector<Token>& tokens, PTScene* scene, const std::string& content);
+    static Argument compileArgument(const std::vector<Token>& tokens, ResourceMap& res_map, const std::string& content);
+    static std::pair<std::string, Argument> compileNamedArgument(const std::vector<Token>& tokens, ResourceMap& res_map, const std::string& content);
 
     static TokenType decodeVectorToken(const std::string token, PTVector4f& vector_out, size_t offset, const std::string& content);
 };

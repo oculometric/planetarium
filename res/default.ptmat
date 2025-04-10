@@ -1,13 +1,15 @@
 Resource(shader, "demo") : shader;
-Resource(image, "demo.bmp") : albedo;
+//Resource(image, "demo.bmp") : albedo;
 
-Depth(operation = 0, test = 1, write = 1);
+Depth(operation = "LESS", test = 1, write = 1);
+Culling(mode = "BACK");
+Polygon(mode = "FILL");
 
 Shader(resource = @shader);
 
 Uniform(binding = 2)
 {
-    [ 1.0, 0.5, 0.1, 1.0 ],     // colour
+    [ 0.2, 1.0, 0.2, 1.0 ],     // colour
     0.6                         // roughness
 };
 

@@ -2,6 +2,7 @@
 
 #include "debug.h"
 #include "resource_manager.h"
+#include "image.h"
 #include "scene.h"
 
 using namespace std;
@@ -20,28 +21,29 @@ typedef PTNode*(*PTNodeInstantiateFunc)(PTScene*, string, PTDeserialiser::ArgMap
 
 vector<PTDeserialiser::Token> PTDeserialiser::tokenise(const string& content)
 {
+    string copy_content = content + "\n";
     size_t offset = 0;
     vector<Token> tokens;
     if (content.length() == 0) return tokens;
 
     string current_token = "";
-    TokenType current_type = getType(content[0]);
+    TokenType current_type = getType(copy_content[0]);
     size_t start_offset = 0;
     if (current_type != TokenType::TEXT && current_type != TokenType::COMMENT && current_type != TokenType::WHITESPACE && current_type != TokenType::NEWLINE)
-        reportError("invalid first token", offset, content);
+        reportError("invalid first token", offset, copy_content);
 
     current_type = TokenType::WHITESPACE;
 
-    while (offset < content.length() + 1)
+    while (offset < copy_content.length() + 1)
     {
         char cur = ' ';
-        if (offset < content.length())
-            cur = content[offset];
+        if (offset < copy_content.length())
+            cur = copy_content[offset];
         
         TokenType next_type = getType(cur);
 
         if (next_type == TokenType::INVALID)
-            reportError("illegal character", offset, content);
+            reportError("illegal character", offset, copy_content);
 
         TokenType new_type = current_type;
         bool append_cur = true;
@@ -55,7 +57,7 @@ vector<PTDeserialiser::Token> PTDeserialiser::tokenise(const string& content)
             if (next_type == TokenType::TEXT || next_type == TokenType::INT)
                 break;
             else if (!isSeparator(next_type))
-                reportError("invalid conjoined tokens", offset, content);
+                reportError("invalid conjoined tokens", offset, copy_content);
 
             finished_token.s_value = current_token;
             reset_token = true;
@@ -85,7 +87,7 @@ vector<PTDeserialiser::Token> PTDeserialiser::tokenise(const string& content)
                 break;
             }
             else if (!isSeparator(next_type))
-                reportError("invalid conjoined tokens", offset, content);
+                reportError("invalid conjoined tokens", offset, copy_content);
 
             finished_token.i_value = stoi(current_token);
             reset_token = true;
@@ -94,7 +96,7 @@ vector<PTDeserialiser::Token> PTDeserialiser::tokenise(const string& content)
             if (next_type == TokenType::INT)
                 break;
             else if (next_type == TokenType::FLOAT)
-                reportError("invalid float literal", offset, content);
+                reportError("invalid float literal", offset, copy_content);
             else if (!isSeparator(next_type))
                 reportError("invalid conjoined tokens", offset, content);
 
@@ -105,30 +107,30 @@ vector<PTDeserialiser::Token> PTDeserialiser::tokenise(const string& content)
             if (next_type == TokenType::TEXT || next_type == TokenType::INT)
                 break;
             else if (!isSeparator(next_type))
-                reportError("invalid conjoined tokens", offset, content);
+                reportError("invalid conjoined tokens", offset, copy_content);
 
             finished_token.s_value = current_token.substr(1);
             reset_token = true;
             break;
         case VECTOR4:
-            reportError("unexpected vector closing token", offset, content);
+            reportError("unexpected vector closing token", offset, copy_content);
             break;
         case VECTOR2:
             if (next_type == TokenType::VECTOR4)
             {
-                finished_token.type = decodeVectorToken(current_token.substr(1), finished_token.c_value, offset, content);            
+                finished_token.type = decodeVectorToken(current_token.substr(1), finished_token.c_value, offset, copy_content);            
                 append_cur = false;
                 reset_token = true;
                 next_type = TokenType::WHITESPACE;
                 break;
             }
             if (next_type == TokenType::VECTOR2)
-                reportError("invalid nested vector token", offset, content);
+                reportError("invalid nested vector token", offset, copy_content);
             else
                 break;
         case COMMENT:
             if (next_type != TokenType::COMMENT && current_token.size() < 2)
-                reportError("incomplete comment initiator", offset, content);
+                reportError("incomplete comment initiator", offset, copy_content);
             else if (next_type != TokenType::NEWLINE)
                 break;
             
@@ -143,7 +145,7 @@ vector<PTDeserialiser::Token> PTDeserialiser::tokenise(const string& content)
             break;
         case INVALID:
             if (!isSeparator(next_type))
-                reportError("invalid conjoined tokens", offset, content);
+                reportError("invalid conjoined tokens", offset, copy_content);
             
             reset_token = true;
             break;
@@ -169,7 +171,7 @@ vector<PTDeserialiser::Token> PTDeserialiser::tokenise(const string& content)
     }
 
     if (current_type != TokenType::WHITESPACE)
-        reportError("invalid unclosed token at end of content", offset - 2, content);
+        reportError("invalid unclosed token at end of content", offset - 2, copy_content);
 
     return tokens;
 }
@@ -184,7 +186,7 @@ vector<PTDeserialiser::Token> PTDeserialiser::prune(const vector<Token>& tokens)
     return pruned;
 }
 
-pair<string, PTResource*> PTDeserialiser::deserialiseResourceDescriptor(const std::vector<Token>& tokens, size_t& first_token, PTScene* scene, const std::string& content)
+pair<string, PTResource*> PTDeserialiser::deserialiseResourceDescriptor(const std::vector<Token>& tokens, size_t& first_token, ResourceMap& res_map, const std::string& content)
 {
     if (tokens.size() <= first_token + 4)
     {
@@ -280,7 +282,7 @@ pair<string, PTResource*> PTDeserialiser::deserialiseResourceDescriptor(const st
 
     vector<Argument> initialiser_args;
     for (auto arg : arguments)
-        initialiser_args.push_back(compileArgument(arg, scene, content));
+        initialiser_args.push_back(compileArgument(arg, res_map, content));
 
     PTResource* resource = PTResourceManager::get()->createGeneric(resource_type, initialiser_args);
 
@@ -288,7 +290,7 @@ pair<string, PTResource*> PTDeserialiser::deserialiseResourceDescriptor(const st
     return pair<string, PTResource*>{ name, resource };
 }
 
-PTNode* PTDeserialiser::deserialiseObject(const std::vector<Token>& tokens, size_t& first_token, PTScene* scene, const std::string& content)
+PTNode* PTDeserialiser::deserialiseObject(const std::vector<Token>& tokens, size_t& first_token, PTScene* scene, ResourceMap& res_map, const std::string& content)
 {
     if (tokens.size() <= first_token + 4)
     {
@@ -360,7 +362,7 @@ PTNode* PTDeserialiser::deserialiseObject(const std::vector<Token>& tokens, size
                     
                     if (current_child.empty())
                         reportError("missing child before semicolon", tokens[i].start_offset, content);
-                    children.push_back(deserialiseObject(current_child, tmp, scene, content));
+                    children.push_back(deserialiseObject(current_child, tmp, scene, res_map, content));
                     current_child.clear();
                     break;
                 default:
@@ -375,8 +377,86 @@ PTNode* PTDeserialiser::deserialiseObject(const std::vector<Token>& tokens, size
     else
         reportError("expected node name, open curly brace, or semicolon after node definition", tokens[next_step].start_offset, content);
 
+    size_t tmp_first = first_token + 1;
+    auto args_list = deserialiseStatement(tokens, tmp_first, false, true, res_map, content);
+    ArgMap initialiser_args;
+    for (auto arg : args_list)
+        initialiser_args[arg.first] = arg.second;
+
+    PTNodeInstantiateFunc ptr = node_instantiators[object_type];
+    
+    if (ptr == nullptr)
+        reportError("invalid node type", tokens[first_token].start_offset, content);
+
+    PTNode* node = ptr(scene, object_name, initialiser_args);
+    
+    for (PTNode* child : children)
+        child->getTransform()->setParent(node->getTransform());
+
+    // TODO: if any errors occur (INCLUDING PREVIOUS REPORTERRORS), destroy child nodes in scene
+
+    first_token = semicolon;
+    return node;
+}
+
+void PTDeserialiser::deserialiseScene(PTScene* scene, const std::string& content)
+{
+    vector<Token> tokens = prune(tokenise(content));
+    
+    if (tokens.size() == 0) return;
+
+    if (tokens.size() < 4)
+        reportError("not enough tokens provided", 0, content);
+
+    if (tokens[0].type != TokenType::TEXT)
+        reportError("invalid first token", tokens[0].start_offset, content);
+    
+    ResourceMap res_map;
+    size_t statement_first = 0;
+    while (statement_first < tokens.size() - 1)
+    {
+        if (tokens[statement_first].type != TokenType::TEXT)
+            reportError("invalid token", tokens[statement_first].start_offset, content);
+        
+        if (tokens[statement_first].s_value == "Resource")
+        {
+            auto res = deserialiseResourceDescriptor(tokens, statement_first, res_map, content);
+            res_map[res.first] = res.second;
+            scene->addResource(res.first, res.second);
+            res.second->removeReferencer();
+        }
+        else
+        {
+            deserialiseObject(tokens, statement_first, scene, res_map, content);
+        }
+        statement_first++;
+    }
+
+    // TODO: if any errors occur (INCLUDING PREVIOUS REPORTERRORS), destroy scene? no actually! resource manager will do that
+}
+
+vector<pair<string, PTDeserialiser::Argument>> PTDeserialiser::deserialiseStatement(const vector<Token>& tokens, size_t& first_token, bool allow_unnamed, bool allow_named, ResourceMap& res_map, const string& content)
+{
+    if (!allow_named && !allow_unnamed)
+        reportError("at least one type of argument must be allowed for deserialisation", 0, content);
+
+    // structure must be (something, something, thing = something);
+    // (i.e. we need open bracket, close bracket, semicolon)
+    if (tokens.size() <= first_token + 2)
+    {
+        size_t o = 0;
+        if (!tokens.empty())
+            o = tokens[tokens.size() - 1].start_offset;
+        reportError("no tokens to decode", o, content);
+    }
+    
+    if (tokens[first_token].type != TokenType::OPEN_ROUND && tokens[first_token].type != TokenType::OPEN_CURLY)
+        reportError("expected open bracket/brace", tokens[first_token].start_offset, content);
+    
+    size_t end_bracket = findClosingBracket(tokens, first_token, false, content);
+
     vector<Token> bracket_contents;
-    for (size_t i = first_token + 2; i <= close_bracket - 1; i++)
+    for (size_t i = first_token + 1; i <= end_bracket - 1; i++)
         bracket_contents.push_back(tokens[i]);
 
     // split the rest into a list of lists of tokens
@@ -419,7 +499,7 @@ PTNode* PTDeserialiser::deserialiseObject(const std::vector<Token>& tokens, size
     }
 
     if (!bracket_stack.empty())
-        reportError("missing closing bracket/brace", tokens[close_bracket - 1].start_offset, content);
+        reportError("missing closing bracket/brace", tokens[end_bracket].start_offset, content);
     
     if (current_argument.empty())
     {
@@ -429,30 +509,33 @@ PTNode* PTDeserialiser::deserialiseObject(const std::vector<Token>& tokens, size
     else
         arguments.push_back(current_argument);
 
-    PTDeserialiser::ArgMap initialiser_args;
+    vector<pair<string, PTDeserialiser::Argument>> args;
     for (auto arg : arguments)
     {
-        auto pr = compileNamedArgument(arg, scene, content);
-        initialiser_args[pr.first] = pr.second;
+        pair<string, PTDeserialiser::Argument> pr;
+        if (arg.size() < 3 || arg[1].type != PTDeserialiser::TokenType::EQUALS)
+        {
+            if (!allow_unnamed)
+                reportError("invalid unnamed argument", arg[0].start_offset, content);
+            else
+                pr = { "", compileArgument(arg, res_map, content) };
+        }
+        else
+        {
+            if (!allow_named)
+                reportError("invalid named argument", arg[0].start_offset, content);
+            else
+                pr = compileNamedArgument(arg, res_map, content);
+        }
+        args.push_back(pr);
     }
 
-    PTNodeInstantiateFunc ptr = node_instantiators[object_type];
-    
-    if (ptr == nullptr)
-        reportError("invalid node type", tokens[first_token].start_offset, content);
+    first_token = end_bracket + 1;
 
-    PTNode* node = ptr(scene, object_name, initialiser_args);
-    
-    for (PTNode* child : children)
-        child->getTransform()->setParent(node->getTransform());
-
-    // TODO: if any errors occur (INCLUDING PREVIOUS REPORTERRORS), destroy child nodes in scene
-
-    first_token = semicolon;
-    return node;
+    return args;
 }
 
-void PTDeserialiser::deserialiseScene(PTScene* scene, const std::string& content)
+void PTDeserialiser::deserialiseMaterial(const std::string& content, MaterialParams& params, PTShader*& shader, std::vector<UniformParam>& uniforms, std::map<uint16_t, PTImage*>& textures)
 {
     vector<Token> tokens = prune(tokenise(content));
     
@@ -464,6 +547,7 @@ void PTDeserialiser::deserialiseScene(PTScene* scene, const std::string& content
     if (tokens[0].type != TokenType::TEXT)
         reportError("invalid first token", tokens[0].start_offset, content);
     
+    ResourceMap res_map;
     size_t statement_first = 0;
     while (statement_first < tokens.size() - 1)
     {
@@ -472,24 +556,119 @@ void PTDeserialiser::deserialiseScene(PTScene* scene, const std::string& content
         
         if (tokens[statement_first].s_value == "Resource")
         {
-            auto res = deserialiseResourceDescriptor(tokens, statement_first, scene, content);
-            scene->addResource(res.first, res.second);
-            res.second->removeReferencer();
+            auto res = deserialiseResourceDescriptor(tokens, statement_first, res_map, content);
+            res_map[res.first] = res.second;
+        }
+        else if (tokens[statement_first].s_value == "Depth")
+        {
+            auto args = deserialiseStatement(tokens, ++statement_first, false, true, res_map, content);
+            for (auto arg : args)
+            {
+                if (arg.first == "operation" && arg.second.type == ArgType::STRING_ARG)
+                    params.depth_op = arg.second.s_val;
+                else if (arg.first == "test" && arg.second.type == ArgType::INT_ARG)
+                    params.depth_test = arg.second.i_val;
+                else if (arg.first == "write" && arg.second.type == ArgType::INT_ARG)
+                    params.depth_write = arg.second.i_val;
+            }
+            if (tokens[statement_first].type != TokenType::SEMICOLON)
+                reportError("expected semicolon", tokens[statement_first].start_offset, content);
+        }
+        else if (tokens[statement_first].s_value == "Culling")
+        {
+            auto args = deserialiseStatement(tokens, ++statement_first, false, true, res_map, content);
+            for (auto arg : args)
+            {
+                if (arg.first == "mode" && arg.second.type == ArgType::STRING_ARG)
+                    params.culling = arg.second.s_val;
+            }
+            if (tokens[statement_first].type != TokenType::SEMICOLON)
+                reportError("expected semicolon", tokens[statement_first].start_offset, content);
+        }
+        else if (tokens[statement_first].s_value == "Polygon")
+        {
+            auto args = deserialiseStatement(tokens, ++statement_first, false, true, res_map, content);
+            for (auto arg : args)
+            {
+                if (arg.first == "mode" && arg.second.type == ArgType::STRING_ARG)
+                    params.polygon_mode = arg.second.s_val;
+            }
+            if (tokens[statement_first].type != TokenType::SEMICOLON)
+                reportError("expected semicolon", tokens[statement_first].start_offset, content);
+        }
+        else if (tokens[statement_first].s_value == "Shader")
+        {
+            auto args = deserialiseStatement(tokens, ++statement_first, false, true, res_map, content);
+            for (auto arg : args)
+            {
+                if (arg.first == "resource" && arg.second.type == ArgType::RESOURCE_ARG)
+                    shader = dynamic_cast<PTShader*>(arg.second.r_val);
+            }
+            if (tokens[statement_first].type != TokenType::SEMICOLON)
+                reportError("expected semicolon", tokens[statement_first].start_offset, content);
+        }
+        else if (tokens[statement_first].s_value == "Uniform")
+        {
+            uint16_t binding = -1;
+            auto args = deserialiseStatement(tokens, ++statement_first, false, true, res_map, content);
+            for (auto arg : args)
+            {
+                if (arg.first == "binding" && arg.second.type == ArgType::INT_ARG)
+                    binding = arg.second.i_val;
+            }
+            if (tokens[statement_first].type == TokenType::OPEN_CURLY)
+            {
+                size_t first_variable = statement_first + 1;
+                auto variables = deserialiseStatement(tokens, statement_first, true, false, res_map, content);
+                size_t offset = 0;
+                for (auto var : variables)
+                {
+                    UniformParam uniform;
+                    uniform.binding = binding;
+                    uniform.offset = offset;
+                    uniform.identifier = var.first;
+                    uniform.value = var.second;
+
+                    switch (uniform.value.type)
+                    {
+                        case ArgType::RESOURCE_ARG:
+                        case ArgType::STRING_ARG:
+                        case ArgType::ARRAY_ARG:
+                            reportError("invalid uniform variable type", tokens[first_variable].start_offset, content);
+                            break;
+                        case ArgType::FLOAT_ARG: offset += sizeof(float); break;
+                        case ArgType::INT_ARG: offset += sizeof(int); break;
+                        case ArgType::VECTOR2_ARG: offset += sizeof(PTVector2f); break;
+                        case ArgType::VECTOR3_ARG: offset += sizeof(PTVector3f); break;
+                        case ArgType::VECTOR4_ARG: offset += sizeof(PTVector4f); break;
+                    }
+
+                    uniforms.push_back(uniform);
+                }
+            }
+            else if (tokens[statement_first].type != TokenType::SEMICOLON)
+                reportError("expected semicolon", tokens[statement_first].start_offset, content);
+        }
+        else if (tokens[statement_first].s_value == "Texture")
+        {
+            uint16_t binding = -1;
+            PTImage* tex = nullptr;
+            auto args = deserialiseStatement(tokens, ++statement_first, false, true, res_map, content);
+            for (auto arg : args)
+            {
+                if (arg.first == "binding" && arg.second.type == ArgType::INT_ARG)
+                    binding = arg.second.i_val;
+                else if (arg.first == "resource" && arg.second.type == ArgType::RESOURCE_ARG)
+                    tex = dynamic_cast<PTImage*>(arg.second.r_val);
+            }
+            textures[binding] = tex;
         }
         else
         {
-            deserialiseObject(tokens, statement_first, scene, content);
+            reportError("invalid statement", tokens[statement_first].start_offset, content);
         }
         statement_first++;
     }
-
-    // TODO: if any errors occur (INCLUDING PREVIOUS REPORTERRORS), destroy scene? no actually! resource manager will do that
-}
-
-PTMaterial* PTDeserialiser::deserialiseMaterial(const std::string& content)
-{
-    // TODO: here!
-    return nullptr;
 }
 
 inline PTDeserialiser::TokenType PTDeserialiser::getType(const char c)
@@ -625,7 +804,7 @@ size_t PTDeserialiser::findClosingBracket(const vector<Token>& tokens, size_t op
     return index;
 }
 
-PTDeserialiser::Argument PTDeserialiser::compileArgument(const std::vector<Token>& tokens, PTScene* scene, const std::string& content)
+PTDeserialiser::Argument PTDeserialiser::compileArgument(const std::vector<Token>& tokens, ResourceMap& res_map, const std::string& content)
 {
     Argument arg;
 
@@ -653,9 +832,9 @@ PTDeserialiser::Argument PTDeserialiser::compileArgument(const std::vector<Token
             arg.type = (ArgType)t.type;
             break;
         case TAG:
-            res = scene->getResource<PTResource>(t.s_value);
-            if (res == nullptr)
+            if (!res_map.contains(t.s_value))
                 reportError("reference to undefined resource", t.start_offset, content);
+            res = res_map[t.s_value];
             arg.r_val = res;
             arg.type = RESOURCE_ARG;
             break;
@@ -671,7 +850,7 @@ PTDeserialiser::Argument PTDeserialiser::compileArgument(const std::vector<Token
     return arg;
 }
 
-pair<string, PTDeserialiser::Argument> PTDeserialiser::compileNamedArgument(const vector<PTDeserialiser::Token>& tokens, PTScene* scene, const string& content)
+pair<string, PTDeserialiser::Argument> PTDeserialiser::compileNamedArgument(const vector<PTDeserialiser::Token>& tokens, ResourceMap& res_map, const string& content)
 {
     Argument arg;
 
@@ -686,7 +865,7 @@ pair<string, PTDeserialiser::Argument> PTDeserialiser::compileNamedArgument(cons
     tmp.erase(tmp.begin());
     tmp.erase(tmp.begin());
 
-    arg = compileArgument(tmp, scene, content);
+    arg = compileArgument(tmp, res_map, content);
 
     return pair<string, Argument>{ tokens[0].s_value, arg };
 }

@@ -262,7 +262,7 @@ void PTRenderServer::initVulkan(GLFWwindow* window, vector<const char*> glfw_ext
     if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS)
         throw runtime_error("unable to create window surface");
 
-	debugLog("    initialising device");
+    debugLog("    initialising device");
 	initDevice(layers);
 
 	PTResourceManager::get()->init(device, physical_device);
@@ -289,10 +289,8 @@ void PTRenderServer::initVulkan(GLFWwindow* window, vector<const char*> glfw_ext
 	createFramebufferAndSyncResources();
 
 	debugLog("    creating default material");
-    // TODO: convert this
-    //default_material = PTResourceManager::get()->createMaterial("res/default.ptmat", swapchain, render_pass);
-    default_material = PTResourceManager::get()->createMaterial(swapchain, render_pass, PTResourceManager::get()->createShader("demo"), VK_TRUE, VK_TRUE, VK_COMPARE_OP_LESS, VK_CULL_MODE_BACK_BIT, VK_POLYGON_MODE_FILL);
-    default_material->setUniform(2, PTVector4f{ 1.0f, 0.0f, 1.0f, 1.0f });
+    default_material = PTResourceManager::get()->createMaterial("res/default.ptmat", swapchain, render_pass);
+//    default_material->setUniform(2, PTVector4f{ 1.0f, 0.0f, 1.0f, 1.0f });
 
    debugLog("done.");
 }
@@ -317,7 +315,7 @@ void PTRenderServer::deinitVulkan()
     while (!draw_queue.empty())
         removeAllDrawRequests(draw_queue.begin()->first);
 
-	destroyFramebufferAndSyncResources();
+    destroyFramebufferAndSyncResources();
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
         scene_uniform_buffers[i]->removeReferencer();
@@ -627,7 +625,6 @@ void PTRenderServer::destroyFramebufferAndSyncResources()
     normal_image->removeReferencer();
 	debugLog("done.");
 }
-
 
 VkResult PTRenderServer::createDebugUtilsMessenger(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, VkDebugUtilsMessengerEXT* pDebugMessenger)
 {

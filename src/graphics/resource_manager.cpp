@@ -229,7 +229,16 @@ PTResource* PTResourceManager::createGeneric(string type, vector<PTDeserialiser:
 
         return createImage(args[0].s_val);
     }
-    // TODO: add other resource types as we go (material, shader)
+    else if (type == "shader")
+    {
+        if (args.size() < 1)
+            return nullptr;
+        if (args[0].type != PTDeserialiser::ArgType::STRING_ARG)
+            return nullptr;
+        
+        return createShader(args[0].s_val);
+    }
+    // TODO: add other resource types as we go (material)
 
     return nullptr;
 }
