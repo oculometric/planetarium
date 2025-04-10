@@ -2,7 +2,7 @@
 
 #include <stdexcept>
 
-#include "application.h"
+#include "render_server.h"
 
 using namespace std;
 
@@ -65,7 +65,7 @@ void PTBuffer::unmap()
 void PTBuffer::copyTo(PTBuffer* destination, VkDeviceSize length, VkDeviceSize source_offset, VkDeviceSize destination_offset)
 {
     // create, and execute, a copy command
-    VkCommandBuffer copy_command_buffer = PTApplication::get()->beginTransientCommands();
+    VkCommandBuffer copy_command_buffer = PTRenderServer::get()->beginTransientCommands();
 
     VkBufferCopy copy_command{ };
     copy_command.dstOffset = destination_offset;
@@ -74,7 +74,7 @@ void PTBuffer::copyTo(PTBuffer* destination, VkDeviceSize length, VkDeviceSize s
 
     vkCmdCopyBuffer(copy_command_buffer, buffer, destination->getBuffer(), 1, &copy_command);
 
-    PTApplication::get()->endTransientCommands(copy_command_buffer);
+    PTRenderServer::get()->endTransientCommands(copy_command_buffer);
 }
 
 uint32_t PTBuffer::findMemoryType(uint32_t type_bits, VkMemoryPropertyFlags properties, PTPhysicalDevice physical_device)

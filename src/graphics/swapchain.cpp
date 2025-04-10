@@ -45,10 +45,10 @@ PTSwapchain::PTSwapchain(VkDevice _device, PTPhysicalDevice& physical_device, Vk
         image_count = capabilities.maxImageCount;
 
     // check if the queues are the same
-    if (physical_device.getQueueFamily(PTQueueFamily::PRESENT) != physical_device.getQueueFamily(PTQueueFamily::GRAPHICS))
+    if (physical_device.getQueueFamily(PTPhysicalDevice::QueueFamily::PRESENT) != physical_device.getQueueFamily(PTPhysicalDevice::QueueFamily::GRAPHICS))
     {
         vector<uint32_t> queue_family_indices(physical_device.getAllQueueFamilies().size());
-        for (pair<PTQueueFamily, uint32_t> family : physical_device.getAllQueueFamilies())
+        for (pair<PTPhysicalDevice::QueueFamily, uint32_t> family : physical_device.getAllQueueFamilies())
             queue_family_indices.push_back(family.second);
         queue_families = queue_family_indices;
         sharing_mode = VK_SHARING_MODE_CONCURRENT;

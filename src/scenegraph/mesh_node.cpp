@@ -2,7 +2,7 @@
 
 #include "debug.h"
 #include "mesh.h"
-#include "application.h"
+#include "render_server.h"
 
 PTMeshNode::PTMeshNode(PTDeserialiser::ArgMap arguments) : PTNode(arguments)
 {
@@ -14,7 +14,7 @@ PTMeshNode::PTMeshNode(PTDeserialiser::ArgMap arguments) : PTNode(arguments)
 void PTMeshNode::setMesh(PTMesh* _mesh_data)
 {
     // delete draw request
-    getApplication()->removeAllDrawRequests(this);
+    PTRenderServer::get()->removeAllDrawRequests(this);
     
     // unlink mesh data
     if (mesh_data != nullptr)
@@ -25,7 +25,7 @@ void PTMeshNode::setMesh(PTMesh* _mesh_data)
     if (mesh_data != nullptr)
     {
         addDependency(mesh_data);
-        getApplication()->addDrawRequest(this, mesh_data);
+        PTRenderServer::get()->addDrawRequest(this, mesh_data);
     }
 }
 
@@ -37,5 +37,5 @@ PTMeshNode::~PTMeshNode()
     mesh_data = nullptr;
     
     // remove the draw requests associated with this node
-    getApplication()->removeAllDrawRequests(this);
+    PTRenderServer::get()->removeAllDrawRequests(this);
 }

@@ -44,11 +44,11 @@ void PTPhysicalDevice::refreshInfo(VkSurfaceKHR surface)
     for (const auto& queue_family : queue_family_props)
     {
         if (queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT)
-            queue_families.insert(std::make_pair(PTQueueFamily::GRAPHICS, index));
+            queue_families.insert(std::make_pair(QueueFamily::GRAPHICS, index));
         VkBool32 present_support;
         vkGetPhysicalDeviceSurfaceSupportKHR(device, index, surface, &present_support);
         if (present_support)
-            queue_families.insert(std::make_pair(PTQueueFamily::PRESENT, index));
+            queue_families.insert(std::make_pair(QueueFamily::PRESENT, index));
         index++;
     }
 

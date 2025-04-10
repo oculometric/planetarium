@@ -102,6 +102,9 @@
     <ClInclude Include="inc\scenegraph\gizmo_node.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="inc\graphics\render_server.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\application.cpp">
@@ -183,6 +186,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\spirv_reflect.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\graphics\render_server.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

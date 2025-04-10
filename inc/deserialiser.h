@@ -149,7 +149,7 @@ public:
 
     struct Argument
     {
-        ArgType type;
+        ArgType type = ArgType::INT_ARG;
 
         std::string s_val;
         std::vector<Argument> a_val;

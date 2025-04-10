@@ -1,4 +1,4 @@
-#include "renderserver.h"
+#include "render_server.h"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <cstdlib>
 
+#include "application.h"
 #include "node.h"
 #include "shader.h"
 #include "pipeline.h"
@@ -112,8 +113,8 @@ void PTRenderServer::endTransientCommands(VkCommandBuffer transient_command_buff
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &transient_command_buffer;
 
-    vkQueueSubmit(queues[PTQueueFamily::GRAPHICS], 1, &submit_info, VK_NULL_HANDLE);
-    vkQueueWaitIdle(queues[PTQueueFamily::GRAPHICS]);
+    vkQueueSubmit(queues[PTPhysicalDevice::QueueFamily::GRAPHICS], 1, &submit_info, VK_NULL_HANDLE);
+    vkQueueWaitIdle(queues[PTPhysicalDevice::QueueFamily::GRAPHICS]);
 
     vkFreeCommandBuffers(device, command_pool, 1, &transient_command_buffer);
 }
@@ -238,16 +239,10 @@ void PTRenderServer::endDrawLock()
 PTRenderServer::PTRenderServer(GLFWwindow* window, vector<const char*> glfw_extensions)
 {
 	initVulkan(window, glfw_extensions);
-
-	should_stop = false;
-	mainloop_thread = thread(&PTRenderServer::mainLoop, this);
 }
 
 PTRenderServer::~PTRenderServer()
 {
-	should_stop = true;
-	mainloop_thread.join();
-
 	deinitVulkan();
 }
 
@@ -257,7 +252,11 @@ void PTRenderServer::initVulkan(GLFWwindow* window, vector<const char*> glfw_ext
 
     // initialise vulkan app instance
     vector<const char*> layers;
-    initVulkanInstance(layers);
+    auto extensions = glfw_extensions;
+#ifndef NDEBUG
+    extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+#endif
+    initVulkanInstance(layers, extensions);
 
 	debugLog("    creating window surface");
     if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS)
@@ -265,6 +264,8 @@ void PTRenderServer::initVulkan(GLFWwindow* window, vector<const char*> glfw_ext
 
 	debugLog("    initialising device");
 	initDevice(layers);
+
+	PTResourceManager::get()->init(device, physical_device);
 
 	debugLog("    creating swapchain");
 	PTVector2u size = PTApplication::get()->getFramebufferSize();
@@ -296,22 +297,15 @@ void PTRenderServer::initVulkan(GLFWwindow* window, vector<const char*> glfw_ext
    debugLog("done.");
 }
 
-void PTRenderServer::mainLoop()
+void PTRenderServer::update()
 {
-	int frame_total_number = 0;
-    uint32_t frame_index = 0;
-	while (!should_stop)
-	{
-        drawFrame(frame_index);
+    static uint32_t frame_index = 0;
+    drawFrame(frame_index);
 
-		if (wants_screenshot)
-            takeScreenshot(frame_index);
+	if (wants_screenshot)
+        takeScreenshot(frame_index);
 
-		frame_index = (frame_index + 1) % MAX_FRAMES_IN_FLIGHT;
-		frame_total_number++;
-	}
-
-    vkDeviceWaitIdle(device);
+	frame_index = (frame_index + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
 void PTRenderServer::deinitVulkan()
@@ -334,7 +328,7 @@ void PTRenderServer::deinitVulkan()
 
     swapchain->removeReferencer();
 
-    PTResourceManager::get()->clearResources();
+    PTResourceManager::deinit();
 
     vkDestroyDescriptorPool(device, descriptor_pool, nullptr);
 
@@ -343,13 +337,13 @@ void PTRenderServer::deinitVulkan()
     vkDestroySurfaceKHR(instance, surface, nullptr);
 
 #ifndef NDEBUG
-    destroyDebugUtilsMessenger(instance, debug_messenger, nullptr);
+    destroyDebugUtilsMessenger(instance, debug_messenger);
 #endif
 
     vkDestroyInstance(instance, nullptr);
 }
 
-void PTRenderServer::initVulkanInstance(std::vector<const char*>& layers)
+void PTRenderServer::initVulkanInstance(vector<const char*>& layers, vector<const char*> extensions)
 {
 	const char* application_name = "planetarium";
     debugLog("    vulkan app name: " + string(application_name));
@@ -388,7 +382,6 @@ void PTRenderServer::initVulkanInstance(std::vector<const char*>& layers)
     VkInstanceCreateInfo create_info{ };
     create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     create_info.pApplicationInfo = &app_info;
-    vector<const char*> extensions = getRequiredExtensions();
     create_info.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
     create_info.ppEnabledExtensionNames = extensions.data();
 #ifdef NDEBUG
@@ -421,7 +414,7 @@ void PTRenderServer::initVulkanInstance(std::vector<const char*>& layers)
     debug_messenger_create_info.pfnUserCallback = vulkanDebugMessengerCallback;
     debug_messenger_create_info.pUserData = nullptr;
 
-    if (createDebugUtilsMessenger(instance, &debug_messenger_create_info, nullptr, &debug_messenger) != VK_SUCCESS)
+    if (createDebugUtilsMessenger(instance, &debug_messenger_create_info, &debug_messenger) != VK_SUCCESS)
         throw runtime_error("unable to set up debug messenger!");
 #endif
     debugLog("    done.");
@@ -487,7 +480,7 @@ void PTRenderServer::initDevice(const std::vector<const char*>& layers)
 		debugLog("    grabbing queue handles:");
 		VkQueue queue;
 		queues.clear();
-		for (pair<PTQueueFamily, uint32_t> queue_family : physical_device.getAllQueueFamilies())
+		for (pair<PTPhysicalDevice::QueueFamily, uint32_t> queue_family : physical_device.getAllQueueFamilies())
 		{
 			vkGetDeviceQueue(device, queue_family.second, 0, &queue);
 			queues.insert(make_pair(queue_family.first, queue));
@@ -635,6 +628,23 @@ void PTRenderServer::destroyFramebufferAndSyncResources()
 	debugLog("done.");
 }
 
+
+VkResult PTRenderServer::createDebugUtilsMessenger(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, VkDebugUtilsMessengerEXT* pDebugMessenger)
+{
+    auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+    if (func != nullptr)
+        return func(instance, pCreateInfo, nullptr, pDebugMessenger);
+    else
+        return VK_ERROR_EXTENSION_NOT_PRESENT;
+}
+
+void PTRenderServer::destroyDebugUtilsMessenger(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger)
+{
+    auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+    if (func != nullptr)
+        func(instance, debugMessenger, nullptr);
+}
+
 void PTRenderServer::updateSceneAndTransformUniforms(uint32_t frame_index)
 {
 	{
@@ -643,7 +653,7 @@ void PTRenderServer::updateSceneAndTransformUniforms(uint32_t frame_index)
 
         PTMatrix4f world_to_view;
         PTMatrix4f view_to_clip;
-        current_scene->getCameraMatrix(getAspectRatio(), world_to_view, view_to_clip);
+        PTApplication::get()->getCameraMatrix(world_to_view, view_to_clip);
         world_to_view.getColumnMajor(uniforms.world_to_view);
         view_to_clip.getColumnMajor(uniforms.view_to_clip);
 
@@ -661,8 +671,7 @@ void PTRenderServer::updateSceneAndTransformUniforms(uint32_t frame_index)
         SceneUniforms uniforms;
 
         uniforms.viewport_size = PTVector2f{ (float)swapchain->getExtent().width, (float)swapchain->getExtent().height };
-        chrono::duration<float> since = chrono::high_resolution_clock::now() - program_start;
-        uniforms.time = since.count();
+        uniforms.time = PTApplication::get()->getTotalTime();
 
         memcpy(scene_uniform_buffers[frame_index]->map(), &uniforms, scene_uniform_buffers[frame_index]->getSize());
     }
@@ -670,7 +679,7 @@ void PTRenderServer::updateSceneAndTransformUniforms(uint32_t frame_index)
 
 void PTRenderServer::drawFrame(uint32_t frame_index)
 {
-	updateUniformBuffers(frame_index);
+	updateSceneAndTransformUniforms(frame_index);
 
     vkWaitForFences(device, 1, &in_flight_fences[frame_index], VK_TRUE, UINT64_MAX);
 
@@ -786,7 +795,7 @@ void PTRenderServer::drawFrame(uint32_t frame_index)
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores = signal_semaphores;
 
-    if (vkQueueSubmit(queues[PTQueueFamily::GRAPHICS], 1, &submit_info, in_flight_fences[frame_index]) != VK_SUCCESS)
+    if (vkQueueSubmit(queues[PTPhysicalDevice::QueueFamily::GRAPHICS], 1, &submit_info, in_flight_fences[frame_index]) != VK_SUCCESS)
         throw std::runtime_error("unable to submit draw command buffer");
 
     VkPresentInfoKHR present_info{ };
@@ -799,7 +808,7 @@ void PTRenderServer::drawFrame(uint32_t frame_index)
     present_info.pImageIndices = &image_index;
     present_info.pResults = nullptr;
 
-    result = vkQueuePresentKHR(queues[PTQueueFamily::PRESENT], &present_info);
+    result = vkQueuePresentKHR(queues[PTPhysicalDevice::QueueFamily::PRESENT], &present_info);
     if (result == VK_ERROR_OUT_OF_DATE_KHR)
     {
         debugLog("swapchain out of date during present~");
@@ -820,7 +829,7 @@ void PTRenderServer::drawFrame(uint32_t frame_index)
 void PTRenderServer::resizeSwapchain()
 {
 	debugLog("resizing swapchain + framebuffer...");
-    destroyFramebufferandSyncResources();
+    destroyFramebufferAndSyncResources();
 
 	// keep checking until it actually makes sense
 	PTVector2u size{ 0, 0 };
@@ -1008,7 +1017,7 @@ int PTRenderServer::evaluatePhysicalDevice(PTPhysicalDevice d)
     return score;
 }
 
-bool PTApplication::DrawRequest::compare(const DrawRequest& a, const DrawRequest& b)
+bool PTRenderServer::DrawRequest::compare(const DrawRequest& a, const DrawRequest& b)
 {
     return (a.material->getPriority() < b.material->getPriority()) && (a.material < b.material) && (a.mesh < b.mesh);
 }

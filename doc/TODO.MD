@@ -14,7 +14,6 @@
 
 - [ ] make input run on its own thread
 - [ ] make float isDown and bool wasPressed and bool wasReleased functions for each keyboard key
-- [ ] separate graphics stuff into RenderingServer (simplify Application)
 - [ ] better way of specifying which keyboard key to check the state of (A vs a, etc)
 - [ ] show debug axes of objects currently hovered over (this should be a new Node type)
 - [ ] cross platform controller support
@@ -109,3 +108,4 @@
       - [x] material specifies the shader, pipeline, descriptor set layout, descriptor set values, textures
 - [x] add uniform buffer for scene-constants (screen size, time, lights)
 - [x] change the way PTInput initialises to match PTResourceManager
+- [x] separate graphics stuff into RenderingServer (simplify Application)

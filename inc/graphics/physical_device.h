@@ -31,9 +31,9 @@ public:
     inline VkPhysicalDevice getDevice() const { return device; }
     inline VkPhysicalDeviceProperties getProperties() const { return properties; }
     inline VkPhysicalDeviceFeatures getFeatures() const { return features; }
-    inline bool hasQueueFamily(PTQueueFamily family) const { return queue_families.count(family); }
-    inline uint32_t getQueueFamily(PTQueueFamily family) const { return queue_families.at(family); }
-    inline std::map<PTQueueFamily, uint32_t> getAllQueueFamilies() const { return queue_families; }
+    inline bool hasQueueFamily(QueueFamily family) const { return queue_families.count(family); }
+    inline uint32_t getQueueFamily(QueueFamily family) const { return queue_families.at(family); }
+    inline std::map<QueueFamily, uint32_t> getAllQueueFamilies() const { return queue_families; }
     inline std::vector<VkExtensionProperties> getExtensions() const { return extensions; }
     inline VkSurfaceCapabilitiesKHR getSwapchainCapabilities() const { return swapchain_capabilities; }
     inline std::vector<VkSurfaceFormatKHR> getSwapchainFormats() const { return swapchain_formats; }

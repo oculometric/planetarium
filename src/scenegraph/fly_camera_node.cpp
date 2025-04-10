@@ -5,16 +5,17 @@
 using namespace std;
 
 #include "input/input.h"
-#include "application.h"
+#include "render_server.h"
 
 void PTFlyCameraNode::process(float delta_time)
 {
     PTInput* manager = PTInput::get();
 
     // set debug mode
-    PTApplication::get()->debug_mode = (manager->getKeyState('F').action == 1) || manager->getButtonState(PTGamepad::Button::CONTROL_SOUTH);
+    PTRenderServer::get()->debug_mode = (manager->getKeyState('F').action == 1) || manager->getButtonState(PTGamepad::Button::CONTROL_SOUTH);
     // set screenshot wanted
-    PTApplication::get()->wants_screenshot = (manager->getKeyState('P').action == 1) || manager->getButtonState(PTGamepad::Button::CONTROL_NORTH);
+    if ((manager->getKeyState('P').action == 1) || manager->getButtonState(PTGamepad::Button::CONTROL_NORTH))
+        PTRenderServer::get()->setWantsScreenshot();
 
     // keyboard movement vector
     float keyboard_x = (float)(manager->getKeyState('D').action == 1) - (float)(manager->getKeyState('A').action == 1);

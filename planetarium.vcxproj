@@ -29,6 +29,7 @@
     <ClInclude Include="inc\graphics\physical_device.h" />
     <ClInclude Include="inc\graphics\pipeline.h" />
     <ClInclude Include="inc\graphics\render_pass.h" />
+    <ClInclude Include="inc\graphics\render_server.h" />
     <ClInclude Include="inc\graphics\resource.h" />
     <ClInclude Include="inc\graphics\resource_manager.h" />
     <ClInclude Include="inc\graphics\shader.h" />
@@ -61,6 +62,7 @@
     <ClCompile Include="src\graphics\physical_device.cpp" />
     <ClCompile Include="src\graphics\pipeline.cpp" />
     <ClCompile Include="src\graphics\render_pass.cpp" />
+    <ClCompile Include="src\graphics\render_server.cpp" />
     <ClCompile Include="src\graphics\resource.cpp" />
     <ClCompile Include="src\graphics\resource_manager.cpp" />
     <ClCompile Include="src\graphics\shader.cpp" />

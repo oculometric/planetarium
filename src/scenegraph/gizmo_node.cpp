@@ -1,7 +1,7 @@
 #include "gizmo_node.h"
 
 #include "resource_manager.h"
-#include "application.h"
+#include "render_server.h"
 #include "scene.h"
 
 using namespace std;
@@ -32,10 +32,10 @@ void PTGizmoNode::process(float delta_time)
     if (min_node != tracking_node)
     {
         debugLog("new debug target is " + to_string((uint64_t)(min_node)));
-        getApplication()->removeAllDrawRequests(this);
+        PTRenderServer::get()->removeAllDrawRequests(this);
         if (min_node != nullptr)
         {
-            getApplication()->addDrawRequest(this, axes_mesh, nullptr, min_node->getTransform());
+            PTRenderServer::get()->addDrawRequest(this, axes_mesh, nullptr, min_node->getTransform());
             debugSetObjectProperty("name", min_node->name);
             debugSetObjectProperty("position", to_string(min_node->getTransform()->getPosition()));
             debugSetObjectProperty("rotation", to_string(min_node->getTransform()->getLocalRotation()));
@@ -63,6 +63,6 @@ PTGizmoNode::PTGizmoNode(PTDeserialiser::ArgMap arguments)
 
 PTGizmoNode::~PTGizmoNode()
 {
-    getApplication()->removeAllDrawRequests(this);
+    PTRenderServer::get()->removeAllDrawRequests(this);
     removeDependency(axes_mesh);
 }

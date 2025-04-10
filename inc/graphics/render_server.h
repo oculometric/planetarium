@@ -23,7 +23,7 @@ class PTMesh;
 class PTTransform;
 class PTMaterial;
 
-class GLFWwindow;
+struct GLFWwindow;
 
 class PTRenderServer
 {
@@ -43,9 +43,6 @@ public:
 	bool debug_mode = false;
 
 private:
-	bool should_stop = false;
-	std::thread mainloop_thread;
-
 	bool wants_screenshot = false;
     bool window_resized = false;
 
@@ -95,7 +92,7 @@ public:
     void operator=(PTRenderServer& other) = delete;
     void operator=(PTRenderServer&& other) = delete;
 
-	static void init(GLFWwindow* window, vector<const char*> glfw_extensions);
+	static void init(GLFWwindow* window, std::vector<const char*> glfw_extensions);
     static void deinit();
     static PTRenderServer* get();
 
@@ -113,20 +110,23 @@ public:
     void beginDrawLock();
     void endDrawLock();
 
+    void update();
+
 private:
-	PTRenderServer(GLFWwindow* window, vector<const char*> glfw_extensions);
+	PTRenderServer(GLFWwindow* window, std::vector<const char*> glfw_extensions);
 	~PTRenderServer();
 
-    void initVulkan(GLFWwindow* window, vector<const char*> glfw_extensions);
-    void mainLoop();
+    void initVulkan(GLFWwindow* window, std::vector<const char*> glfw_extensions);
     void deinitVulkan();
 
-    void initVulkanInstance(std::vector<const char*>& layers);
+    void initVulkanInstance(std::vector<const char*>& layers, std::vector<const char*> extensions);
 	void initDevice(const std::vector<const char*>& layers);
     void createCommandPoolAndBuffers();
     void createDescriptorPoolAndSets();
     void createFramebufferAndSyncResources();
 	void destroyFramebufferAndSyncResources();
+	VkResult createDebugUtilsMessenger(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, VkDebugUtilsMessengerEXT* pDebugMessenger);
+    void destroyDebugUtilsMessenger(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger);
 
     void updateSceneAndTransformUniforms(uint32_t frame_index);
     void drawFrame(uint32_t frame_index);

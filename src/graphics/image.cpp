@@ -4,7 +4,7 @@
 #include <cstring>
 
 #include "buffer.h"
-#include "application.h"
+#include "render_server.h"
 #include "resource_manager.h"
 
 using namespace std;
@@ -69,7 +69,7 @@ void PTImage::copyBufferToImage(VkBuffer buffer, VkCommandBuffer cmd)
 {
     VkCommandBuffer command_buffer;
     if (cmd == VK_NULL_HANDLE)
-        command_buffer = PTApplication::get()->beginTransientCommands();
+        command_buffer = PTRenderServer::get()->beginTransientCommands();
     else
         command_buffer = cmd;
 
@@ -94,7 +94,7 @@ void PTImage::copyBufferToImage(VkBuffer buffer, VkCommandBuffer cmd)
     vkCmdCopyBufferToImage(command_buffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
 
     if (cmd == VK_NULL_HANDLE)
-        PTApplication::get()->endTransientCommands(command_buffer);
+        PTRenderServer::get()->endTransientCommands(command_buffer);
 }
 
 void PTImage::transitionImageLayout(VkImage image, VkImageLayout old_layout, VkImageLayout new_layout, VkCommandBuffer cmd)
@@ -103,7 +103,7 @@ void PTImage::transitionImageLayout(VkImage image, VkImageLayout old_layout, VkI
     
     VkCommandBuffer command_buffer;
     if (cmd == VK_NULL_HANDLE)
-        command_buffer = PTApplication::get()->beginTransientCommands();
+        command_buffer = PTRenderServer::get()->beginTransientCommands();
     else
         command_buffer = cmd;
 
@@ -161,7 +161,7 @@ void PTImage::transitionImageLayout(VkImage image, VkImageLayout old_layout, VkI
     );
 
     if (cmd == VK_NULL_HANDLE)
-        PTApplication::get()->endTransientCommands(command_buffer);
+        PTRenderServer::get()->endTransientCommands(command_buffer);
 }
 
 PTImage::~PTImage()
