@@ -52,8 +52,11 @@ public:
     inline T getUniform(uint16_t bind_point);
 
 private:
+    PTMaterial(VkDevice _device, std::string material_path, PTRenderPass* _render_pass, PTSwapchain* swapchain);
     PTMaterial(VkDevice _device, PTRenderPass* _render_pass, PTSwapchain* swapchain, PTShader* _shader, VkBool32 depth_write, VkBool32 depth_test, VkCompareOp depth_op, VkCullModeFlags culling, VkPolygonMode polygon_mode);
     ~PTMaterial();
+
+    void initialiseMaterial(PTSwapchain* swapchain, VkBool32 depth_write, VkBool32 depth_test, VkCompareOp depth_op, VkCullModeFlags culling, VkPolygonMode polygon_mode);
 };
 
 #include "buffer.h"

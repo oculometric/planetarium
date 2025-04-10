@@ -105,6 +105,9 @@
     <ClInclude Include="inc\graphics\render_server.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="inc\graphics\material.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\application.cpp">

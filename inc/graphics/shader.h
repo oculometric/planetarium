@@ -26,10 +26,6 @@ private:
 
     VkDescriptorSetLayout descriptor_set_layout = VK_NULL_HANDLE;
     std::vector<UniformDescriptor> descriptor_bindings;
-
-    PTShader(VkDevice _device, std::string shader_path_stub);
-
-    ~PTShader();
     
 public:
     PTShader() = delete;
@@ -45,6 +41,10 @@ public:
     UniformDescriptor getDescriptorBinding(size_t index) const;
 
 private:
+    PTShader(VkDevice _device, std::string shader_path_stub);
+
+    ~PTShader();
+
     bool readFromFile(std::string shader_path_stub, std::vector<char>& vertex_code, std::vector<char>& fragment_code); // FIXME: add a way to pass in/add bindings
     void createShaderModules(const std::vector<char>& vertex_code, const std::vector<char>& fragment_code);
     void createDescriptorSetLayout();

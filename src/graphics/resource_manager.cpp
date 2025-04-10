@@ -153,7 +153,7 @@ PTSwapchain* PTResourceManager::createSwapchain(VkSurfaceKHR surface, int window
     return sc;
 }
 
-PTMaterial* PTResourceManager::createMaterial(std::string material_path, PTSwapchain* swapchain, PTRenderPass* _render_pass, bool force_duplicate)
+PTMaterial* PTResourceManager::createMaterial(std::string material_path, PTSwapchain* swapchain, PTRenderPass* render_pass, bool force_duplicate)
 {
     string identifier = "material-" + material_path;
     PTMaterial* mt = nullptr;
@@ -161,31 +161,7 @@ PTMaterial* PTResourceManager::createMaterial(std::string material_path, PTSwapc
     if (!force_duplicate)
         mt = tryGetExistingResource<PTMaterial>(identifier);
     if (mt == nullptr)
-    {
-        ifstream file(material_path, ios::ate);
-        if (!file.is_open())
-            return nullptr;
-
-        size_t size = file.tellg();
-        string text;
-        text.resize(size, ' ');
-        file.seekg(0);
-        file.read(text.data(), size);
-
-        string shader_path = "demo"; // TODO: this should point to the default shader
-        VkBool32 depth_write = VK_TRUE;
-        VkBool32 depth_test = VK_TRUE;
-        VkCompareOp depth_op = VK_COMPARE_OP_LESS;
-        VkCullModeFlags culling = VK_CULL_MODE_BACK_BIT;
-        VkPolygonMode polygon_mode = VK_POLYGON_MODE_FILL;
-        //PTDeserialiser::deserialiseMaterial(text, shader_path, depth_write, depth_test, depth_op, culling, polygon_mode); // TODO: this function should extract the relevant info from the material
-        // TODO: extract uniform values from the material too, and apply them!
-        PTShader* shader = createShader(shader_path);
-        mt = new PTMaterial(device, _render_pass, swapchain, shader, depth_write, depth_test, depth_op, culling, polygon_mode);
-        shader->removeReferencer();
-
-        resources.emplace(identifier, mt);
-    }
+        resources.emplace(identifier, mt = new PTMaterial(device, material_path, render_pass, swapchain));
 
     mt->addReferencer();
 

@@ -12,6 +12,7 @@
 class PTResource;
 class PTNode;
 class PTScene;
+class PTMaterial;
 
 class PTDeserialiser
 {
@@ -186,7 +187,7 @@ public:
     static std::pair<std::string, PTResource*> deserialiseResourceDescriptor(const std::vector<Token>& tokens, size_t& first_token, PTScene* scene, const std::string& content);
     static PTNode* deserialiseObject(const std::vector<Token>& tokens, size_t& first_token, PTScene* scene, const std::string& content);
     static void deserialiseScene(PTScene* scene, const std::string& content);
-    static void deserialiseMaterial(const std::string& text, std::string& shader_path, VkBool32& depth_write, VkBool32& depth_test, VkCompareOp& depth_op, VkCullModeFlags& culling, VkPolygonMode& polygon_mode); // TODO: this
+    static void deserialiseMaterial(const std::string& content, MaterialParams& params, std::string& shader_path, std::vector<UniformParam>& uniforms, std::map<uint16_t, PTResource*>& textures); // TODO: this
 
 private:
     static inline TokenType getType(const char c);

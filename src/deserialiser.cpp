@@ -486,6 +486,12 @@ void PTDeserialiser::deserialiseScene(PTScene* scene, const std::string& content
     // TODO: if any errors occur (INCLUDING PREVIOUS REPORTERRORS), destroy scene? no actually! resource manager will do that
 }
 
+PTMaterial* PTDeserialiser::deserialiseMaterial(const std::string& content)
+{
+    // TODO: here!
+    return nullptr;
+}
+
 inline PTDeserialiser::TokenType PTDeserialiser::getType(const char c)
 {
     if (isAlphabetic(c) || c == '_') return TokenType::TEXT;

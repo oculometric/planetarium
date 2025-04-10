@@ -25,6 +25,7 @@
     <ClInclude Include="inc\deserialiser.h" />
     <ClInclude Include="inc\graphics\buffer.h" />
     <ClInclude Include="inc\graphics\image.h" />
+    <ClInclude Include="inc\graphics\material.h" />
     <ClInclude Include="inc\graphics\mesh.h" />
     <ClInclude Include="inc\graphics\physical_device.h" />
     <ClInclude Include="inc\graphics\pipeline.h" />
