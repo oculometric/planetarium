@@ -636,12 +636,13 @@ void PTDeserialiser::deserialiseMaterial(const std::string& content, MaterialPar
                         case ArgType::ARRAY_ARG:
                             reportError("invalid uniform variable type", tokens[first_variable].start_offset, content);
                             break;
-                        case ArgType::FLOAT_ARG: offset += sizeof(float); break;
-                        case ArgType::INT_ARG: offset += sizeof(int); break;
-                        case ArgType::VECTOR2_ARG: offset += sizeof(PTVector2f); break;
-                        case ArgType::VECTOR3_ARG: offset += sizeof(PTVector3f); break;
-                        case ArgType::VECTOR4_ARG: offset += sizeof(PTVector4f); break;
+                        case ArgType::FLOAT_ARG: uniform.size = sizeof(float); break;
+                        case ArgType::INT_ARG: uniform.size = sizeof(int); break;
+                        case ArgType::VECTOR2_ARG: uniform.size = sizeof(PTVector2f); break;
+                        case ArgType::VECTOR3_ARG: uniform.size = sizeof(PTVector3f); break;
+                        case ArgType::VECTOR4_ARG: uniform.size = sizeof(PTVector4f); break;
                     }
+                    offset += uniform.size;
 
                     uniforms.push_back(uniform);
                 }

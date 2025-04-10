@@ -197,6 +197,7 @@ public:
     {
         uint16_t binding;
         size_t offset;
+        size_t size;
         std::string identifier;
         Argument value;
     };

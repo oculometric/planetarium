@@ -2,6 +2,7 @@
 
 #include <assert.h>
 #include <fstream>
+#include <cstring>
 
 #include "resource_manager.h"
 #include "shader.h"
@@ -56,7 +57,6 @@ PTMaterial::PTMaterial(VkDevice _device, std::string material_path, PTRenderPass
     file.seekg(0);
     file.read(text.data(), size);
 
-
     PTDeserialiser::MaterialParams params;
     std::vector<PTDeserialiser::UniformParam> uniforms;
     std::map<uint16_t, PTImage*> textures;
@@ -67,8 +67,32 @@ PTMaterial::PTMaterial(VkDevice _device, std::string material_path, PTRenderPass
         cull_modes.contains(params.culling) ? cull_modes[params.culling] : VK_CULL_MODE_BACK_BIT, 
         polygon_modes.contains(params.polygon_mode) ? polygon_modes[params.polygon_mode] : VK_POLYGON_MODE_FILL);
 
-    
-    // TODO: apply uniforms and textures
+    for (PTDeserialiser::UniformParam variable : uniforms)
+    {
+        if (variable.binding == TRANSFORM_UNIFORM_BINDING
+         || variable.binding == SCENE_UNIFORM_BINDING)
+            continue;
+        
+        uint32_t buf_size = static_cast<uint32_t>(descriptor_buffers[variable.binding]->getSize());
+        uint8_t* target = (uint8_t*)descriptor_buffers[variable.binding]->map();
+
+        uint32_t data_size = variable.size;
+        uint32_t data_offset = variable.offset;
+
+        void* data;
+        switch (variable.value.type)
+        {
+        case PTDeserialiser::ArgType::FLOAT_ARG: data = &(variable.value.f_val); break;
+        case PTDeserialiser::ArgType::INT_ARG: data = &(variable.value.i_val); break;
+        case PTDeserialiser::ArgType::VECTOR2_ARG: data = &(variable.value.v2_val); break;
+        case PTDeserialiser::ArgType::VECTOR3_ARG: data = &(variable.value.v3_val); break;
+        case PTDeserialiser::ArgType::VECTOR4_ARG: data = &(variable.value.v4_val); break;
+        default: throw runtime_error("invalid argument type");
+        }
+
+        if (data_offset + data_size <= buf_size)
+            memcpy(target + data_offset, data, data_size);
+    }
 }
 
 PTMaterial::PTMaterial(VkDevice _device, PTRenderPass* _render_pass, PTSwapchain* swapchain, PTShader* _shader, VkBool32 depth_write, VkBool32 depth_test, VkCompareOp depth_op, VkCullModeFlags culling, VkPolygonMode polygon_mode)
