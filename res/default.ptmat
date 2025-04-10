@@ -5,6 +5,10 @@ Depth(operation = 0, test = 1, write = 1);
 
 Shader(resource = @shader);
 
-Uniform(binding = 1, /* etc */);
+Uniform(binding = 2)
+{
+    [ 1.0, 0.5, 0.1, 1.0 ],     // colour
+    0.6                         // roughness
+};
 
-// TODO: finish the material file spec!!
+//Texture(binding = 3, resource = @albedo);
