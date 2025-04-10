@@ -68,7 +68,7 @@ PTImage* PTResourceManager::createImage(std::string texture_file, bool force_dup
     if (!force_duplicate)
         img = tryGetExistingResource<PTImage>(identifier);
     if (img == nullptr)
-        resources.emplace(identifier, img = new PTImage(device, physical_device, texture_file));
+        resources.emplace(identifier, img = new PTImage(device, texture_file, physical_device));
 
     img->addReferencer();
         
@@ -83,7 +83,7 @@ PTMesh* PTResourceManager::createMesh(std::string file_name, bool force_duplicat
     if (!force_duplicate)
         me = tryGetExistingResource<PTMesh>(identifier);
     if (me == nullptr)
-        resources.emplace(identifier, me = new PTMesh(device, physical_device, file_name));
+        resources.emplace(identifier, me = new PTMesh(device, file_name, physical_device));
 
     me->addReferencer();
 
@@ -92,7 +92,7 @@ PTMesh* PTResourceManager::createMesh(std::string file_name, bool force_duplicat
 
 PTMesh* PTResourceManager::createMesh(std::vector<PTVertex> vertices, std::vector<uint16_t> indices)
 {
-    PTMesh* me = new PTMesh(device, physical_device, vertices, indices);
+    PTMesh* me = new PTMesh(device, vertices, indices, physical_device);
     string identifier = "mesh-" + to_string((size_t)me);
 
     resources.emplace(identifier, me);
