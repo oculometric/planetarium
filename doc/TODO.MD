@@ -7,8 +7,7 @@
       - [x] implement proper shader reflection
       - [ ] texture descriptors                           (3)
       - [x] respect priority system
-      - [x] read material priority from file              (1)
-- [ ] runtime shader compilation                          (2)
+      - [x] read material priority from file
 - [ ] mesh data updating
 
 ## Engine Stuff
@@ -112,3 +111,4 @@
 - [x] support materials loading as a scene resource
 - [x] allow materials on meshes
 - [x] show debug axes of objects currently hovered over (this should be a new Node type)
+- [x] runtime shader compilation

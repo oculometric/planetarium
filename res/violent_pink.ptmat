@@ -1,4 +1,4 @@
-Resource(shader, "demo") : shader;
+Resource(shader, "shr/demo") : shader;
 
 Depth(operation = "ALWAYS");
 Culling(mode = "NONE");

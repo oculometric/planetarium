@@ -2,10 +2,27 @@
 
 #include "math/ptmath.h"
 
+// this simply prevents us from getting a million 'variable defined but not used' errors
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4101)
+#elif defined(__GNUG__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-variable"
+#endif
+
 const uint32_t MAX_FRAMES_IN_FLIGHT = 2;
 
 const uint16_t TRANSFORM_UNIFORM_BINDING = 0;
 const uint16_t SCENE_UNIFORM_BINDING = 1;
+
+static const char* DEFAULT_SHADER_PATH = "shr/demo";
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#elif defined(__GNUG__)
+#pragma GCC diagnostic pop
+#endif
 
 struct TransformUniforms
 {

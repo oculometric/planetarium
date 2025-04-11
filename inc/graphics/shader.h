@@ -43,11 +43,12 @@ public:
     UniformDescriptor getDescriptorBinding(size_t index) const;
 
 private:
-    PTShader(VkDevice _device, std::string shader_path_stub);
+    PTShader(VkDevice _device, std::string shader_path_stub, bool is_precompiled);
 
     ~PTShader();
 
-    bool readFromFile(std::string shader_path_stub, std::vector<char>& vertex_code, std::vector<char>& fragment_code);
+    bool readRawAndCompile(std::string shader_path_stub, std::vector<char>& vertex_code, std::vector<char>& fragment_code);
+    bool readPrecompiled(std::string shader_path_stub, std::vector<char>& vertex_code, std::vector<char>& fragment_code);
     void createShaderModules(const std::vector<char>& vertex_code, const std::vector<char>& fragment_code);
     void createDescriptorSetLayout();
     bool hasDescriptorWithBinding(uint16_t binding, UniformDescriptor& out, size_t& index);

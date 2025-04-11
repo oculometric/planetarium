@@ -289,7 +289,10 @@ void PTRenderServer::initVulkan(GLFWwindow* window, vector<const char*> glfw_ext
 	createFramebufferAndSyncResources();
 
 	debugLog("    creating default material");
-    default_material = PTResourceManager::get()->createMaterial("res/default.ptmat", swapchain, render_pass);
+    PTShader* default_shader = PTResourceManager::get()->createShader(DEFAULT_SHADER_PATH, false, true);
+    default_material = PTResourceManager::get()->createMaterial(swapchain, render_pass, default_shader, VK_TRUE, VK_TRUE, VK_COMPARE_OP_LESS, VK_CULL_MODE_BACK_BIT, VK_POLYGON_MODE_FILL);
+    default_material->setUniform(2, PTVector3f{ 1.0f, 1.0f, 1.0f });
+    default_shader->removeReferencer();
 
     debugLog("done.");
 }

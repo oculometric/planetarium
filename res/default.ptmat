@@ -1,4 +1,4 @@
-Resource(shader, "demo") : shader;
+Resource(shader, "shr/demo") : shader;
 //Resource(image, "demo.bmp") : albedo;
 
 Depth(operation = "LESS", test = 1, write = 1);

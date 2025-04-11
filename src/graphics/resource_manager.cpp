@@ -126,7 +126,7 @@ PTRenderPass* PTResourceManager::createRenderPass(std::vector<PTRenderPass::Atta
     return rp;
 }
 
-PTShader* PTResourceManager::createShader(std::string shader_path_stub, bool force_duplicate)
+PTShader* PTResourceManager::createShader(std::string shader_path_stub, bool is_precompiled, bool force_duplicate)
 {
     string identifier = "shader-" + shader_path_stub;
     PTShader* sh = nullptr;
@@ -134,7 +134,7 @@ PTShader* PTResourceManager::createShader(std::string shader_path_stub, bool for
     if (!force_duplicate)
         sh = tryGetExistingResource<PTShader>(identifier);
     if (sh == nullptr)
-        resources.emplace(identifier, sh = new PTShader(device, shader_path_stub));
+        resources.emplace(identifier, sh = new PTShader(device, shader_path_stub, is_precompiled));
 
     sh->addReferencer();
 
@@ -238,7 +238,7 @@ PTResource* PTResourceManager::createGeneric(string type, vector<PTDeserialiser:
         if (args[0].type != PTDeserialiser::ArgType::STRING_ARG)
             return nullptr;
         
-        return createShader(args[0].s_val);
+        return createShader(args[0].s_val, false);
     }
     else if (type == "material")
     {

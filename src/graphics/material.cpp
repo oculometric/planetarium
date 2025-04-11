@@ -57,6 +57,7 @@ PTMaterial::PTMaterial(VkDevice _device, string material_path, PTRenderPass* _re
     text.resize(size, ' ');
     file.seekg(0);
     file.read(text.data(), size);
+    file.close();
 
     PTDeserialiser::MaterialParams params;
     vector<PTDeserialiser::UniformParam> uniforms;
@@ -69,6 +70,8 @@ PTMaterial::PTMaterial(VkDevice _device, string material_path, PTRenderPass* _re
         depth_ops.contains(params.depth_op) ? depth_ops[params.depth_op] : VK_COMPARE_OP_LESS, 
         cull_modes.contains(params.culling) ? cull_modes[params.culling] : VK_CULL_MODE_BACK_BIT, 
         polygon_modes.contains(params.polygon_mode) ? polygon_modes[params.polygon_mode] : VK_POLYGON_MODE_FILL);
+
+    shader->removeReferencer();
 
     for (PTDeserialiser::UniformParam variable : uniforms)
     {

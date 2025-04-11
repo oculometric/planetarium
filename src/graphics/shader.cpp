@@ -7,14 +7,38 @@
 
 using namespace std;
 
-PTShader::PTShader(VkDevice _device, const string shader_path_stub)
+PTShader::PTShader(VkDevice _device, const string shader_path_stub, bool is_precompiled)
 {
     origin_path = shader_path_stub;
 
     vector<char> vert, frag;
     device = _device;
-    if (readFromFile(shader_path_stub, vert, frag))
-        createShaderModules(vert, frag);
+    if (is_precompiled)
+    {
+        if (readPrecompiled(shader_path_stub, vert, frag))
+            createShaderModules(vert, frag);
+        else
+        {
+            debugLog("ERROR: failed to load precompiled shader " + shader_path_stub);
+            if (!readRawAndCompile(DEFAULT_SHADER_PATH, vert, frag))
+                throw runtime_error("failed to load default shader");
+            else
+                createShaderModules(vert, frag);
+        }
+    }
+    else
+    {
+        if (readRawAndCompile(shader_path_stub, vert, frag))
+            createShaderModules(vert, frag);
+        else
+        {
+            debugLog("ERROR: failed to compile shader " + shader_path_stub);
+            if (!readRawAndCompile(DEFAULT_SHADER_PATH, vert, frag))
+                throw runtime_error("failed to load default shader");
+            else
+                createShaderModules(vert, frag);
+        }
+    }
 
     // these bindings should always be binding 0 and 1, and should always be present
     descriptor_bindings.push_back(UniformDescriptor{ "TransformUniforms", TRANSFORM_UNIFORM_BINDING, sizeof(TransformUniforms) });
@@ -64,24 +88,69 @@ PTShader::UniformDescriptor PTShader::getDescriptorBinding(size_t index) const
     return descriptor_bindings[index];
 }
 
-bool PTShader::readFromFile(const string shader_path_stub, vector<char>& vertex_code, vector<char>& fragment_code)
+bool PTShader::readRawAndCompile(string shader_path_stub, vector<char>& vertex_code, vector<char>& fragment_code)
+{
+    // run compile commands
+    string compiler = "";
+#ifdef _WIN32
+    compiler = "glslc.exe";
+#else
+    compiler = "glslc";
+#endif
+
+    string out_path_base = shader_path_stub + "_TEMP_" + to_string((uint32_t)((size_t)this));
+
+    string command = compiler + ' ' + shader_path_stub + ".vert -o " + out_path_base + "_vert.spv";
+
+    int result = system(command.c_str());
+    if (result != 0)
+    {
+        debugLog("WARNING: failed to compile " + shader_path_stub + ".vert");
+        return false;
+    }
+
+    command = compiler + ' ' + shader_path_stub + ".frag -o " + out_path_base + "_frag.spv";
+
+    result = system(command.c_str());
+    command = "rm " + out_path_base + "_vert.spv";
+    if (result != 0)
+    {
+        debugLog("WARNING: failed to compile " + shader_path_stub + ".frag");
+        system(command.c_str());
+        return false;
+    }
+    
+    // load shader modules using the other function
+    bool load_result = readPrecompiled(out_path_base, vertex_code, fragment_code);
+    
+    // delete the generated files
+    system(command.c_str());
+    command = "rm " + out_path_base + "_frag.spv";
+    system(command.c_str());
+
+    return load_result;
+}
+
+bool PTShader::readPrecompiled(const string shader_path_stub, vector<char>& vertex_code, vector<char>& fragment_code)
 {
     ifstream vert_file, frag_file;
-
-    // TODO: load a text shader, compile it, and then load shader blobs from it (also, extract the descriptor set layout)
     
     // open vertex and frag shader files (precompiled)
     vert_file.open(shader_path_stub + "_vert.spv", ios::ate | ios::binary);
     if (!vert_file.is_open())
-        throw runtime_error("unable to open vertex shader for " + shader_path_stub);
+    {
+        debugLog("WARNING: unable to open " + shader_path_stub + "_vert.spv");
+        return false;
+    }
     frag_file.open(shader_path_stub + "_frag.spv", ios::ate | ios::binary);
     if (!frag_file.is_open())
     {
         vert_file.close();
-        throw runtime_error("unable to open fragment shader for " + shader_path_stub);
+        debugLog("WARNING: unable to open " + shader_path_stub + "_frag.spv");
+        return false;
     }
 
-    // clear and resize the vertex and fragment buffers
+    // clear and resize the vertex and fragment arrays
     vertex_code.clear();
     fragment_code.clear();
     size_t vert_size = (size_t)vert_file.tellg();
@@ -111,7 +180,7 @@ void PTShader::createShaderModules(const vector<char>& vertex_code, const vector
     vert_create_info.pCode = reinterpret_cast<const uint32_t*>(vertex_code.data());
 
     if (vkCreateShaderModule(device, &vert_create_info, nullptr, &vertex_shader) != VK_SUCCESS)
-        throw std::runtime_error("unable to create vertex shader module");
+        throw runtime_error("unable to create vertex shader module");
 
     // extract a list of descriptor bindings from the vertex shader
     SpvReflectShaderModule reflect;
@@ -131,7 +200,7 @@ void PTShader::createShaderModules(const vector<char>& vertex_code, const vector
     frag_create_info.pCode = reinterpret_cast<const uint32_t*>(fragment_code.data());
 
     if (vkCreateShaderModule(device, &frag_create_info, nullptr, &fragment_shader) != VK_SUCCESS)
-        throw std::runtime_error("unable to create fragment shader module");
+        throw runtime_error("unable to create fragment shader module");
 
     // extract a list of descriptor bindings from the fragment shader
     spvReflectCreateShaderModule(fragment_code.size(), fragment_code.data(), &reflect);
