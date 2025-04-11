@@ -214,6 +214,15 @@
     <None Include="doc\TODO.MD">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="shr\common.glsl">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shr\demo.frag">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="shr\demo.vert">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Object Include="res\debug_axes.obj">

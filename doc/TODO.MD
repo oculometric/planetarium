@@ -16,7 +16,6 @@
 - [ ] make input run on its own thread                    (5)
 - [ ] make float isDown and bool wasPressed and bool wasReleased functions for each keyboard key
 - [ ] better way of specifying which keyboard key to check the state of (A vs a, etc)
-- [ ] show debug axes of objects currently hovered over (this should be a new Node type)
 - [ ] cross platform controller support
 - [ ] mouse input support
 - [ ] UI system (use STUI to generate charbufs, then pass it into a shader maybe????)
@@ -112,3 +111,4 @@
 - [x] separate graphics stuff into RenderingServer (simplify Application)
 - [x] support materials loading as a scene resource
 - [x] allow materials on meshes
+- [x] show debug axes of objects currently hovered over (this should be a new Node type)

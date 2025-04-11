@@ -88,6 +88,9 @@
     <None Include="res\default.ptmat" />
     <None Include="res\demo.ptscn" />
     <None Include="res\violent_pink.ptmat" />
+    <None Include="shr\common.glsl" />
+    <None Include="shr\demo.frag" />
+    <None Include="shr\demo.vert" />
   </ItemGroup>
   <ItemGroup>
     <Object Include="res\debug_axes.obj">
