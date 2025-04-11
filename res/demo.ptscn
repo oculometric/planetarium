@@ -3,6 +3,7 @@ Resource(mesh, "res/obj/teapot.obj") : teapot_mesh;
 Resource(mesh, "res/desert_surrealism.obj") : origin_mesh;
 Resource(material, "res/violent_pink.ptmat") : pink;
 
+TextNode(position = [0, 0, 6]) : text;
 MeshNode(data = @origin_mesh) : desert;
 GizmoNode();
 

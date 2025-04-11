@@ -102,20 +102,23 @@ bool PTShader::readRawAndCompile(string shader_path_stub, vector<char>& vertex_c
 
     string command = compiler + ' ' + shader_path_stub + ".vert -o " + out_path_base + "_vert.spv";
 
-    int result = system(command.c_str());
+    string command_out;
+    int result = exec(command.c_str(), command_out);
     if (result != 0)
     {
-        debugLog("WARNING: failed to compile " + shader_path_stub + ".vert");
+        debugLog("WARNING: failed to compile " + shader_path_stub + ".vert:");
+        debugLog(command_out);
         return false;
     }
 
     command = compiler + ' ' + shader_path_stub + ".frag -o " + out_path_base + "_frag.spv";
 
-    result = system(command.c_str());
+    result = exec(command.c_str(), command_out);
     command = "rm " + out_path_base + "_vert.spv";
     if (result != 0)
     {
-        debugLog("WARNING: failed to compile " + shader_path_stub + ".frag");
+        debugLog("WARNING: failed to compile " + shader_path_stub + ".frag:");
+        debugLog(command_out);
         system(command.c_str());
         return false;
     }

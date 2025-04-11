@@ -61,6 +61,7 @@ private:
 };
 
 #include "buffer.h"
+#include <cstring>
 
 template <typename T>
 inline void PTMaterial::setUniform(uint16_t bind_point, T data)

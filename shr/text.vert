@@ -3,10 +3,9 @@
 #include "common.glsl"
 
 VERTEX_INPUTS
-UNIFORM_COMMON
 
-// TODO: text character array (buffer?)
-// TODO: font texture
+UNIFORM_TRANSFORM
+UNIFORM_SCENE
 
 VARYING_COMMON(out)
 

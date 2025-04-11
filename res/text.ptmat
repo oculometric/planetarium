@@ -1,0 +1,3 @@
+Resource(shader, "shr/text") : shader;
+
+Shader(resource = @shader);

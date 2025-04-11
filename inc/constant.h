@@ -37,3 +37,21 @@ struct SceneUniforms
     PTVector2f viewport_size;
     float time;
 };
+
+#include <fstream>
+#include <string>
+
+inline int exec(std::string command, std::string& output)
+{
+    int status = std::system((command + " > tmp.txt").c_str());
+    output = "";
+    
+    std::ifstream file("tmp.txt", std::ios::ate);
+    size_t size = file.tellg();
+    output.resize(size, ' ');
+    file.seekg(0);
+    file.read(output.data(), size);
+    file.close();
+
+    return status;
+}
