@@ -208,6 +208,12 @@
     <None Include="res\demo.ptscn">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="res\default.ptmat">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="res\violent_pink.ptmat">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Object Include="res\debug_axes.obj">

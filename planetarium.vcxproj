@@ -84,7 +84,9 @@
   <ItemGroup>
     <None Include="FORMATTING.md" />
     <None Include="NODE.md" />
+    <None Include="res\default.ptmat" />
     <None Include="res\demo.ptscn" />
+    <None Include="res\violent_pink.ptmat" />
     <None Include="TODO.MD" />
   </ItemGroup>
   <ItemGroup>

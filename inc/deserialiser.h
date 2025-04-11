@@ -186,11 +186,11 @@ public:
     
     struct MaterialParams
     {
-        bool depth_write;
-        bool depth_test;
-        std::string depth_op;
-        std::string culling;
-        std::string polygon_mode;
+        bool depth_write = true;
+        bool depth_test = true;
+        std::string depth_op = "LESS";
+        std::string culling = "BACK";
+        std::string polygon_mode = "FILL";
     };
 
     struct UniformParam

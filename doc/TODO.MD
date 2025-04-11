@@ -7,6 +7,7 @@
       - [x] implement proper shader reflection
       - [ ] texture descriptors                           (3)
       - [x] respect priority system
+      - [ ] read material priority from file              (1)
 - [ ] runtime shader compilation                          (2)
 - [ ] mesh data updating
 

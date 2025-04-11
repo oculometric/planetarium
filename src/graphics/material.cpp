@@ -77,8 +77,8 @@ PTMaterial::PTMaterial(VkDevice _device, string material_path, PTRenderPass* _re
         uint32_t buf_size = static_cast<uint32_t>(descriptor_buffers[variable.binding]->getSize());
         uint8_t* target = (uint8_t*)descriptor_buffers[variable.binding]->map();
 
-        uint32_t data_size = variable.size;
-        uint32_t data_offset = variable.offset;
+        uint32_t data_size = static_cast<uint32_t>(variable.size);
+        uint32_t data_offset = static_cast<uint32_t>(variable.offset);
 
         void* data;
         switch (variable.value.type)
