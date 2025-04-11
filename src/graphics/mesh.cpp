@@ -66,8 +66,8 @@ PTMesh::PTMesh(VkDevice _device, std::string mesh_path, const PTPhysicalDevice& 
     vector<uint16_t> inds;
 
     // read file into the vectors (parse OBJ), then create vertex and index buffers from the data
-    readFileToBuffers(mesh_path, verts, inds);
-    createVertexBuffers(physical_device, verts, inds);
+    if (readFileToBuffers(mesh_path, verts, inds))
+        createVertexBuffers(physical_device, verts, inds);
 }
 
 PTMesh::PTMesh(VkDevice _device, std::vector<PTVertex> vertices, std::vector<uint16_t> indices, const PTPhysicalDevice& physical_device)
@@ -81,8 +81,10 @@ PTMesh::PTMesh(VkDevice _device, std::vector<PTVertex> vertices, std::vector<uin
 PTMesh::~PTMesh()
 {
     // release the buffers!!!
-    removeDependency(index_buffer);
-    removeDependency(vertex_buffer);
+    if (index_buffer != nullptr)
+        removeDependency(index_buffer);
+    if (vertex_buffer != nullptr)
+        removeDependency(vertex_buffer);
 }
 
 struct PTFaceCorner { uint16_t co; uint16_t uv; uint16_t vn; };
@@ -155,12 +157,15 @@ static pair<PTVector3f, PTVector3f> computeTangent(PTVector3f co_a, PTVector3f c
     return ret;
 }
 
-void PTMesh::readFileToBuffers(std::string file_name, std::vector<PTVertex>& vertices, std::vector<uint16_t>& indices)
+bool PTMesh::readFileToBuffers(std::string file_name, std::vector<PTVertex>& vertices, std::vector<uint16_t>& indices)
 {
     ifstream file;
     file.open(file_name);
     if (!file.is_open())
-        throw runtime_error("unable to open file " + file_name);
+    {
+        debugLog("WARNING: unable to open file " + file_name);
+        return false;
+    }
 
     // vectors to load data into
     vector<PTVector3f> tmp_co;
@@ -299,6 +304,8 @@ void PTMesh::readFileToBuffers(std::string file_name, std::vector<PTVertex>& ver
         fv.normal = PTVector3f(fv.normal.x, -fv.normal.z, fv.normal.y);
         fv.tangent = PTVector3f(fv.tangent.x, -fv.tangent.z, fv.tangent.y);
     }
+
+    return true;
 }
 
 void PTMesh::createVertexBuffers(const PTPhysicalDevice& physical_device, const std::vector<PTVertex>& vertices, const std::vector<uint16_t>& indices)

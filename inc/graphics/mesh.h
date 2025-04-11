@@ -40,8 +40,8 @@ public:
     PTMesh operator=(const PTMesh& other) = delete;
     PTMesh operator=(const PTMesh&& other) = delete;
 
-    inline VkBuffer getVertexBuffer() const { return vertex_buffer->getBuffer(); }
-    inline VkBuffer getIndexBuffer() const { return index_buffer->getBuffer(); }
+    inline VkBuffer getVertexBuffer() const { return vertex_buffer != nullptr ? vertex_buffer->getBuffer() : VK_NULL_HANDLE; }
+    inline VkBuffer getIndexBuffer() const { return index_buffer != nullptr ? index_buffer->getBuffer() : VK_NULL_HANDLE; }
     inline uint32_t getVertexCount() const { return vertex_count; }
     inline uint32_t getIndexCount() const { return index_count; }
 
@@ -54,6 +54,6 @@ private:
 
     ~PTMesh();
 
-    static void readFileToBuffers(std::string file_name, std::vector<PTVertex>& vertices, std::vector<uint16_t>& indices);
+    static bool readFileToBuffers(std::string file_name, std::vector<PTVertex>& vertices, std::vector<uint16_t>& indices);
     void createVertexBuffers(const PTPhysicalDevice& physical_device, const std::vector<PTVertex>& vertices, const std::vector<uint16_t>& indices);
 };

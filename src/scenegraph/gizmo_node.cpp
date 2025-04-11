@@ -31,10 +31,10 @@ void PTGizmoNode::process(float delta_time)
 
     if (min_node != tracking_node)
     {
-        debugLog("new debug target is " + to_string((uint64_t)(min_node)));
         PTRenderServer::get()->removeAllDrawRequests(this);
         if (min_node != nullptr)
         {
+            debugLog("new debug target is " + min_node->name);
             PTRenderServer::get()->addDrawRequest(this, axes_mesh, material, min_node->getTransform());
             debugSetObjectProperty("name", min_node->name);
             debugSetObjectProperty("position", to_string(min_node->getTransform()->getPosition()));
@@ -43,6 +43,7 @@ void PTGizmoNode::process(float delta_time)
         }
         else
         {
+            debugLog("debug target lost");
             debugClearObjectProperty("name");
             debugClearObjectProperty("position");
             debugClearObjectProperty("rotation");
@@ -58,10 +59,12 @@ PTGizmoNode::PTGizmoNode(PTDeserialiser::ArgMap arguments)
     axes_mesh = PTResourceManager::get()->createMesh("res/debug_axes.obj");
     material = PTResourceManager::get()->createMaterial("res/unlit_vertex_colour.ptmat");
     addDependency(axes_mesh, false);
+    addDependency(material, false);
 }
 
 PTGizmoNode::~PTGizmoNode()
 {
     PTRenderServer::get()->removeAllDrawRequests(this);
+    removeDependency(material);
     removeDependency(axes_mesh);
 }

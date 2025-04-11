@@ -769,10 +769,14 @@ void PTRenderServer::drawFrame(uint32_t frame_index)
         {
             // for each mesh, bind the vertex and index buffers
             mesh = instruction.mesh;
-            VkBuffer vertex_buffers[] = { mesh->getVertexBuffer() };
+            VkBuffer vbuf = mesh->getVertexBuffer();
+            VkBuffer ibuf = mesh->getIndexBuffer();
+            if (vbuf == VK_NULL_HANDLE || ibuf == VK_NULL_HANDLE)
+                continue;
+            VkBuffer vertex_buffers[] = { vbuf };
             VkDeviceSize offsets[] = { 0 };
             vkCmdBindVertexBuffers(command_buffers[frame_index], 0, 1, vertex_buffers, offsets);
-            vkCmdBindIndexBuffer(command_buffers[frame_index], mesh->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT16);
+            vkCmdBindIndexBuffer(command_buffers[frame_index], ibuf, 0, VK_INDEX_TYPE_UINT16);
         }
 
         // for each object, bind the object-specific common descriptor set, then draw indexed

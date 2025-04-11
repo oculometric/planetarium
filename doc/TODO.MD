@@ -54,6 +54,7 @@
 - [ ] actual error handling?
 
 ## Completed
+
 - [x] make physical device stuff its own file (finding swapchain info, supported features, etc)
 - [x] make swapchain stuff (swapchain, swapchain format, extent, images, imageviews, framebuffers) its own file, and handle creation/destruction, maybe recreation (as opposed to just destroy whole thing and recreate)
 - [x] implement swapchain/framebuffer resizing
