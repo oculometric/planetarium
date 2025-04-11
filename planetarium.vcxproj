@@ -82,12 +82,12 @@
     <ClCompile Include="src\spirv_reflect.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="doc\TODO.MD" />
     <None Include="FORMATTING.md" />
     <None Include="NODE.md" />
     <None Include="res\default.ptmat" />
     <None Include="res\demo.ptscn" />
     <None Include="res\violent_pink.ptmat" />
-    <None Include="TODO.MD" />
   </ItemGroup>
   <ItemGroup>
     <Object Include="res\debug_axes.obj">

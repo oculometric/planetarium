@@ -191,6 +191,7 @@ public:
         std::string depth_op = "LESS";
         std::string culling = "BACK";
         std::string polygon_mode = "FILL";
+        int priority = 0;
     };
 
     struct UniformParam

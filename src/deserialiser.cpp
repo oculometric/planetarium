@@ -670,6 +670,17 @@ void PTDeserialiser::deserialiseMaterial(const std::string& content, MaterialPar
             }
             textures[binding] = tex;
         }
+        else if (tokens[statement_first].s_value == "Priority")
+        {
+            auto args = deserialiseStatement(tokens, ++statement_first, true, false, res_map, content);
+            for (auto arg : args)
+            {
+                if (arg.second.type == ArgType::INT_ARG)
+                    params.priority = arg.second.i_val;
+            }
+            if (tokens[statement_first].type != TokenType::SEMICOLON)
+                reportError("expected semicolon", tokens[statement_first].start_offset, content);
+        }
         else
         {
             reportError("invalid statement", tokens[statement_first].start_offset, content);

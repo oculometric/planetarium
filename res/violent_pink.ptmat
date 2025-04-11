@@ -1,7 +1,9 @@
 Resource(shader, "demo") : shader;
 
+Depth(operation = "ALWAYS");
 Culling(mode = "NONE");
 Polygon(mode = "LINE");
+Priority(-1);
 
 Shader(resource = @shader);
 

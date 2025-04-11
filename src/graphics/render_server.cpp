@@ -290,9 +290,8 @@ void PTRenderServer::initVulkan(GLFWwindow* window, vector<const char*> glfw_ext
 
 	debugLog("    creating default material");
     default_material = PTResourceManager::get()->createMaterial("res/default.ptmat", swapchain, render_pass);
-//    default_material->setUniform(2, PTVector4f{ 1.0f, 0.0f, 1.0f, 1.0f });
 
-   debugLog("done.");
+    debugLog("done.");
 }
 
 void PTRenderServer::update()
@@ -1016,5 +1015,10 @@ int PTRenderServer::evaluatePhysicalDevice(PTPhysicalDevice d)
 
 bool PTRenderServer::DrawRequest::compare(const DrawRequest& a, const DrawRequest& b)
 {
-    return (a.material->getPriority() < b.material->getPriority()) && (a.material < b.material) && (a.mesh < b.mesh);
+    if (a.material->getPriority() > b.material->getPriority())
+        return true;
+    if (a.material->getPriority() < b.material->getPriority())
+        return false;
+
+    return (a.material < b.material) && (a.mesh < b.mesh);
 }

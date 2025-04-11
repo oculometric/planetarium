@@ -202,9 +202,6 @@
     <None Include="NODE.md">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="TODO.MD">
-      <Filter>Resource Files</Filter>
-    </None>
     <None Include="res\demo.ptscn">
       <Filter>Resource Files</Filter>
     </None>
@@ -212,6 +209,9 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="res\violent_pink.ptmat">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="doc\TODO.MD">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

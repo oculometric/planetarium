@@ -63,6 +63,8 @@ PTMaterial::PTMaterial(VkDevice _device, string material_path, PTRenderPass* _re
     map<uint16_t, PTImage*> textures;
     PTDeserialiser::deserialiseMaterial(text, params, shader, uniforms, textures);
 
+    setPriority(params.priority);
+
     initialiseMaterial(swapchain, params.depth_write, params.depth_test, 
         depth_ops.contains(params.depth_op) ? depth_ops[params.depth_op] : VK_COMPARE_OP_LESS, 
         cull_modes.contains(params.culling) ? cull_modes[params.culling] : VK_CULL_MODE_BACK_BIT, 
