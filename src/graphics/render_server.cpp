@@ -310,6 +310,8 @@ void PTRenderServer::update()
 
 void PTRenderServer::deinitVulkan()
 {
+    debugLog("destroying Vulkan...");
+
 	vkDeviceWaitIdle(device);
 
     default_material->removeReferencer();
@@ -341,6 +343,8 @@ void PTRenderServer::deinitVulkan()
 #endif
 
     vkDestroyInstance(instance, nullptr);
+
+    debugLog("done.");
 }
 
 void PTRenderServer::initVulkanInstance(vector<const char*>& layers, vector<const char*> extensions)

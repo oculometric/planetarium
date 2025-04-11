@@ -44,7 +44,7 @@ public:
     PTRenderPass* createRenderPass(std::vector<PTRenderPass::Attachment> attachments);
     PTShader* createShader(std::string shader_path_stub, bool is_precompiled, bool force_duplicate = false);
     PTSwapchain* createSwapchain(VkSurfaceKHR surface, int window_x, int window_y);
-    PTMaterial* createMaterial(std::string material_path, PTSwapchain* swapchain, PTRenderPass* render_pass, bool force_duplicate = false);
+    PTMaterial* createMaterial(std::string material_path, PTSwapchain* swapchain = nullptr, PTRenderPass* render_pass = nullptr, bool force_duplicate = false);
     PTMaterial* createMaterial(PTSwapchain* swapchain, PTRenderPass* _render_pass, PTShader* _shader, VkBool32 depth_write, VkBool32 depth_test, VkCompareOp depth_op, VkCullModeFlags culling, VkPolygonMode polygon_mode);
 
     template<class T>

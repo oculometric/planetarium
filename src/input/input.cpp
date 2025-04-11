@@ -1,17 +1,20 @@
 #include "input/input.h"
 
+#include <GLFW/glfw3.h>
+
 #include "debug.h"
+#include "input.h"
 
 using namespace std;
 
 PTInput* input_manager = nullptr;
 
-void PTInput::init()
+void PTInput::init(GLFWwindow* window)
 {
     if (input_manager != nullptr)
         return;
 
-    input_manager = new PTInput();
+    input_manager = new PTInput(window);
 }
 
 void PTInput::deinit()
@@ -63,20 +66,71 @@ PTVector2f PTInput::getJoystickState(PTGamepad::Axis axis) const
 
 void PTInput::handleKeyboardEvent(int key, int action, int mods)
 {
-    translate(key, action, mods);
+    Modifiers modifiers = Modifiers::NONE;
+    if (mods & GLFW_MOD_SHIFT)
+        modifiers = (Modifiers)(modifiers | Modifiers::SHIFT);
+    if (mods & GLFW_MOD_CONTROL)
+        modifiers = (Modifiers)(modifiers | Modifiers::CTRL);
+    if (mods & GLFW_MOD_ALT)
+        modifiers = (Modifiers)(modifiers | Modifiers::ALT);
+    
+    if (action == GLFW_RELEASE)
+        key_states[key] = KeyInfo{ State::RELEASED, Modifiers::NONE };
+    else if (action == GLFW_PRESS)
+        key_states[key] = KeyInfo{ (State)(State::PRESSED | State::DOWN), modifiers };
+    else if (action == GLFW_REPEAT)
+    {
+        if (wasKeyPressed(key)) key_states[key] = KeyInfo{ (State)(State::PRESSED | State::DOWN), modifiers };
+        else key_states[key] = KeyInfo{ State::DOWN, modifiers };
+    }
 }
 
-PTKeyState PTInput::getKeyState(int key) const
+bool PTInput::isKeyDown(int key) const
 {
-    if (key_states.contains(key))
-        return key_states.at(key);
-    return PTKeyState{ key, 0, 0 };
+    auto it = key_states.find(key);
+    if (it != key_states.end())
+        return (*it).second.state & State::DOWN;
+    
+    return false;
 }
 
-PTInput::PTInput()
+bool PTInput::wasKeyPressed(int key)
 {
-    for (uint8_t i = 0; i < 4; i++)
-        gamepads[i] = PTGamepad(i);
+    auto it = key_states.find(key);
+    if (it != key_states.end())
+    {
+        bool pressed = (*it).second.state & State::PRESSED;
+        if (pressed)
+            (*it).second.state = State::DOWN;
+        return pressed;
+    }
+    
+    return false;
+}
+
+bool PTInput::wasKeyReleased(int key)
+{
+    auto it = key_states.find(key);
+    if (it != key_states.end())
+    {
+        bool released = (*it).second.state & State::RELEASED;
+        if (released)
+            (*it).second.state = State::UP;
+        return released;
+    }
+    
+    return false;
+}
+
+PTInput::Modifiers PTInput::getKeyModifiers(int key) const
+{
+    auto it = key_states.find(key);
+    if (it != key_states.end())
+    {
+        return (*it).second.modifiers;
+    }
+    
+    return Modifiers::NONE;
 }
 
 void PTInput::pollGamepads()
@@ -90,15 +144,35 @@ void PTInput::pollGamepads()
     }
 }
 
-void PTInput::translate(int key, int action, int mods)
-{
-    if (action == 2) return;
-    
-    debugLog("keyboard event: key (" + to_string(key) + "), action (" + to_string(action) + "), mods (" + to_string(mods) + ")");
-    key_states[key] = PTKeyState{ key, action, mods };
-}
-
-void keyboardCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
+void PTInput::keyboardCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
     if (input_manager) input_manager->handleKeyboardEvent(key, action, mods);
+}
+
+PTInput::PTInput(GLFWwindow* window)
+{
+    glfwSetKeyCallback(window, keyboardCallback);
+
+    for (uint8_t i = 0; i < 4; i++)
+        gamepads[i] = PTGamepad(i);
+
+    should_exit = false;
+    mainloop_thread = thread([this] { this->mainLoop(); });
+}
+
+
+PTInput::~PTInput()
+{
+    should_exit = true;
+    
+    mainloop_thread.join();
+}
+
+void PTInput::mainLoop()
+{
+    while (!should_exit)
+    {
+        glfwPollEvents();
+        pollGamepads();
+    }
 }

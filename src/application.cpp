@@ -23,8 +23,7 @@ void PTApplication::start()
     program_start = chrono::high_resolution_clock::now();
 
     initWindow();
-    glfwSetKeyCallback(window, keyboardCallback);
-    PTInput::init();
+    PTInput::init(window);
 
 	uint32_t glfw_extension_count = 0;
     const char** glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extension_count);
@@ -72,9 +71,6 @@ void PTApplication::mainLoop()
     last_frame_start = chrono::high_resolution_clock::now();
     while (!glfwWindowShouldClose(window) && !should_stop)
     {
-        glfwPollEvents();
-        PTInput::get()->pollGamepads();
-
         auto now = chrono::high_resolution_clock::now();
         chrono::duration<float> frame_time = now - last_frame_start;
 

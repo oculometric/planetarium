@@ -2,26 +2,47 @@
 
 #include <stdint.h>
 #include <array>
-#include <GLFW/glfw3.h>
 #include <map>
+#include <thread>
 
 #include "gamepad.h"
 
-struct PTKeyState
-{
-    int key;
-    int action; // TODO: implement a system for detecting if key down on this frame
-    int modifiers;
-};
+struct GLFWwindow;
 
 class PTInput
 {
+public:
+    enum State
+    {
+        UP          = 0b0000,
+        DOWN        = 0b0001,
+        PRESSED     = 0b0010,
+        RELEASED    = 0b0100
+    };
+
+    enum Modifiers
+    {
+        NONE        = 0b0000,
+        SHIFT       = 0b0001,
+        CTRL        = 0b0010,
+        ALT         = 0b0100
+    };
+
+    struct KeyInfo
+    {
+        State state;
+        Modifiers modifiers;
+    };
+
 private:
     std::array<PTGamepad, 4> gamepads;
-    std::map<int, PTKeyState> key_states;
+    std::map<int, KeyInfo> key_states;
+
+    std::thread mainloop_thread;
+    bool should_exit = false;
 
 public:
-    static void init();
+    static void init(GLFWwindow* window);
     static void deinit();
     static PTInput* get();
 
@@ -30,22 +51,24 @@ public:
 
     bool getButtonState(PTGamepad::Button button) const;
     PTVector2f getJoystickState(PTGamepad::Axis axis) const;
-
-    void handleKeyboardEvent(int key, int action, int mods);
     
-    PTKeyState getKeyState(int key) const;
+    bool isKeyDown(int key) const;
+    bool wasKeyPressed(int key);
+    bool wasKeyReleased(int key);
+    Modifiers getKeyModifiers(int key) const;
 
     PTInput(PTInput& other) = delete;
     PTInput(PTInput&& other) = delete;
     PTInput operator=(PTInput& other) = delete;
     PTInput operator=(PTInput&& other) = delete;
 
-    void pollGamepads(); // TODO: make input run on its own thread
-
 private:
-    PTInput();
+    PTInput(GLFWwindow* window);
+    ~PTInput();
 
-    void translate(int key, int action, int mods);
+    static void keyboardCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+    void handleKeyboardEvent(int key, int action, int mods);
+    void pollGamepads();
+
+    void mainLoop();
 };
-
-void keyboardCallback(GLFWwindow* window, int key, int scancode, int action, int mods);

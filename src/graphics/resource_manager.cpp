@@ -9,6 +9,7 @@
 #include "pipeline.h"
 #include "shader.h"
 #include "swapchain.h"
+#include "render_server.h"
 
 using namespace std;
 
@@ -161,7 +162,7 @@ PTMaterial* PTResourceManager::createMaterial(std::string material_path, PTSwapc
     if (!force_duplicate)
         mt = tryGetExistingResource<PTMaterial>(identifier);
     if (mt == nullptr)
-        resources.emplace(identifier, mt = new PTMaterial(device, material_path, render_pass, swapchain));
+        resources.emplace(identifier, mt = new PTMaterial(device, material_path, render_pass == nullptr ? PTRenderServer::get()->getRenderPass() : render_pass, swapchain == nullptr ? PTRenderServer::get()->getSwapchain() : swapchain));
 
     mt->addReferencer();
 
@@ -209,8 +210,6 @@ PTScene* PTResourceManager::createScene(string file_name, bool force_duplicate)
     return scene;
 }
 
-#include "render_server.h"
-
 PTResource* PTResourceManager::createGeneric(string type, vector<PTDeserialiser::Argument> args)
 {
     if (type == "mesh")
@@ -247,7 +246,7 @@ PTResource* PTResourceManager::createGeneric(string type, vector<PTDeserialiser:
         if (args[0].type != PTDeserialiser::ArgType::STRING_ARG)
             return nullptr;
         
-        return createMaterial(args[0].s_val, PTRenderServer::get()->getSwapchain(), PTRenderServer::get()->getRenderPass());
+        return createMaterial(args[0].s_val);
     }
 
     return nullptr;
@@ -255,6 +254,8 @@ PTResource* PTResourceManager::createGeneric(string type, vector<PTDeserialiser:
 
 PTResourceManager::~PTResourceManager()
 {
+    debugLog("shutting down resource manager.");
+
     if (resources.empty())
     {
         debugLog("well done for cleaning up!");

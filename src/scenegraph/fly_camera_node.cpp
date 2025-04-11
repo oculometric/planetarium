@@ -12,19 +12,19 @@ void PTFlyCameraNode::process(float delta_time)
     PTInput* manager = PTInput::get();
 
     // set debug mode
-    PTRenderServer::get()->debug_mode = (manager->getKeyState('F').action == 1) || manager->getButtonState(PTGamepad::Button::CONTROL_SOUTH);
+    PTRenderServer::get()->debug_mode = manager->wasKeyPressed('F') || manager->getButtonState(PTGamepad::Button::CONTROL_SOUTH);
     // set screenshot wanted
-    if ((manager->getKeyState('P').action == 1) || manager->getButtonState(PTGamepad::Button::CONTROL_NORTH))
+    if (manager->wasKeyPressed('P') || manager->getButtonState(PTGamepad::Button::CONTROL_NORTH))
         PTRenderServer::get()->setWantsScreenshot();
 
     // keyboard movement vector
-    float keyboard_x = (float)(manager->getKeyState('D').action == 1) - (float)(manager->getKeyState('A').action == 1);
-    float keyboard_y = (float)(manager->getKeyState('W').action == 1) - (float)(manager->getKeyState('S').action == 1);
-    float keyboard_z = (float)(manager->getKeyState('E').action == 1) - (float)(manager->getKeyState('Q').action == 1);
+    float keyboard_x = (float)(manager->isKeyDown('D')) - (float)(manager->isKeyDown('A'));
+    float keyboard_y = (float)(manager->isKeyDown('W')) - (float)(manager->isKeyDown('S'));
+    float keyboard_z = (float)(manager->isKeyDown('E')) - (float)(manager->isKeyDown('Q'));
     
     // keyboard look vector
-    float keyboard_lx = (float)(manager->getKeyState('J').action == 1) - (float)(manager->getKeyState('L').action == 1);
-    float keyboard_ly = (float)(manager->getKeyState('I').action == 1) - (float)(manager->getKeyState('K').action == 1);
+    float keyboard_lx = (float)(manager->isKeyDown('J')) - (float)(manager->isKeyDown('L'));
+    float keyboard_ly = (float)(manager->isKeyDown('I')) - (float)(manager->isKeyDown('K'));
 
     // gamepad move vector
     PTVector2f move_axis = manager->getJoystickState(PTGamepad::Axis::LEFT_AXIS) + PTVector2f{ keyboard_x, -keyboard_y };

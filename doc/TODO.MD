@@ -12,11 +12,10 @@
 
 ## Engine Stuff
 
-- [ ] make input run on its own thread                    (2)
-- [ ] make float isDown and bool wasPressed and bool wasReleased functions for each keyboard key (3)
+- [ ] mouse input support
 - [ ] better way of specifying which keyboard key to check the state of (A vs a, etc)
 - [ ] cross platform controller support
-- [ ] mouse input support
+- [ ] lights
 - [ ] UI system (use STUI to generate charbufs, then pass it into a shader maybe????)
 - [ ] fix bug with quaternions where something goes to infinity
 - [ ] object and vertex picking
@@ -113,3 +112,5 @@
 - [x] allow materials on meshes
 - [x] show debug axes of objects currently hovered over (this should be a new Node type)
 - [x] runtime shader compilation
+- [x] make input run on its own thread
+- [x] make float isDown and bool wasPressed and bool wasReleased functions for each keyboard key

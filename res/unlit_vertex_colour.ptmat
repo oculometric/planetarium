@@ -1,0 +1,6 @@
+Resource(shader, "shr/unlit_vertex_colour") : shader;
+
+Shader(resource = @shader);
+
+Depth(operation = "ALWAYS", write = 0, test = 0);
+Priority(-10000);
