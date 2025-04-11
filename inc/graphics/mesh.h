@@ -28,6 +28,7 @@ private:
 
     PTBuffer* vertex_buffer = nullptr;
     PTBuffer* index_buffer = nullptr;
+    uint32_t vertex_count = 0;
     uint32_t index_count = 0;
 
     std::string origin_path;
@@ -41,9 +42,8 @@ public:
 
     inline VkBuffer getVertexBuffer() const { return vertex_buffer->getBuffer(); }
     inline VkBuffer getIndexBuffer() const { return index_buffer->getBuffer(); }
+    inline uint32_t getVertexCount() const { return vertex_count; }
     inline uint32_t getIndexCount() const { return index_count; }
-
-    // TODO: functions to update the contents of the buffers
 
     static VkVertexInputBindingDescription getVertexBindingDescription();
     static std::array<VkVertexInputAttributeDescription, 5> getVertexAttributeDescriptions();
@@ -55,5 +55,5 @@ private:
     ~PTMesh();
 
     static void readFileToBuffers(std::string file_name, std::vector<PTVertex>& vertices, std::vector<uint16_t>& indices);
-    void createVertexBuffers(const PTPhysicalDevice& physical_device, std::vector<PTVertex> vertices, std::vector<uint16_t> indices);
+    void createVertexBuffers(const PTPhysicalDevice& physical_device, const std::vector<PTVertex>& vertices, const std::vector<uint16_t>& indices);
 };

@@ -12,8 +12,8 @@
 
 ## Engine Stuff
 
-- [ ] make input run on its own thread                    (5)
-- [ ] make float isDown and bool wasPressed and bool wasReleased functions for each keyboard key
+- [ ] make input run on its own thread                    (2)
+- [ ] make float isDown and bool wasPressed and bool wasReleased functions for each keyboard key (3)
 - [ ] better way of specifying which keyboard key to check the state of (A vs a, etc)
 - [ ] cross platform controller support
 - [ ] mouse input support
@@ -38,6 +38,7 @@
 
 ## Misc
 
+- [ ] add a lot more catching of errors (vs just throwing them)
 - [ ] add a fuck ton of comments everywhere
 	- [ ] application
 	- [x] buffer

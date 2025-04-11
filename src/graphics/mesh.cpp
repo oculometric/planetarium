@@ -301,7 +301,7 @@ void PTMesh::readFileToBuffers(std::string file_name, std::vector<PTVertex>& ver
     }
 }
 
-void PTMesh::createVertexBuffers(const PTPhysicalDevice& physical_device, std::vector<PTVertex> vertices, std::vector<uint16_t> indices)
+void PTMesh::createVertexBuffers(const PTPhysicalDevice& physical_device, const std::vector<PTVertex>& vertices, const std::vector<uint16_t>& indices)
 {
     // vertex buffer creation (via staging buffer)
     VkDeviceSize size = sizeof(PTVertex) * vertices.size();
