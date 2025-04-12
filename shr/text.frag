@@ -56,6 +56,7 @@ void main()
     uint packed4 = packed16[(index / 4) % 4];
     uint value = (packed4 >> (8 * (index % 4))) % 256;
 
-    frag_colour = vec4(colours[value % 16], 1.0f);
+    //frag_colour = vec4(colours[value % 16], 1.0f);
+    frag_colour = texture(font_texture, varyings.uv);
     frag_normal = varyings.normal;
 }

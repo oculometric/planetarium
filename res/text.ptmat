@@ -1,3 +1,6 @@
 Resource(shader, "shr/text") : shader;
+Resource(image, "res/font.bmp") : font;
 
 Shader(resource = @shader);
+
+Texture(binding = 3, resource = @font);

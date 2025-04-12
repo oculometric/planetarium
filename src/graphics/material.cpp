@@ -68,8 +68,8 @@ PTMaterial::PTMaterial(VkDevice _device, string material_path, PTRenderPass* _re
 
     PTDeserialiser::MaterialParams params;
     vector<PTDeserialiser::UniformParam> uniforms;
-    map<uint16_t, PTImage*> textures;
-    PTDeserialiser::deserialiseMaterial(text, params, shader, uniforms, textures);
+    map<uint16_t, PTImage*> _textures;
+    PTDeserialiser::deserialiseMaterial(text, params, shader, uniforms, _textures);
 
     setPriority(params.priority);
 
@@ -106,7 +106,11 @@ PTMaterial::PTMaterial(VkDevice _device, string material_path, PTRenderPass* _re
         if (data_offset + data_size <= buf_size)
             memcpy(target + data_offset, data, data_size);
     }
-    // TODO: support texture reading!
+    
+    for (auto pair : _textures)
+    {
+        setTexture(pair.first, pair.second);
+    }
 }
 
 PTMaterial::PTMaterial(VkDevice _device, PTRenderPass* _render_pass, PTSwapchain* swapchain, PTShader* _shader, VkBool32 depth_write, VkBool32 depth_test, VkCompareOp depth_op, VkCullModeFlags culling, VkPolygonMode polygon_mode)
@@ -123,6 +127,13 @@ PTMaterial::~PTMaterial()
     for (auto pair : uniform_buffers)
     {
         removeDependency(pair.second);
+    }
+
+    for (auto pair : textures)
+    {
+        vkDestroyImageView(device, pair.second.second.first, nullptr);
+        removeDependency(pair.second.first);
+        removeDependency(pair.second.second.second);
     }
 
     removeDependency(render_pass);
@@ -200,22 +211,36 @@ void PTMaterial::setTexture(uint16_t bind_point, PTImage* texture)
         return;
     }
 
+    // if it's the same texture that's already bound, do nothing
+    if (texture == textures[bind_point].first && texture != nullptr)
+        return;
+
     // if a texture is already bound, destroy it
     auto it = textures.find(bind_point);
-    if (it != textures.end())
+    if (it != textures.end() && it->second.first != nullptr)
     {
         vkDestroyImageView(device, it->second.second.first, nullptr);
         removeDependency(it->second.first);
         removeDependency(it->second.second.second);
     }
 
-    addDependency(texture);
-    textures[bind_point] = { texture, 
+    if (texture != nullptr)
     {
-        texture->createImageView(VK_IMAGE_ASPECT_COLOR_BIT),
-        PTResourceManager::get()->createSampler(VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_LINEAR, VK_FILTER_LINEAR, 2)
-    } };
-    addDependency(textures[bind_point].second.second, false);
+        addDependency(texture);
+        textures[bind_point] = { texture, 
+        {
+            texture->createImageView(VK_IMAGE_ASPECT_COLOR_BIT),
+            PTResourceManager::get()->createSampler(VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_NEAREST, VK_FILTER_NEAREST, 2)
+        } };
+        addDependency(textures[bind_point].second.second, false);
+    }
+    else
+    {
+        // if the texture is null, use the blank default image
+        PTImage* img = PTResourceManager::get()->createImage("res/blank.bmp");
+        setTexture(bind_point, img);
+        img->removeReferencer();
+    }
     needs_texture_update = true;
 }
 
@@ -238,13 +263,17 @@ void PTMaterial::initialiseMaterial(PTSwapchain* swapchain, VkBool32 depth_write
             || binding_info.bind_point == SCENE_UNIFORM_BINDING)
             continue;
 
-        // only create a buffer if it's a uniform buffer
-        if (binding_info.type != VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
-            continue;
-
-        PTBuffer* buffer = PTResourceManager::get()->createBuffer(binding_info.size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-        uniform_buffers[binding_info.bind_point] = buffer;
-        addDependency(buffer, false);
+        // create a buffer if it's a uniform buffer, otherwise bind the blank texture
+        if (binding_info.type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
+        {
+            PTBuffer* buffer = PTResourceManager::get()->createBuffer(binding_info.size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+            uniform_buffers[binding_info.bind_point] = buffer;
+            addDependency(buffer, false);
+        }
+        else if (binding_info.type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
+        {
+            setTexture(binding_info.bind_point, nullptr);
+        }
     }
 
     addDependency(shader, true);

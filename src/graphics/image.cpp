@@ -6,6 +6,7 @@
 #include "buffer.h"
 #include "render_server.h"
 #include "resource_manager.h"
+#include "bitmap.h"
 
 using namespace std;
 
@@ -20,23 +21,28 @@ PTImage::PTImage(VkDevice _device, string texture_path, PTPhysicalDevice physica
 {
     device = _device;
     origin_path = texture_path;
-    // TODO: load an image to a memory buffer from the file
-    //OLImage texture(texture_file);
-    VkDeviceSize image_size = 0;//texture.getSize().x * texture.getSize().y * 4;
+
+    char* data;
+    int32_t _width;
+    int32_t _height;
+    if (!readRGBABitmap(texture_path, data, _width, _height))
+        throw runtime_error("unable to read texture file '" + texture_path + "'");
+    VkDeviceSize image_size = _width * _height * 4;
 
     PTBuffer* staging_buffer = PTResourceManager::get()->createBuffer(image_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-    //void* data = staging_buffer->map();
-    //memcpy(data, texture.getData(), static_cast<size_t>(image_size));
-    //staging_buffer->unmap();
+    void* mapped_buffer = staging_buffer->map();
+    memcpy(mapped_buffer, data, static_cast<size_t>(image_size));
+    staging_buffer->unmap();
+    delete[] data;
 
-    createImage(physical_device, VkExtent2D{ /*texture.getSize().x, texture.getSize().y*/ 0, 0 }, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    createImage(physical_device, VkExtent2D{ static_cast<uint32_t>(_width), static_cast<uint32_t>(_height) }, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
     copyBufferToImage(staging_buffer->getBuffer());
     transitionImageLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-    PTResourceManager::get()->releaseResource(staging_buffer);
+    staging_buffer->removeReferencer();
 }
 
 VkImageView PTImage::createImageView(VkImageAspectFlags aspect_flags)

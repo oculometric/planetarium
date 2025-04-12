@@ -30,6 +30,7 @@ struct PTBitmapInfoHeader
     uint32_t important_colours = 0;
 };
 
-bool writeRGBABitmap(std::string path, void* data, int32_t width, int32_t height);
+bool writeRGBABitmap(std::string path, char* data, int32_t width, int32_t height);
+bool readRGBABitmap(std::string path, char*& data, int32_t& width, int32_t& height); // TODO: improve the reading and writing of image files
 
 #pragma pack(pop)

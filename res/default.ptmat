@@ -1,5 +1,4 @@
 Resource(shader, "shr/demo") : shader;
-//Resource(image, "demo.bmp") : albedo;
 
 Depth(operation = "LESS", test = 1, write = 1);
 Culling(mode = "BACK");
@@ -12,5 +11,3 @@ Uniform(binding = 2)
     [ 0.2, 1.0, 0.2, 1.0 ],     // colour
     0.6                         // roughness
 };
-
-//Texture(binding = 3, resource = @albedo);

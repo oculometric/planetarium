@@ -959,7 +959,7 @@ void PTRenderServer::takeScreenshot(uint32_t frame_index)
 
     screenshot_img->removeReferencer();
 
-    writeRGBABitmap("screenshot.bmp", host_buffer->map(), ext.width, ext.height);
+    writeRGBABitmap("screenshot.bmp", (char*)(host_buffer->map()), ext.width, ext.height);
 
     host_buffer->removeReferencer();
     wants_screenshot = false;
