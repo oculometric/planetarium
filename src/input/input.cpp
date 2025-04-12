@@ -75,13 +75,43 @@ void PTInput::handleKeyboardEvent(int key, int action, int mods)
         modifiers = (Modifiers)(modifiers | Modifiers::ALT);
     
     if (action == GLFW_RELEASE)
-        key_states[key] = KeyInfo{ State::RELEASED, Modifiers::NONE };
+        key_states[key] = StateInfo{ State::RELEASED, Modifiers::NONE };
     else if (action == GLFW_PRESS)
-        key_states[key] = KeyInfo{ (State)(State::PRESSED | State::DOWN), modifiers };
+        key_states[key] = StateInfo{ (State)(State::PRESSED | State::DOWN), modifiers };
     else if (action == GLFW_REPEAT)
     {
-        if (wasKeyPressed(key)) key_states[key] = KeyInfo{ (State)(State::PRESSED | State::DOWN), modifiers };
-        else key_states[key] = KeyInfo{ State::DOWN, modifiers };
+        if (wasKeyPressed(key)) key_states[key] = StateInfo{ (State)(State::PRESSED | State::DOWN), modifiers };
+        else key_states[key] = StateInfo{ State::DOWN, modifiers };
+    }
+}
+
+void PTInput::handleMouseEvent(int button, int action, int mods)
+{
+    Modifiers modifiers = Modifiers::NONE;
+    if (mods & GLFW_MOD_SHIFT)
+        modifiers = (Modifiers)(modifiers | Modifiers::SHIFT);
+    if (mods & GLFW_MOD_CONTROL)
+        modifiers = (Modifiers)(modifiers | Modifiers::CTRL);
+    if (mods & GLFW_MOD_ALT)
+        modifiers = (Modifiers)(modifiers | Modifiers::ALT);
+
+    MouseButton but = MouseButton::MOUSE_NONE;
+    switch (button)
+    {
+        case GLFW_MOUSE_BUTTON_LEFT: but = MOUSE_LEFT; break;
+        case GLFW_MOUSE_BUTTON_RIGHT: but = MOUSE_RIGHT; break;
+        case GLFW_MOUSE_BUTTON_MIDDLE: but = MOUSE_MIDDLE; break;
+        default: but = MOUSE_NONE; break;
+    }
+
+    if (action == GLFW_RELEASE)
+        mouse_states[but] = StateInfo{ State::RELEASED, Modifiers::NONE };
+    else if (action == GLFW_PRESS)
+        mouse_states[but] = StateInfo{ (State)(State::PRESSED | State::DOWN), modifiers };
+    else if (action == GLFW_REPEAT)
+    {
+        if (wasMousePressed(but)) mouse_states[but] = StateInfo{ (State)(State::PRESSED | State::DOWN), modifiers };
+        else mouse_states[but] = StateInfo{ State::DOWN, modifiers };
     }
 }
 
@@ -133,6 +163,60 @@ PTInput::Modifiers PTInput::getKeyModifiers(int key) const
     return Modifiers::NONE;
 }
 
+bool PTInput::isMouseDown(MouseButton button) const
+{
+    auto it = mouse_states.find(button);
+    if (it != mouse_states.end())
+        return (*it).second.state & State::DOWN;
+    
+    return false;
+}
+
+bool PTInput::wasMousePressed(MouseButton button)
+{
+    auto it = mouse_states.find(button);
+    if (it != mouse_states.end())
+    {
+        bool pressed = (*it).second.state & State::PRESSED;
+        if (pressed)
+            (*it).second.state = State::DOWN;
+        return pressed;
+    }
+    
+    return false;
+}
+
+bool PTInput::wasMouseReleased(MouseButton button)
+{
+    auto it = mouse_states.find(button);
+    if (it != mouse_states.end())
+    {
+        bool released = (*it).second.state & State::RELEASED;
+        if (released)
+            (*it).second.state = State::UP;
+        return released;
+    }
+    
+    return false;
+}
+
+PTVector2i PTInput::getMousePosition() const
+{
+    return mouse_position;
+}
+
+void PTInput::setMousePosition(PTVector2i position)
+{
+    mouse_position = position;
+    glfwSetCursorPos(window, static_cast<double>(position.x), static_cast<double>(position.y));
+}
+
+void PTInput::setMouseVisible(bool visible)
+{
+    if (visible) glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    else glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+}
+
 void PTInput::pollGamepads()
 {
     for (uint8_t i = 0; i < gamepads.size(); i++)
@@ -149,9 +233,22 @@ void PTInput::keyboardCallback(GLFWwindow* window, int key, int scancode, int ac
     if (input_manager) input_manager->handleKeyboardEvent(key, action, mods);
 }
 
-PTInput::PTInput(GLFWwindow* window)
+void PTInput::cursorCallback(GLFWwindow* window, double xpos, double ypos)
 {
+    if (input_manager) input_manager->mouse_position = PTVector2i{ static_cast<int32_t>(xpos), static_cast<int32_t>(ypos) };
+}
+
+void PTInput::mouseButtonCallback(GLFWwindow* window, int button, int action, int mods)
+{
+    if (input_manager) input_manager->handleMouseEvent(button, action, mods);
+}
+
+PTInput::PTInput(GLFWwindow* _window)
+{
+    window = _window;
     glfwSetKeyCallback(window, keyboardCallback);
+    glfwSetCursorPosCallback(window, cursorCallback);
+    glfwSetMouseButtonCallback(window, mouseButtonCallback);
 
     for (uint8_t i = 0; i < 4; i++)
         gamepads[i] = PTGamepad(i);

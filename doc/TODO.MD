@@ -8,25 +8,19 @@
 - [ ] sampler and image mipmaps
 - [ ] custom buffers for shaders to write extra data into - ability to configure these (add/remove from render pass)
 - [ ] post processing support
+- [ ] ray traced ambient occlusion pass
 
 ## Engine Stuff
 
-- [ ] mouse input support                                 (2)
-      - [ ] getting mouse position
-      - [ ] getting mouse motion since.. ???
-      - [ ] setting mouse visbility
-      - [ ] setting mouse position
-      - [ ] setting mouse locking
-      - [ ] getting mouse down, pressed, released
-      - [ ] raw motion?
-      - [ ] getting cursor in window
+
 - [ ] new PTFile module for file IO
       - [ ] engine data packaged into executable
       - [ ] new path resolution system/file loading which allows loading engine data directly out of the executable
       - [ ] organise this, the text-file reading util, and the bitmap loader into the new module
       - [ ] better bitmap image loading (support more formats)
+- [ ] ability to get mouse delta this frame
 - [ ] better way of specifying which keyboard key to check the state of (A vs a, etc)
-- [ ] cross platform controller support
+- [ ] cross platform controller support (using GLFW probably)
 - [ ] lights                                              (3)
 - [ ] UI system (use STUI to generate charbufs, then pass it into a shader maybe????)
 - [ ] fix bug with quaternions where something goes to infinity
@@ -135,3 +129,12 @@
       - [x] texture descriptors
       - [x] respect priority system
       - [x] read material priority from file
+- [x] mouse input support
+      - [x] getting mouse position
+      - [x] getting mouse motion since
+      - [x] setting mouse visbility
+      - [x] setting mouse position
+      - [x] setting mouse locking
+      - [x] getting mouse down, pressed, released
+      - [x] raw motion?
+      - [x] getting cursor in window

@@ -12,14 +12,7 @@ struct GLFWwindow;
 class PTInput
 {
 public:
-    enum State
-    {
-        UP          = 0b0000,
-        DOWN        = 0b0001,
-        PRESSED     = 0b0010,
-        RELEASED    = 0b0100
-    };
-
+    
     enum Modifiers
     {
         NONE        = 0b0000,
@@ -28,15 +21,36 @@ public:
         ALT         = 0b0100
     };
 
-    struct KeyInfo
+    enum MouseButton
     {
-        State state;
-        Modifiers modifiers;
+        MOUSE_NONE      = 0b0000,
+        MOUSE_LEFT      = 0b0001,
+        MOUSE_RIGHT     = 0b0010,
+        MOUSE_MIDDLE    = 0b0100
+    };
+
+private:
+    enum State
+    {
+        UP          = 0b0000,
+        DOWN        = 0b0001,
+        PRESSED     = 0b0010,
+        RELEASED    = 0b0100
+    };
+
+    struct StateInfo
+    {
+        State state = UP;
+        Modifiers modifiers = NONE;
     };
 
 private:
     std::array<PTGamepad, 4> gamepads;
-    std::map<int, KeyInfo> key_states;
+    std::map<int, StateInfo> key_states;
+    std::map<MouseButton, StateInfo> mouse_states;
+    PTVector2i mouse_position;
+
+    GLFWwindow* window;
 
     std::thread mainloop_thread;
     bool should_exit = false;
@@ -57,17 +71,30 @@ public:
     bool wasKeyReleased(int key);
     Modifiers getKeyModifiers(int key) const;
 
+    bool isMouseDown(MouseButton button) const;
+    bool wasMousePressed(MouseButton button);
+    bool wasMouseReleased(MouseButton button);
+
+    PTVector2i getMousePosition() const;
+    void setMousePosition(PTVector2i position);
+    void setMouseVisible(bool visible);
+
+    // TODO: scroll wheel detection
+
     PTInput(PTInput& other) = delete;
     PTInput(PTInput&& other) = delete;
     PTInput operator=(PTInput& other) = delete;
     PTInput operator=(PTInput&& other) = delete;
 
 private:
-    PTInput(GLFWwindow* window);
+    PTInput(GLFWwindow* _window);
     ~PTInput();
 
     static void keyboardCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+    static void cursorCallback(GLFWwindow* window, double xpos, double ypos);
+    static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
     void handleKeyboardEvent(int key, int action, int mods);
+    void handleMouseEvent(int button, int action, int mods);
     void pollGamepads();
 
     void mainLoop();
