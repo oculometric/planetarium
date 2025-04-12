@@ -66,6 +66,15 @@ inline T* PTScene::instantiate(std::string name, PTDeserialiser::ArgMap argument
 }
 
 template<class T>
+inline T* PTScene::findNode(std::string name) const
+{
+    if (all_nodes.contains(name))
+        return dynamic_cast<T*>(all_nodes.find(name)->second);
+        
+    return nullptr;
+}
+
+template<class T>
 inline T* PTScene::getResource(std::string identifier)
 {
     static_assert(std::is_base_of<PTResource, T>::value, "T is not a PTResource type");

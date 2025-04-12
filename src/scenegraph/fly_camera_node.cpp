@@ -4,11 +4,15 @@
 
 using namespace std;
 
-#include "input/input.h"
+#include "input.h"
 #include "render_server.h"
+#include "scene.h"
 
 void PTFlyCameraNode::process(float delta_time)
 {
+    PTNode* parent = getScene()->findNode<PTNode>("parent");
+    parent->getTransform()->rotate(delta_time * 30.0f, PTVector3f::forward(), parent->getTransform()->getPosition());
+
     PTInput* manager = PTInput::get();
 
     // set debug mode
