@@ -5,14 +5,22 @@
 - [ ] material system
       - [x] read material from file
       - [x] implement proper shader reflection
-      - [ ] texture descriptors                           (3)
+      - [ ] texture descriptors                           (1)
       - [x] respect priority system
       - [x] read material priority from file
 - [ ] mesh data updating
 
 ## Engine Stuff
 
-- [ ] mouse input support
+- [ ] mouse input support                                 (2)
+      - [ ] getting mouse position
+      - [ ] getting mouse motion since.. ???
+      - [ ] setting mouse visbility
+      - [ ] setting mouse position
+      - [ ] setting mouse locking
+      - [ ] getting mouse down, pressed, released
+      - [ ] raw motion?
+      - [ ] getting cursor in window
 - [ ] better way of specifying which keyboard key to check the state of (A vs a, etc)
 - [ ] cross platform controller support
 - [ ] lights
