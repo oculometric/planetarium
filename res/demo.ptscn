@@ -1,5 +1,5 @@
-Resource(mesh, "res/obj/suzanne.obj") : 4a3b825f;
-Resource(mesh, "res/obj/teapot.obj") : teapot_mesh;
+Resource(mesh, "res/engine/mesh/suzanne.obj") : 4a3b825f;
+Resource(mesh, "res/engine/mesh/teapot.obj") : teapot_mesh;
 Resource(mesh, "res/desert_surrealism.obj") : origin_mesh;
 Resource(material, "res/violent_pink.ptmat") : pink;
 

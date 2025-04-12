@@ -2,12 +2,6 @@
 
 ## Vulkan Stuff
 
-- [ ] material system
-      - [x] read material from file
-      - [x] implement proper shader reflection
-      - [ ] texture descriptors                           (1)
-      - [x] respect priority system
-      - [x] read material priority from file
 - [ ] mesh data updating
 
 ## Engine Stuff
@@ -45,6 +39,7 @@
 
 ## Misc
 
+- [ ] document scene and material specifications
 - [ ] add a lot more catching of errors (vs just throwing them)
 - [ ] add a fuck ton of comments everywhere
 	- [ ] application
@@ -123,3 +118,9 @@
 - [x] runtime shader compilation
 - [x] make input run on its own thread
 - [x] make float isDown and bool wasPressed and bool wasReleased functions for each keyboard key
+- [x] material system
+      - [x] read material from file
+      - [x] implement proper shader reflection
+      - [x] texture descriptors
+      - [x] respect priority system
+      - [x] read material priority from file

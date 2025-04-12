@@ -1,5 +1,5 @@
-Resource(shader, "shr/text") : shader;
-Resource(image, "res/font.bmp") : font;
+Resource(shader, "res/text") : shader;
+Resource(image, "res/peter.bmp") : font;
 
 Shader(resource = @shader);
 

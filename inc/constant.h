@@ -16,8 +16,9 @@ const uint32_t MAX_FRAMES_IN_FLIGHT = 2;
 const uint16_t TRANSFORM_UNIFORM_BINDING = 0;
 const uint16_t SCENE_UNIFORM_BINDING = 1;
 
-static const char* DEFAULT_SHADER_PATH = "shr/demo";
-static const char* DEFAULT_MATERIAL_PATH = "res/default.ptmat";
+static const char* DEFAULT_SHADER_PATH = "res/engine/shader/default";
+static const char* DEFAULT_MATERIAL_PATH = "res/engine/material/default.ptmat";
+static const char* DEFAULT_TEXTURE_PATH = "res/engine/texture/blank.bmp";
 
 #ifdef _MSC_VER
 #pragma warning(pop)

@@ -56,8 +56,8 @@ void PTGizmoNode::process(float delta_time)
 
 PTGizmoNode::PTGizmoNode(PTDeserialiser::ArgMap arguments)
 {
-    axes_mesh = PTResourceManager::get()->createMesh("res/debug_axes.obj");
-    material = PTResourceManager::get()->createMaterial("res/unlit_vertex_colour.ptmat");
+    axes_mesh = PTResourceManager::get()->createMesh("res/engine/mesh/debug_axes.obj");
+    material = PTResourceManager::get()->createMaterial("res/engine/material/unlit_overlay.ptmat");
     addDependency(axes_mesh, false);
     addDependency(material, false);
 }

@@ -84,7 +84,11 @@ PTMaterial::PTMaterial(VkDevice _device, string material_path, PTRenderPass* _re
     PTDeserialiser::MaterialParams params;
     vector<PTDeserialiser::UniformParam> uniforms;
     map<uint16_t, PTDeserialiser::TextureParam> _textures;
+        
     PTDeserialiser::deserialiseMaterial(text, params, shader, uniforms, _textures);
+
+    if (shader == nullptr)
+        shader = PTResourceManager::get()->createShader(DEFAULT_SHADER_PATH, false);
 
     setPriority(params.priority);
 
@@ -255,7 +259,7 @@ void PTMaterial::setTexture(uint16_t bind_point, PTImage* texture, VkSamplerAddr
     else
     {
         // if the texture is null, use the blank default image
-        PTImage* img = PTResourceManager::get()->createImage("res/blank.bmp");
+        PTImage* img = PTResourceManager::get()->createImage(DEFAULT_TEXTURE_PATH);
         setTexture(bind_point, img);
         img->removeReferencer();
     }

@@ -43,7 +43,8 @@ bool writeRGBABitmap(string path, char* data, int32_t width, int32_t height)
         other_buf[(i * 4) + 3] = data[(i * 4) + 3];
     }
 
-    file.write((char*)data, info_header.data_length);
+    file.write((char*)other_buf, info_header.data_length);
+    delete[] other_buf;
 
     file.close();
 

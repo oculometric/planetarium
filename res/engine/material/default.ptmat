@@ -1,4 +1,4 @@
-Resource(shader, "shr/demo") : shader;
+Resource(shader, "res/engine/shader/default") : shader;
 
 Depth(operation = "LESS", test = 1, write = 1);
 Culling(mode = "BACK");

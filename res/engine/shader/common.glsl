@@ -4,7 +4,6 @@ layout(location = 2) in vec3 vert_normal; \
 layout(location = 3) in vec3 vert_tangent; \
 layout(location = 4) in vec2 vert_uv;
 
-// TODO: add lighting
 #define UNIFORM_TRANSFORM layout(binding = 0) uniform TransformUniforms \
 { \
     mat4 model_to_world; \
@@ -13,6 +12,7 @@ layout(location = 4) in vec2 vert_uv;
     uint object_id; \
 } transform;
 
+// TODO: add lighting
 #define UNIFORM_SCENE layout(binding = 1) uniform SceneUniforms \
 { \
 	vec2 viewport_size; \

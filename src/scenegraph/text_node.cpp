@@ -25,7 +25,7 @@ void PTTextNode::updateText(std::string _text)
 PTTextNode::PTTextNode(PTDeserialiser::ArgMap arguments) : PTNode(arguments)
 {
     material = PTResourceManager::get()->createMaterial("res/text.ptmat");
-    mesh = PTResourceManager::get()->createMesh("res/obj/plane.obj");
+    mesh = PTResourceManager::get()->createMesh("res/engine/mesh/plane.obj");
 
     addDependency(material, false);
     addDependency(mesh, false);
