@@ -3,6 +3,11 @@
 ## Vulkan Stuff
 
 - [ ] mesh data updating
+- [ ] give pipeline option to use mesh as line
+- [ ] give shader ability to detect where uniforms are used to reduce binding requirements
+- [ ] sampler and image mipmaps
+- [ ] custom buffers for shaders to write extra data into - ability to configure these (add/remove from render pass)
+- [ ] post processing support
 
 ## Engine Stuff
 
@@ -15,9 +20,14 @@
       - [ ] getting mouse down, pressed, released
       - [ ] raw motion?
       - [ ] getting cursor in window
+- [ ] new PTFile module for file IO
+      - [ ] engine data packaged into executable
+      - [ ] new path resolution system/file loading which allows loading engine data directly out of the executable
+      - [ ] organise this, the text-file reading util, and the bitmap loader into the new module
+      - [ ] better bitmap image loading (support more formats)
 - [ ] better way of specifying which keyboard key to check the state of (A vs a, etc)
 - [ ] cross platform controller support
-- [ ] lights
+- [ ] lights                                              (3)
 - [ ] UI system (use STUI to generate charbufs, then pass it into a shader maybe????)
 - [ ] fix bug with quaternions where something goes to infinity
 - [ ] object and vertex picking
@@ -36,6 +46,7 @@
 - [ ] spaceship terminal interface/look
 - [ ] google earth replacement
 - [ ] dernacueilliette walkaround scene
+- [ ] text shader                                         (1)
 
 ## Misc
 
