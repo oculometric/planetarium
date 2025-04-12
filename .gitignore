@@ -6,3 +6,6 @@ bin
 /x64
 planetarium.log
 screenshot.bmp
+*.kra~
+*.kra-autosave.kra
+*.bmp~
