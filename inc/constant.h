@@ -17,6 +17,7 @@ const uint16_t TRANSFORM_UNIFORM_BINDING = 0;
 const uint16_t SCENE_UNIFORM_BINDING = 1;
 
 static const char* DEFAULT_SHADER_PATH = "shr/demo";
+static const char* DEFAULT_MATERIAL_PATH = "res/default.ptmat";
 
 #ifdef _MSC_VER
 #pragma warning(pop)

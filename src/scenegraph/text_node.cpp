@@ -7,8 +7,20 @@
 
 struct TextBuffer
 {
-    uint32_t text[256];
+    PTVector4u text[64] = { 0 };
 };
+
+#define min(a,b) a > b ? b : a
+
+void PTTextNode::updateText(std::string _text)
+{
+    text = _text;
+
+    TextBuffer buf;
+    memcpy((void*)(&buf), text.data(), min(text.size(), 64 * 4 * 4));
+
+    material->setUniform(2, buf);
+}
 
 PTTextNode::PTTextNode(PTDeserialiser::ArgMap arguments) : PTNode(arguments)
 {
@@ -20,17 +32,8 @@ PTTextNode::PTTextNode(PTDeserialiser::ArgMap arguments) : PTNode(arguments)
 
     PTRenderServer::get()->addDrawRequest(this, mesh, material);
 
-    TextBuffer text;
-    text.text[0] = 1;
-    text.text[1] = 1;
-    text.text[2] = 0;
-    text.text[3] = 0;
-    text.text[3] = 4;
-    text.text[3] = 2;
-    text.text[3] = 2;
-    text.text[3] = 4;
-
-    material->setUniform(2, text);
+    updateText(text);
+    updateText("Hello, World!    ABCDEFGHIJKLMNOPQRSTUVWXYZ    abcdefghijklmnopqrstuvwxyz");
 }
 
 PTTextNode::~PTTextNode()

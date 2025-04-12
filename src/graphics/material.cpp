@@ -50,7 +50,13 @@ PTMaterial::PTMaterial(VkDevice _device, string material_path, PTRenderPass* _re
 
     ifstream file(material_path, ios::ate);
     if (!file.is_open())
-        throw runtime_error("material path does not exist");
+    {
+        debugLog("ERROR: material file not found");
+
+        file.open(DEFAULT_MATERIAL_PATH, ios::ate);
+        if (!file.is_open())
+            throw runtime_error("failed to load default material");
+    }
 
     size_t size = file.tellg();
     string text;

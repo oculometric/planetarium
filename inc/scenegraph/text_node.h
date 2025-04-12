@@ -7,12 +7,13 @@ class PTMesh;
 class PTTextNode : public PTNode
 {
 	friend class PTResourceManager;
-public:
-	std::string text = "Hello, World!";
-
 private:
+	std::string text = "Hello, World!";
 	PTMesh* mesh = nullptr;
 	PTMaterial* material = nullptr;
+
+public:
+	void updateText(std::string _text);
 
 protected:
 	PTTextNode(PTDeserialiser::ArgMap arguments);
