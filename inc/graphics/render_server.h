@@ -132,6 +132,7 @@ private:
     void destroyDebugUtilsMessenger(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger);
 
     void updateSceneAndTransformUniforms(uint32_t frame_index);
+    void updateTextureBindings();
     void drawFrame(uint32_t frame_index);
 
     void resizeSwapchain();

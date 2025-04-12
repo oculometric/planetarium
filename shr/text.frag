@@ -11,6 +11,8 @@ layout(binding = UNIFORM_OFFSET + 0) uniform TextBuffer
     uvec4[64] text;
 } text_buffer;
 
+layout(binding = UNIFORM_OFFSET + 1) uniform sampler2D font_texture;
+
 VARYING_COMMON(in)
 
 FRAGMENT_OUTPUTS

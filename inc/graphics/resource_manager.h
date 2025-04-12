@@ -21,6 +21,7 @@ class PTRenderPass;
 class PTShader;
 class PTSwapchain;
 class PTMaterial;
+class PTSampler;
 
 class PTResourceManager
 {
@@ -46,6 +47,7 @@ public:
     PTSwapchain* createSwapchain(VkSurfaceKHR surface, int window_x, int window_y);
     PTMaterial* createMaterial(std::string material_path, PTSwapchain* swapchain = nullptr, PTRenderPass* render_pass = nullptr, bool force_duplicate = false);
     PTMaterial* createMaterial(PTSwapchain* swapchain, PTRenderPass* _render_pass, PTShader* _shader, VkBool32 depth_write, VkBool32 depth_test, VkCompareOp depth_op, VkCullModeFlags culling, VkPolygonMode polygon_mode);
+    PTSampler* createSampler(VkSamplerAddressMode _address_mode, VkFilter _min_filter, VkFilter _mag_filter, uint32_t _max_anisotropy, bool force_duplicate = false);
 
     template<class T>
     T* createNode(PTDeserialiser::ArgMap arguments);

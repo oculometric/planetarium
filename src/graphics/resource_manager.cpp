@@ -10,6 +10,7 @@
 #include "shader.h"
 #include "swapchain.h"
 #include "render_server.h"
+#include "sampler.h"
 
 using namespace std;
 
@@ -178,6 +179,21 @@ PTMaterial* PTResourceManager::createMaterial(PTSwapchain* swapchain, PTRenderPa
     mt->addReferencer();
 
     return mt;
+}
+
+PTSampler* PTResourceManager::createSampler(VkSamplerAddressMode _address_mode, VkFilter _min_filter, VkFilter _mag_filter, uint32_t _max_anisotropy, bool force_duplicate)
+{
+    string identifier = "sampler-" + to_string(_address_mode) + '-' + to_string(_min_filter) + '-' + to_string(_mag_filter) + '-' + to_string(_max_anisotropy);
+    PTSampler* sm;
+
+    if (!force_duplicate)
+        sm = tryGetExistingResource<PTSampler>(identifier);
+    if (sm == nullptr)
+        resources.emplace(identifier, sm = new PTSampler(device, _address_mode, _min_filter, _mag_filter, _max_anisotropy));
+
+    sm->addReferencer();
+
+    return sm;
 }
 
 PTScene* PTResourceManager::createScene(string file_name, bool force_duplicate)

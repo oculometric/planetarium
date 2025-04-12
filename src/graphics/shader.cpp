@@ -41,8 +41,8 @@ PTShader::PTShader(VkDevice _device, const string shader_path_stub, bool is_prec
     }
 
     // these bindings should always be binding 0 and 1, and should always be present
-    descriptor_bindings.push_back(UniformDescriptor{ "TransformUniforms", TRANSFORM_UNIFORM_BINDING, sizeof(TransformUniforms) });
-    descriptor_bindings.push_back(UniformDescriptor{ "SceneUniforms", SCENE_UNIFORM_BINDING, sizeof(SceneUniforms) });
+    descriptor_bindings.push_back(BindingInfo{ "TransformUniforms", TRANSFORM_UNIFORM_BINDING, sizeof(TransformUniforms), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER });
+    descriptor_bindings.push_back(BindingInfo{ "SceneUniforms", SCENE_UNIFORM_BINDING, sizeof(SceneUniforms), VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER });
     createDescriptorSetLayout();
 }
 
@@ -83,9 +83,24 @@ size_t PTShader::getDescriptorCount() const
     return descriptor_bindings.size();
 }
 
-PTShader::UniformDescriptor PTShader::getDescriptorBinding(size_t index) const
+PTShader::BindingInfo PTShader::getDescriptorBinding(size_t index) const
 {
     return descriptor_bindings[index];
+}
+
+bool PTShader::hasDescriptorWithBinding(uint16_t binding, BindingInfo& out, size_t& index)
+{
+    index = 0;
+    for (BindingInfo descriptor : descriptor_bindings)
+    {
+        if (descriptor.bind_point == binding)
+        {
+            out = descriptor;
+            return true;
+        }
+        index++;
+    }
+    return false;
 }
 
 bool PTShader::readRawAndCompile(string shader_path_stub, vector<char>& vertex_code, vector<char>& fragment_code)
@@ -191,7 +206,16 @@ void PTShader::createShaderModules(const vector<char>& vertex_code, const vector
     for (size_t i = 0; i < reflect.descriptor_binding_count; i++)
     {
         SpvReflectDescriptorBinding binding = reflect.descriptor_bindings[i];
-        UniformDescriptor descriptor{ binding.name, static_cast<uint16_t>(binding.binding), binding.block.padded_size };
+        BindingInfo descriptor{ binding.name, static_cast<uint16_t>(binding.binding), binding.block.padded_size };
+        if (binding.descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
+            descriptor.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        else if (binding.descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
+            descriptor.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        else
+        {
+            debugLog("ERROR: vertex shader '" + origin_path + "' contains unsupported descriptor of type " + to_string(binding.descriptor_type));
+            continue;
+        }
         insertDescriptor(descriptor);
     }
     spvReflectDestroyShaderModule(&reflect);
@@ -210,7 +234,16 @@ void PTShader::createShaderModules(const vector<char>& vertex_code, const vector
     for (size_t i = 0; i < reflect.descriptor_binding_count; i++)
     {
         SpvReflectDescriptorBinding binding = reflect.descriptor_bindings[i];
-        UniformDescriptor descriptor{ binding.name, static_cast<uint16_t>(binding.binding), binding.block.padded_size };
+        BindingInfo descriptor{ binding.name, static_cast<uint16_t>(binding.binding), binding.block.padded_size };
+        if (binding.descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
+            descriptor.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        else if (binding.descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
+            descriptor.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        else
+        {
+            debugLog("ERROR: fragment shader '" + origin_path + "' contains unsupported descriptor of type " + to_string(binding.descriptor_type));
+            continue;
+        }
         insertDescriptor(descriptor);
     }
     spvReflectDestroyShaderModule(&reflect);
@@ -222,13 +255,13 @@ void PTShader::createDescriptorSetLayout()
 
     // go through all the descriptor bindings which are listed (currently only uniform buffers are supported)
     // and create descriptor set layout bindings
-    for (UniformDescriptor descriptor : descriptor_bindings)
+    for (BindingInfo descriptor : descriptor_bindings)
     {
         VkDescriptorSetLayoutBinding binding{ };
         binding.binding = descriptor.bind_point;
-        binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER; // TODO: implement texture descriptors
+        binding.descriptorType = descriptor.type;
         binding.descriptorCount = 1;
-        binding.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS;
+        binding.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS; // TODO: detect which stages it's used in and set this to something other than 'absoultely everything'
 
         bindings.push_back(binding);
     }
@@ -243,32 +276,22 @@ void PTShader::createDescriptorSetLayout()
         throw runtime_error("unable to create descriptor set layout");
 }
 
-bool PTShader::hasDescriptorWithBinding(uint16_t binding, UniformDescriptor& out, size_t& index)
-{
-    index = 0;
-    for (UniformDescriptor descriptor : descriptor_bindings)
-    {
-        if (descriptor.bind_point == binding)
-        {
-            out = descriptor;
-            return true;
-        }
-        index++;
-    }
-    return false;
-}
-
-void PTShader::insertDescriptor(UniformDescriptor descriptor)
+void PTShader::insertDescriptor(BindingInfo descriptor)
 {
     if (descriptor.bind_point == TRANSFORM_UNIFORM_BINDING
      || descriptor.bind_point == SCENE_UNIFORM_BINDING)
         return;
-    UniformDescriptor existing;
+    BindingInfo existing;
     size_t index;
+    // handle duplicate bindings - either merge them if they're the same type, or error and do nothing if they're different types (e.g. a texture being bound to the same slot that a uniform was bound to previously)
     if (hasDescriptorWithBinding(descriptor.bind_point, existing, index))
     {
-        // TODO: check that they are the same type here (texture vs uniform, throw error if they aren't)
-        debugLog("WARNING: during shader " + string("NONAME") + " loading, multiple descriptors found bound to " + to_string(descriptor.bind_point) + ". i will overwrite with the larger one");
+        if (descriptor.type != existing.type)
+        {
+            debugLog("ERROR: during shader " + origin_path + " loading, multiple descriptors found bound to " + to_string(descriptor.bind_point) + ", with incompatible types. the later one will be ignored");
+            return;
+        }
+        debugLog("WARNING: during shader " + origin_path + " loading, multiple descriptors found bound to " + to_string(descriptor.bind_point) + ". i will overwrite with the larger one");
         if (existing.size < descriptor.size)
             descriptor_bindings[index] = descriptor;
 

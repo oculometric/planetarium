@@ -453,6 +453,7 @@ void PTRenderServer::initDevice(const std::vector<const char*>& layers)
 	{
 		VkPhysicalDeviceFeatures features{ };
 		features.fillModeNonSolid = VK_TRUE;
+        features.samplerAnisotropy = VK_TRUE;
 
 		debugLog("    creating logical device...");
 		VkDeviceCreateInfo device_create_info{ };
@@ -518,16 +519,18 @@ void PTRenderServer::createCommandPoolAndBuffers()
 void PTRenderServer::createDescriptorPoolAndSets()
 {
 	// allow enough for a lot of indiviual uniform descriptors
-	VkDescriptorPoolSize uniform_pool_size{ };
-    uniform_pool_size.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    uniform_pool_size.descriptorCount = MAX_FRAMES_IN_FLIGHT * MAX_OBJECTS * 16;
+	array<VkDescriptorPoolSize, 2> pool_sizes{ };
+    pool_sizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    pool_sizes[0].descriptorCount = MAX_FRAMES_IN_FLIGHT * MAX_OBJECTS * 16;
+    pool_sizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    pool_sizes[1].descriptorCount = MAX_FRAMES_IN_FLIGHT * MAX_OBJECTS * 16;
 
 	// each object will have MAX_FRAMES_IN_FLIGHT descriptor sets associated probably
     VkDescriptorPoolCreateInfo pool_create_info{ };
     pool_create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     pool_create_info.maxSets = MAX_FRAMES_IN_FLIGHT * MAX_OBJECTS;
-    pool_create_info.poolSizeCount = 1;
-    pool_create_info.pPoolSizes = &uniform_pool_size;
+    pool_create_info.poolSizeCount = static_cast<uint32_t>(pool_sizes.size());
+    pool_create_info.pPoolSizes = pool_sizes.data();
     pool_create_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
 	if (vkCreateDescriptorPool(device, &pool_create_info, nullptr, &descriptor_pool) != VK_SUCCESS)
@@ -678,6 +681,20 @@ void PTRenderServer::updateSceneAndTransformUniforms(uint32_t frame_index)
 
         memcpy(scene_uniform_buffers[frame_index]->map(), &uniforms, scene_uniform_buffers[frame_index]->getSize());
     }
+}
+
+void PTRenderServer::updateTextureBindings()
+{
+    beginEditLock();
+    for (auto instruction : draw_queue)
+    {
+        if (instruction.second.material->getTextureUpdateFlag())
+        {
+            for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+                instruction.second.material->applySetWrites(instruction.second.descriptor_sets[i]);
+        }
+    }
+    endEditLock();
 }
 
 void PTRenderServer::drawFrame(uint32_t frame_index)
@@ -1016,9 +1033,10 @@ int PTRenderServer::evaluatePhysicalDevice(PTPhysicalDevice d)
         score += 2000;
     if (device_features.geometryShader == VK_TRUE)
         score += 10;
-    if (device_features.fillModeNonSolid == VK_TRUE)
-        score += 10;
-    else
+    // we require the presence of non-solid filling, and anisotropy
+    if (device_features.fillModeNonSolid == VK_FALSE)
+        return 0;
+    if (device_features.samplerAnisotropy == VK_FALSE)
         return 0;
 
     return score;

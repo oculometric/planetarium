@@ -14,6 +14,7 @@ class PTBuffer;
 class PTRenderPass;
 class PTPipeline;
 class PTSwapchain;
+class PTSampler;
 
 class PTMaterial : public PTResource
 {
@@ -25,7 +26,9 @@ private:
     PTRenderPass* render_pass = nullptr;
     PTPipeline* pipeline = nullptr;
     VkDescriptorPool descriptor_pool = VK_NULL_HANDLE;
-    std::map<uint16_t, PTBuffer*> descriptor_buffers;
+    std::map<uint16_t, PTBuffer*> uniform_buffers;
+    std::map<uint16_t, std::pair<PTImage*, std::pair<VkImageView, PTSampler*>>> textures;
+    bool needs_texture_update = false;
 
     int priority = 0;
 
@@ -40,15 +43,18 @@ public:
     inline PTShader* getShader() const { return shader; }
     inline PTRenderPass* getRenderPass() const { return render_pass; }
     inline PTPipeline* getPipeline() const { return pipeline; }
-    inline PTBuffer* getDescriptorBuffer(uint16_t binding) { return descriptor_buffers[binding]; }
+    inline PTBuffer* getDescriptorBuffer(uint16_t binding) { return uniform_buffers[binding]; }
     void applySetWrites(VkDescriptorSet descriptor_set);
 
     inline int getPriority() const { return priority; }
     inline void setPriority(int p) { priority = p; }
 
+    void setTexture(uint16_t bind_point, PTImage* texture);
+    PTImage* getTexture(uint16_t bind_point);
+    inline bool getTextureUpdateFlag() { bool b = needs_texture_update; needs_texture_update = false; return b; }
+
     template <typename T>
     inline void setUniform(uint16_t bind_point, T data);
-
     template <typename T>
     inline T getUniform(uint16_t bind_point);
 
@@ -66,18 +72,30 @@ private:
 template <typename T>
 inline void PTMaterial::setUniform(uint16_t bind_point, T data)
 {
-    uint32_t buf_size = static_cast<uint32_t>(descriptor_buffers[bind_point]->getSize());
+    if (!uniform_buffers.contains(bind_point))
+    {
+        debugLog("WARNING: attempt to write to nonexistent uniform");
+        return;
+    }
+
+    uint32_t buf_size = static_cast<uint32_t>(uniform_buffers[bind_point]->getSize());
     uint32_t data_size = static_cast<uint32_t>(sizeof(T));
     if (data_size < buf_size) buf_size = data_size;
-    void* target = descriptor_buffers[bind_point]->map();
+    void* target = uniform_buffers[bind_point]->map();
     memcpy(target, &data, buf_size);
 }
 
 template <typename T>
 inline T PTMaterial::getUniform(uint16_t bind_point)
 {
-    uint32_t buf_size = descriptor_buffers[bind_point]->getSize();
+    if (!uniform_buffers.contains(bind_point))
+    {
+        debugLog("WARNING: attempt to read from nonexistent uniform");
+        return;
+    }
+
+    uint32_t buf_size = uniform_buffers[bind_point]->getSize();
     T data;
-    void* target = descriptor_buffers[bind_point]->map();
+    void* target = uniform_buffers[bind_point]->map();
     memcpy(&data, target, buf_size);
 }

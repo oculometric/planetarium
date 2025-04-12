@@ -10,11 +10,12 @@
 class PTShader : public PTResource
 {
 public:
-    struct UniformDescriptor
+    struct BindingInfo
     {
         std::string identifier;
         uint16_t bind_point;
         uint32_t size;
+        VkDescriptorType type;
     };
 
     friend class PTResourceManager;
@@ -25,7 +26,7 @@ private:
     VkShaderModule fragment_shader = VK_NULL_HANDLE;
 
     VkDescriptorSetLayout descriptor_set_layout = VK_NULL_HANDLE;
-    std::vector<UniformDescriptor> descriptor_bindings;
+    std::vector<BindingInfo> descriptor_bindings;
 
     std::string origin_path;
     
@@ -40,7 +41,8 @@ public:
     
     inline VkDescriptorSetLayout getDescriptorSetLayout() const { return descriptor_set_layout; }
     size_t getDescriptorCount() const;
-    UniformDescriptor getDescriptorBinding(size_t index) const;
+    BindingInfo getDescriptorBinding(size_t index) const;
+    bool hasDescriptorWithBinding(uint16_t binding, BindingInfo& out, size_t& index);
 
 private:
     PTShader(VkDevice _device, std::string shader_path_stub, bool is_precompiled);
@@ -51,6 +53,5 @@ private:
     bool readPrecompiled(std::string shader_path_stub, std::vector<char>& vertex_code, std::vector<char>& fragment_code);
     void createShaderModules(const std::vector<char>& vertex_code, const std::vector<char>& fragment_code);
     void createDescriptorSetLayout();
-    bool hasDescriptorWithBinding(uint16_t binding, UniformDescriptor& out, size_t& index);
-    void insertDescriptor(UniformDescriptor descriptor);
+    void insertDescriptor(BindingInfo descriptor);
 };
