@@ -4,7 +4,7 @@ OBJ_DIR			:= bin/obj/
 SHR_DIR			:= shr/
 
 CC				:= g++
-CC_FLAGS		:= -std=c++20 -g -O0 -Iinc -Iinc/graphics -Iinc/math -Iinc/scenegraph -Iinc/input -Istui/inc -Wall
+CC_FLAGS		:= -std=c++20 -g -O0 -Iinc -Iinc/graphics -Iinc/math -Iinc/scenegraph -Iinc/input -Istui/inc -Wall -Wextra
 CC_INCLUDE		:= 
 
 LD				:= g++

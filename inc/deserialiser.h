@@ -203,6 +203,13 @@ public:
         Argument value;
     };
 
+    struct TextureParam
+    {
+        PTImage* texture;
+        std::string filter = "LINEAR";
+        std::string repeat = "REPEAT";
+    };
+
 public:
 	static std::vector<Token> tokenise(const std::string& content);
     static std::vector<Token> prune(const std::vector<Token>& tokens);
@@ -210,7 +217,7 @@ public:
     static PTNode* deserialiseObject(const std::vector<Token>& tokens, size_t& first_token, PTScene* scene, ResourceMap& res_map, const std::string& content);
     static void deserialiseScene(PTScene* scene, const std::string& content);
     static std::vector<std::pair<std::string, Argument>> deserialiseStatement(const std::vector<Token>& tokens, size_t& first_token, bool allow_unnamed, bool allow_named, ResourceMap& res_map, const std::string& content);
-    static void deserialiseMaterial(const std::string& content, MaterialParams& params, PTShader*& shader, std::vector<UniformParam>& uniforms, std::map<uint16_t, PTImage*>& textures);
+    static void deserialiseMaterial(const std::string& content, MaterialParams& params, PTShader*& shader, std::vector<UniformParam>& uniforms, std::map<uint16_t, TextureParam>& textures);
 
 private:
     static inline TokenType getType(const char c);

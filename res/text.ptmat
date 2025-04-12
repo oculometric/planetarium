@@ -3,4 +3,4 @@ Resource(image, "res/font.bmp") : font;
 
 Shader(resource = @shader);
 
-Texture(binding = 3, resource = @font);
+Texture(binding = 3, resource = @font, filter = "NEAREST");

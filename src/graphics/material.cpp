@@ -42,6 +42,21 @@ static map<string, VkPolygonMode> polygon_modes =
     { "POINT", VK_POLYGON_MODE_POINT }
 };
 
+static map<string, VkSamplerAddressMode> repeat_modes = 
+{
+    { "REPEAT", VK_SAMPLER_ADDRESS_MODE_REPEAT },
+    { "MIRROR", VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT },
+    { "CLAMP", VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE },
+    { "BORDER", VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER }
+};
+
+static map<string, VkFilter> filters = 
+{
+    { "LINEAR", VK_FILTER_LINEAR },
+    { "NEAREST", VK_FILTER_NEAREST },
+    { "CUBIC", VK_FILTER_CUBIC_IMG }
+};
+
 PTMaterial::PTMaterial(VkDevice _device, string material_path, PTRenderPass* _render_pass, PTSwapchain* swapchain)
 {
     device = _device;
@@ -68,7 +83,7 @@ PTMaterial::PTMaterial(VkDevice _device, string material_path, PTRenderPass* _re
 
     PTDeserialiser::MaterialParams params;
     vector<PTDeserialiser::UniformParam> uniforms;
-    map<uint16_t, PTImage*> _textures;
+    map<uint16_t, PTDeserialiser::TextureParam> _textures;
     PTDeserialiser::deserialiseMaterial(text, params, shader, uniforms, _textures);
 
     setPriority(params.priority);
@@ -109,7 +124,10 @@ PTMaterial::PTMaterial(VkDevice _device, string material_path, PTRenderPass* _re
     
     for (auto pair : _textures)
     {
-        setTexture(pair.first, pair.second);
+        setTexture(pair.first, pair.second.texture,
+            repeat_modes.contains(pair.second.repeat) ? repeat_modes[pair.second.repeat] : VK_SAMPLER_ADDRESS_MODE_REPEAT,
+            filters.contains(pair.second.filter) ? filters[pair.second.filter] : VK_FILTER_LINEAR);
+        pair.second.texture->removeReferencer();
     }
 }
 
@@ -196,7 +214,7 @@ void PTMaterial::applySetWrites(VkDescriptorSet descriptor_set)
     vkUpdateDescriptorSets(device, static_cast<uint32_t>(set_writes.size()), set_writes.data(), 0, nullptr);
 }
 
-void PTMaterial::setTexture(uint16_t bind_point, PTImage* texture)
+void PTMaterial::setTexture(uint16_t bind_point, PTImage* texture, VkSamplerAddressMode repeat_mode, VkFilter filtering)
 {
     PTShader::BindingInfo binding;
     size_t _;
@@ -230,7 +248,7 @@ void PTMaterial::setTexture(uint16_t bind_point, PTImage* texture)
         textures[bind_point] = { texture, 
         {
             texture->createImageView(VK_IMAGE_ASPECT_COLOR_BIT),
-            PTResourceManager::get()->createSampler(VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_NEAREST, VK_FILTER_NEAREST, 2)
+            PTResourceManager::get()->createSampler(repeat_mode, filtering, filtering, 2)
         } };
         addDependency(textures[bind_point].second.second, false);
     }

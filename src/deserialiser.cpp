@@ -541,7 +541,7 @@ vector<pair<string, PTDeserialiser::Argument>> PTDeserialiser::deserialiseStatem
     return args;
 }
 
-void PTDeserialiser::deserialiseMaterial(const std::string& content, MaterialParams& params, PTShader*& shader, std::vector<UniformParam>& uniforms, std::map<uint16_t, PTImage*>& textures)
+void PTDeserialiser::deserialiseMaterial(const std::string& content, MaterialParams& params, PTShader*& shader, std::vector<UniformParam>& uniforms, std::map<uint16_t, TextureParam>& textures)
 {
     vector<Token> tokens = prune(tokenise(content));
     
@@ -659,16 +659,20 @@ void PTDeserialiser::deserialiseMaterial(const std::string& content, MaterialPar
         else if (tokens[statement_first].s_value == "Texture")
         {
             uint16_t binding = -1;
-            PTImage* tex = nullptr;
+            TextureParam param;
             auto args = deserialiseStatement(tokens, ++statement_first, false, true, res_map, content);
             for (auto arg : args)
             {
                 if (arg.first == "binding" && arg.second.type == ArgType::INT_ARG)
                     binding = arg.second.i_val;
                 else if (arg.first == "resource" && arg.second.type == ArgType::RESOURCE_ARG)
-                    tex = dynamic_cast<PTImage*>(arg.second.r_val);
+                    param.texture = dynamic_cast<PTImage*>(arg.second.r_val);
+                else if (arg.first == "filter" && arg.second.type == ArgType::STRING_ARG)
+                    param.filter = arg.second.s_val;
+                else if (arg.first == "repeat" && arg.second.type == ArgType::STRING_ARG)
+                    param.filter = arg.second.s_val;
             }
-            textures[binding] = tex;
+            textures[binding] = param;
         }
         else if (tokens[statement_first].s_value == "Priority")
         {
