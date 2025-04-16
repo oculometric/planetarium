@@ -30,7 +30,9 @@ void PTFlyCameraNode::process(float delta_time)
     PTVector2i mouse_delta = manager->getMousePosition() - mouse_pos;
     mouse_pos = manager->getMousePosition();
 
-    float keyboard_x, keyboard_y, keyboard_z = 0;
+    float keyboard_x = 0;
+    float keyboard_y = 0;
+    float keyboard_z = 0;
     float keyboard_lx = 0;
     float keyboard_ly = 0;
     if (manager->isMouseDown(PTInput::MouseButton::MOUSE_RIGHT))

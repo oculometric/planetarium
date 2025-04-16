@@ -66,6 +66,7 @@
     <ClCompile Include="src\graphics\render_server.cpp" />
     <ClCompile Include="src\graphics\resource.cpp" />
     <ClCompile Include="src\graphics\resource_manager.cpp" />
+    <ClCompile Include="src\graphics\sampler.cpp" />
     <ClCompile Include="src\graphics\shader.cpp" />
     <ClCompile Include="src\graphics\swapchain.cpp" />
     <ClCompile Include="src\input\gamepad.cpp" />
@@ -77,6 +78,7 @@
     <ClCompile Include="src\scenegraph\mesh_node.cpp" />
     <ClCompile Include="src\scenegraph\node.cpp" />
     <ClCompile Include="src\scenegraph\scene.cpp" />
+    <ClCompile Include="src\scenegraph\text_node.cpp" />
     <ClCompile Include="src\scenegraph\transform.cpp" />
     <ClCompile Include="src\spirv_reflect.c" />
     <ClCompile Include="src\spirv_reflect.cpp" />
@@ -196,9 +198,8 @@
       <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>$(HOMEPATH)\Documents\Vulkan\Bin\glslc.exe shr/demo.vert -o demo_vert.spv
-
-$(HOMEPATH)\Documents\Vulkan\Bin\glslc.exe shr/demo.frag -o demo_frag.spv</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -230,9 +231,8 @@ $(HOMEPATH)\Documents\Vulkan\Bin\glslc.exe shr/demo.frag -o demo_frag.spv</Comma
       <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>$(HOMEPATH)\Documents\Vulkan\Bin\glslc.exe shr/demo.vert -o demo_vert.spv
-
-$(HOMEPATH)\Documents\Vulkan\Bin\glslc.exe shr/demo.frag -o demo_frag.spv</Command>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

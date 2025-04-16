@@ -257,7 +257,6 @@ PTInput::PTInput(GLFWwindow* _window)
     mainloop_thread = thread([this] { this->mainLoop(); });
 }
 
-
 PTInput::~PTInput()
 {
     should_exit = true;
@@ -269,6 +268,7 @@ void PTInput::mainLoop()
 {
     while (!should_exit)
     {
+        debugLog("poll!");
         glfwPollEvents();
         pollGamepads();
     }

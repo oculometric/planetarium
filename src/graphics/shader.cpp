@@ -107,13 +107,27 @@ bool PTShader::readRawAndCompile(string shader_path_stub, vector<char>& vertex_c
 {
     // run compile commands
     string compiler = "";
+    string deleter = "";
+    string windows_path_stub = shader_path_stub;
+    string out_path_base = shader_path_stub + "_TEMP_" + to_string((uint32_t)((size_t)this));
+    string windows_out_base = out_path_base;
 #ifdef _WIN32
-    compiler = "glslc.exe";
+    compiler = "glslc";
+    deleter = "del";
+    for (size_t i = 0; i < windows_path_stub.size(); i++)
+    {
+        if (windows_path_stub[i] == '/')
+            windows_path_stub[i] = '\\';
+    }
+    for (size_t i = 0; i < windows_out_base.size(); i++)
+    {
+        if (windows_out_base[i] == '/')
+            windows_out_base[i] = '\\';
+    }
 #else
     compiler = "glslc";
+    deleter = "rm";
 #endif
-
-    string out_path_base = shader_path_stub + "_TEMP_" + to_string((uint32_t)((size_t)this));
 
     string command = compiler + ' ' + shader_path_stub + ".vert -o " + out_path_base + "_vert.spv";
 
@@ -129,7 +143,7 @@ bool PTShader::readRawAndCompile(string shader_path_stub, vector<char>& vertex_c
     command = compiler + ' ' + shader_path_stub + ".frag -o " + out_path_base + "_frag.spv";
 
     result = exec(command.c_str(), command_out);
-    command = "rm " + out_path_base + "_vert.spv";
+    command = deleter + ' ' + windows_out_base + "_vert.spv";
     if (result != 0)
     {
         debugLog("WARNING: failed to compile " + shader_path_stub + ".frag:");
@@ -143,7 +157,7 @@ bool PTShader::readRawAndCompile(string shader_path_stub, vector<char>& vertex_c
     
     // delete the generated files
     system(command.c_str());
-    command = "rm " + out_path_base + "_frag.spv";
+    command = deleter + ' ' + windows_out_base + "_frag.spv";
     system(command.c_str());
 
     return load_result;
