@@ -71,6 +71,8 @@ void PTApplication::mainLoop()
     last_frame_start = chrono::high_resolution_clock::now();
     while (!glfwWindowShouldClose(window) && !should_stop)
     {
+        glfwPollEvents();
+
         auto now = chrono::high_resolution_clock::now();
         chrono::duration<float> frame_time = now - last_frame_start;
 

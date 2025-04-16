@@ -268,8 +268,6 @@ void PTInput::mainLoop()
 {
     while (!should_exit)
     {
-        debugLog("poll!");
-        glfwPollEvents();
         pollGamepads();
     }
 }
