@@ -12,7 +12,7 @@
 
 ## Engine Stuff
 
-
+- [ ] marching cubes/tetrahedra using geometry shader (or CPU)
 - [ ] new PTFile module for file IO
       - [ ] engine data packaged into executable
       - [ ] new path resolution system/file loading which allows loading engine data directly out of the executable
