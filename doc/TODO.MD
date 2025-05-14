@@ -41,7 +41,6 @@
 - [ ] spaceship terminal interface/look
 - [ ] google earth replacement
 - [ ] dernacueilliette walkaround scene
-- [ ] text shader                                         (1)
 
 ## Misc
 
@@ -139,3 +138,4 @@
       - [x] getting mouse down, pressed, released
       - [x] raw motion?
       - [x] getting cursor in window
+- [x] text shader

@@ -11,6 +11,8 @@ layout(binding = UNIFORM_OFFSET + 0) uniform TextBuffer
     vec2 fontmap_glyph_size;
     float aspect_ratio;
     uint characters_per_line;
+    vec4 text_colour;
+    vec4 background_colour;
     uvec4[64] text;
 } text_buffer;
 
@@ -26,9 +28,6 @@ vec2 flipUV(vec2 uv)
 {
     return vec2(uv.x, 1.0f - uv.y);
 }
-
-// const vec2 fontmap_glyph_size = vec2(10, 18);
-// const uint characters_per_line = 12;
 
 void main()
 {
@@ -51,6 +50,11 @@ void main()
     float font_y = floor(char / fontmap_size_chars.x) / fontmap_size_chars.y;
     vec2 font_uv = (fract(tile_uv) / fontmap_size_chars) + vec2(font_x, font_y);
 
-    frag_colour = vec4(texture(font_texture, flipUV(font_uv)).rgb, 1.0f);
+    float tex_val = texture(font_texture, flipUV(font_uv)).g;
+    vec4 colour = (tex_val > 0.3f) ? text_buffer.text_colour : text_buffer.background_colour;
+    if (colour.a <= 0.3f)
+        discard;
+
+    frag_colour = vec4(colour.rgb, 1.0f);
     frag_normal = varyings.normal;
 }

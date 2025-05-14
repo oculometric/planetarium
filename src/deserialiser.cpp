@@ -42,7 +42,7 @@ vector<PTDeserialiser::Token> PTDeserialiser::tokenise(const string& content)
         
         TokenType next_type = getType(cur);
 
-        if (next_type == TokenType::INVALID)
+        if (next_type == TokenType::INVALID && current_type != TokenType::STRING)
             reportError("illegal character", offset, copy_content);
 
         TokenType new_type = current_type;

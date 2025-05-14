@@ -34,6 +34,8 @@ PTTextNode::PTTextNode(PTDeserialiser::ArgMap arguments) : PTNode(arguments)
 
     getArg(arguments, "text", text);
     getArg(arguments, "line_width", uniform_buffer.characters_per_line);
+    getArg(arguments, "text_colour", uniform_buffer.text_colour);
+    getArg(arguments, "background_colour", uniform_buffer.background_colour);
 
     setText(text);
 }
