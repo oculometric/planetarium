@@ -261,6 +261,16 @@ inline bool getArg(PTDeserialiser::ArgMap args, std::string name, int& out)
     return false;
 }
 
+inline bool getArg(PTDeserialiser::ArgMap args, std::string name, uint32_t& out)
+{
+    if (hasArg(args, name, PTDeserialiser::ArgType::INT_ARG))
+    {
+        out = (uint32_t)(args[name].i_val);
+        return true;
+    }
+    return false;
+}
+
 inline bool getArg(PTDeserialiser::ArgMap args, std::string name, float& out)
 {
     if (hasArg(args, name, PTDeserialiser::ArgType::FLOAT_ARG))

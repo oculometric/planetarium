@@ -136,6 +136,8 @@ public:
     inline void clearSceneProp(string name) { scene_props_box->elements.erase(name); }
     inline void clearObjectProp(string name) { object_props_box->elements.erase(name); }
 
+    inline Page* getMainPage() const { return main_page; }
+
     inline ~PTDebugManager()
     {
         if (!log.is_open())
@@ -220,6 +222,17 @@ void debugClearObjectProperty(std::string name)
 {
     if (mgr == nullptr) return;
     mgr->clearObjectProp(name);
+}
+
+std::string debugRenderToBuffer(uint32_t width, uint32_t height)
+{
+    Tixel* buf = nullptr;
+    Renderer::renderToBuffer((mgr->getMainPage())->getRoot(), Coordinate{(int)width, (int)height}, buf);
+    std::string out;
+    out.reserve(width * height);
+    for (uint32_t i = 0; i < width * height; i++)
+        out.push_back(buf[i].character & 0xFF);
+    return out;
 }
 
 void PTDebugManager::exitButtonCallback()

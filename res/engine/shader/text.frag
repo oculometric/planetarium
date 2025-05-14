@@ -1,13 +1,16 @@
 #version 450
 
 #extension GL_GOOGLE_include_directive : enable
-#include "engine/shader/common.glsl"
+#include "common.glsl"
 
 UNIFORM_TRANSFORM
 UNIFORM_SCENE
 
 layout(binding = UNIFORM_OFFSET + 0) uniform TextBuffer
 {
+    vec2 fontmap_glyph_size;
+    float aspect_ratio;
+    uint characters_per_line;
     uvec4[64] text;
 } text_buffer;
 
@@ -19,23 +22,21 @@ VARYING_COMMON(in)
 FRAGMENT_OUTPUTS
 
 // buffer size is 64, which means total packed number of chars is 64 * 4 * 4 = 1024
-// thus the canvas should be 32 x 32
-
 vec2 flipUV(vec2 uv)
 {
     return vec2(uv.x, 1.0f - uv.y);
 }
 
-const vec2 fontmap_glyph_size = vec2(10, 18);
-const vec2 fontmap_size_chars = vec2(320, 320) / fontmap_glyph_size;
-const float font_aspect_ratio = fontmap_glyph_size.y / fontmap_glyph_size.x;
-
-const uint characters_per_line = 12;
+// const vec2 fontmap_glyph_size = vec2(10, 18);
+// const uint characters_per_line = 12;
 
 void main()
 {
-    float tb_width_chars = float(characters_per_line);
-    float tb_height_chars = tb_width_chars / font_aspect_ratio;
+    vec2 fontmap_size_chars = textureSize(font_texture, 0) / text_buffer.fontmap_glyph_size;
+    float font_aspect_ratio = text_buffer.fontmap_glyph_size.y / text_buffer.fontmap_glyph_size.x;
+
+    float tb_width_chars = float(text_buffer.characters_per_line);
+    float tb_height_chars = (tb_width_chars * text_buffer.aspect_ratio) / font_aspect_ratio;
     vec2 tile_uv = flipUV(varyings.uv) * vec2(tb_width_chars, tb_height_chars);
     vec2 grid_uv = floor(tile_uv);
 
@@ -52,6 +53,4 @@ void main()
 
     frag_colour = vec4(texture(font_texture, flipUV(font_uv)).rgb, 1.0f);
     frag_normal = varyings.normal;
-
-    //frag_colour = vec4(fract(tile_uv) / fontmap_size_chars, 0, 1);
 }

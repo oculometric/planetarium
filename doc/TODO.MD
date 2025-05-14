@@ -12,6 +12,7 @@
 
 ## Engine Stuff
 
+- [ ] verbose debug
 - [ ] marching cubes/tetrahedra using geometry shader (or CPU)
 - [ ] new PTFile module for file IO
       - [ ] engine data packaged into executable

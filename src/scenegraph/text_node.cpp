@@ -5,26 +5,26 @@
 #include "resource_manager.h"
 #include "render_server.h"
 
-struct TextBuffer
-{
-    PTVector4u text[64] = { 0 };
-};
-
 #define min(a,b) a > b ? b : a
 
-void PTTextNode::updateText(std::string _text)
+void PTTextNode::setText(std::string _text)
 {
     text = _text;
 
-    TextBuffer buf;
-    memcpy((void*)(&buf), text.data(), min(text.size(), 64 * 4 * 4));
+    memcpy((void*)(&(uniform_buffer.text)), text.data(), min(text.size(), 64 * 4 * 4));
 
-    material->setUniform(2, buf);
+    updateUniforms();
+}
+
+void PTTextNode::updateUniforms()
+{
+    uniform_buffer.aspect_ratio = getTransform()->getLocalScale().y / getTransform()->getLocalScale().x;
+    material->setUniform(2, uniform_buffer);
 }
 
 PTTextNode::PTTextNode(PTDeserialiser::ArgMap arguments) : PTNode(arguments)
 {
-    material = PTResourceManager::get()->createMaterial("res/text.ptmat");
+    material = PTResourceManager::get()->createMaterial("res/engine/material/text.ptmat", nullptr, nullptr, true);
     mesh = PTResourceManager::get()->createMesh("res/engine/mesh/plane.obj");
 
     addDependency(material, false);
@@ -32,8 +32,10 @@ PTTextNode::PTTextNode(PTDeserialiser::ArgMap arguments) : PTNode(arguments)
 
     PTRenderServer::get()->addDrawRequest(this, mesh, material);
 
-    updateText(text);
-    updateText("Hello, World!    ABCDEFGHIJKLMNOPQRSTUVWXYZ    abcdefghijklmnopqrstuvwxyz");
+    getArg(arguments, "text", text);
+    getArg(arguments, "line_width", uniform_buffer.characters_per_line);
+
+    setText(text);
 }
 
 PTTextNode::~PTTextNode()

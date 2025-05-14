@@ -6,6 +6,7 @@
 #include "debug.h"
 #include "render_server.h"
 #include "scene.h"
+#include "text_node.h"
 
 using namespace std;
 

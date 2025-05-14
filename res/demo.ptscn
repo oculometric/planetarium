@@ -3,7 +3,7 @@ Resource(mesh, "res/engine/mesh/teapot.obj") : teapot_mesh;
 Resource(mesh, "res/desert_surrealism.obj") : origin_mesh;
 Resource(material, "res/violent_pink.ptmat") : pink;
 
-TextNode(position = [0, 0, 6], scale = [6, 6, 1]) : text;
+TextNode(position = [0, 0, 6], scale = [6, 3, 1], text = "By all known laws of aviation, there is no way that a bee should be able to fly...", line_width = 64) : text;
 MeshNode(data = @origin_mesh) : desert;
 GizmoNode();
 

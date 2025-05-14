@@ -1,6 +1,6 @@
 #version 450
 
-#include "engine/shader/common.glsl"
+#include "common.glsl"
 
 VERTEX_INPUTS
 

@@ -1,6 +1,0 @@
-Resource(shader, "res/text") : shader;
-Resource(image, "res/font8x16.bmp") : font;
-
-Shader(resource = @shader);
-
-Texture(binding = 3, resource = @font, filter = "NEAREST");
