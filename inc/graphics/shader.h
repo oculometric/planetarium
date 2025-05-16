@@ -24,11 +24,13 @@ private:
 
     VkShaderModule vertex_shader = VK_NULL_HANDLE;
     VkShaderModule fragment_shader = VK_NULL_HANDLE;
+    VkShaderModule geometry_shader = VK_NULL_HANDLE;
 
     VkDescriptorSetLayout descriptor_set_layout = VK_NULL_HANDLE;
     std::vector<BindingInfo> descriptor_bindings;
 
     std::string origin_path;
+    bool geom_shader_present = false;
     
 public:
     PTShader() = delete;
@@ -45,13 +47,13 @@ public:
     bool hasDescriptorWithBinding(uint16_t binding, BindingInfo& out, size_t& index);
 
 private:
-    PTShader(VkDevice _device, std::string shader_path_stub, bool is_precompiled);
+    PTShader(VkDevice _device, std::string shader_path_stub, bool is_precompiled, bool has_geometry_shader);
 
     ~PTShader();
 
-    bool readRawAndCompile(std::string shader_path_stub, std::vector<char>& vertex_code, std::vector<char>& fragment_code);
-    bool readPrecompiled(std::string shader_path_stub, std::vector<char>& vertex_code, std::vector<char>& fragment_code);
-    void createShaderModules(const std::vector<char>& vertex_code, const std::vector<char>& fragment_code);
+    bool readRawAndCompile(std::string shader_path_stub, std::vector<char>& vertex_code, std::vector<char>& fragment_code, std::vector<char>& geometry_code);
+    bool readPrecompiled(std::string shader_path_stub, std::vector<char>& vertex_code, std::vector<char>& fragment_code, std::vector<char>& geometry_code);
+    void createShaderModules(const std::vector<char>& vertex_code, const std::vector<char>& fragment_code, std::vector<char>& geometry_code);
     void createDescriptorSetLayout();
     void insertDescriptor(BindingInfo descriptor);
 };

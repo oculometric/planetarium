@@ -7,36 +7,39 @@
 
 using namespace std;
 
-PTShader::PTShader(VkDevice _device, const string shader_path_stub, bool is_precompiled)
+PTShader::PTShader(VkDevice _device, const string shader_path_stub, bool is_precompiled, bool has_geometry_shader)
 {
     origin_path = shader_path_stub;
+    geom_shader_present = has_geometry_shader;
 
-    vector<char> vert, frag;
+    vector<char> vert, frag, geom;
     device = _device;
     if (is_precompiled)
     {
-        if (readPrecompiled(shader_path_stub, vert, frag))
-            createShaderModules(vert, frag);
+        if (readPrecompiled(shader_path_stub, vert, frag, geom))
+            createShaderModules(vert, frag, geom);
         else
         {
             debugLog("ERROR: failed to load precompiled shader " + shader_path_stub);
-            if (!readRawAndCompile(DEFAULT_SHADER_PATH, vert, frag))
+            geom_shader_present = false;
+            if (!readRawAndCompile(DEFAULT_SHADER_PATH, vert, frag, geom))
                 throw runtime_error("failed to load default shader");
             else
-                createShaderModules(vert, frag);
+                createShaderModules(vert, frag, geom);
         }
     }
     else
     {
-        if (readRawAndCompile(shader_path_stub, vert, frag))
-            createShaderModules(vert, frag);
+        if (readRawAndCompile(shader_path_stub, vert, frag, geom))
+            createShaderModules(vert, frag, geom);
         else
         {
             debugLog("ERROR: failed to compile shader " + shader_path_stub);
-            if (!readRawAndCompile(DEFAULT_SHADER_PATH, vert, frag))
+            geom_shader_present = false;
+            if (!readRawAndCompile(DEFAULT_SHADER_PATH, vert, frag, geom))
                 throw runtime_error("failed to load default shader");
             else
-                createShaderModules(vert, frag);
+                createShaderModules(vert, frag, geom);
         }
     }
 
@@ -67,6 +70,18 @@ vector<VkPipelineShaderStageCreateInfo> PTShader::getStageCreateInfo() const
     infos.push_back(vert_stage_create_info);
     infos.push_back(frag_stage_create_info);
 
+    if (geom_shader_present)
+    {
+        // geometry shader info
+        VkPipelineShaderStageCreateInfo geom_stage_create_info{ };
+        geom_stage_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        geom_stage_create_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+        geom_stage_create_info.module = geometry_shader;
+        geom_stage_create_info.pName = "main";
+        
+        infos.push_back(geom_stage_create_info);
+    }
+
     return infos;
 }
 
@@ -76,6 +91,8 @@ PTShader::~PTShader()
     vkDestroyDescriptorSetLayout(device, descriptor_set_layout, nullptr);
     vkDestroyShaderModule(device, vertex_shader, nullptr);
     vkDestroyShaderModule(device, fragment_shader, nullptr);
+    if (geom_shader_present)
+        vkDestroyShaderModule(device, geometry_shader, nullptr);
 }
 
 size_t PTShader::getDescriptorCount() const
@@ -103,7 +120,7 @@ bool PTShader::hasDescriptorWithBinding(uint16_t binding, BindingInfo& out, size
     return false;
 }
 
-bool PTShader::readRawAndCompile(string shader_path_stub, vector<char>& vertex_code, vector<char>& fragment_code)
+bool PTShader::readRawAndCompile(string shader_path_stub, vector<char>& vertex_code, vector<char>& fragment_code, vector<char>& geometry_code)
 {
     // run compile commands
     string compiler = "";
@@ -129,10 +146,15 @@ bool PTShader::readRawAndCompile(string shader_path_stub, vector<char>& vertex_c
     deleter = "rm";
 #endif
 
-    string command = compiler + ' ' + shader_path_stub + ".vert -o " + out_path_base + "_vert.spv";
-
     string command_out;
-    int result = exec(command.c_str(), command_out);
+    string command;
+    int result;
+    
+    // try to compile the vertex shader
+    command = compiler + ' ' + shader_path_stub + ".vert -o " + out_path_base + "_vert.spv";
+    result = exec(command.c_str(), command_out);
+
+    // if failed, report error
     if (result != 0)
     {
         debugLog("WARNING: failed to compile " + shader_path_stub + ".vert:");
@@ -140,32 +162,61 @@ bool PTShader::readRawAndCompile(string shader_path_stub, vector<char>& vertex_c
         return false;
     }
 
+    // try to compile the fragment shader
     command = compiler + ' ' + shader_path_stub + ".frag -o " + out_path_base + "_frag.spv";
-
     result = exec(command.c_str(), command_out);
-    command = deleter + ' ' + windows_out_base + "_vert.spv";
+
+    // if failed, delete the vertex shader and report error
     if (result != 0)
     {
         debugLog("WARNING: failed to compile " + shader_path_stub + ".frag:");
         debugLog(command_out);
+
+        command = deleter + ' ' + windows_out_base + "_vert.spv";
         system(command.c_str());
         return false;
     }
+
+    // try to compile the geometry shader
+    if (geom_shader_present)
+    {
+        command = compiler + ' ' + shader_path_stub + ".geom -o " + out_path_base + "_geom.spv";
+        result = exec(command.c_str(), command_out);
+
+        // if failed, delete the vertex and fragment shaders and report error
+        if (result != 0)
+        {
+            debugLog("WARNING: failed to compile " + shader_path_stub + ".geom:");
+            debugLog(command_out);
+
+            command = deleter + ' ' + windows_out_base + "_vert.spv";
+            system(command.c_str());
+            command = deleter + ' ' + windows_out_base + "_frag.spv";
+            system(command.c_str());
+            return false;
+        }
+    }
     
     // load shader modules using the other function
-    bool load_result = readPrecompiled(out_path_base, vertex_code, fragment_code);
+    bool load_result = readPrecompiled(out_path_base, vertex_code, fragment_code, geometry_code);
     
     // delete the generated files
+    command = deleter + ' ' + windows_out_base + "_vert.spv";
     system(command.c_str());
     command = deleter + ' ' + windows_out_base + "_frag.spv";
     system(command.c_str());
+    if (geom_shader_present)
+    {
+        command = deleter + ' ' + windows_out_base + "_geom.spv";
+        system(command.c_str());
+    }
 
     return load_result;
 }
 
-bool PTShader::readPrecompiled(const string shader_path_stub, vector<char>& vertex_code, vector<char>& fragment_code)
+bool PTShader::readPrecompiled(const string shader_path_stub, vector<char>& vertex_code, vector<char>& fragment_code, vector<char>& geometry_code)
 {
-    ifstream vert_file, frag_file;
+    ifstream vert_file, frag_file, geom_file;
     
     // open vertex and frag shader files (precompiled)
     vert_file.open(shader_path_stub + "_vert.spv", ios::ate | ios::binary);
@@ -181,29 +232,50 @@ bool PTShader::readPrecompiled(const string shader_path_stub, vector<char>& vert
         debugLog("WARNING: unable to open " + shader_path_stub + "_frag.spv");
         return false;
     }
+    if (geom_shader_present)
+    {
+        geom_file.open(shader_path_stub + "_geom.spv", ios::ate | ios::binary);
+        if (!geom_file.is_open())
+        {
+            vert_file.close();
+            frag_file.close();
+            debugLog("WARNING: unable to open " + shader_path_stub + "_geom.spv");
+            return false;
+        }
+    }
 
-    // clear and resize the vertex and fragment arrays
+    // clear and resize the vertex and fragment arrays, then read the whole of each file
     vertex_code.clear();
-    fragment_code.clear();
     size_t vert_size = (size_t)vert_file.tellg();
-    size_t frag_size = (size_t)frag_file.tellg();
     vertex_code.resize(vert_size);
+
+    vert_file.seekg(0);
+    vert_file.read(vertex_code.data(), vert_size);
+    vert_file.close();
+
+    fragment_code.clear();
+    size_t frag_size = (size_t)frag_file.tellg();
     fragment_code.resize(frag_size);
 
-    // read the entirety of both files
-    vert_file.seekg(0);
     frag_file.seekg(0);
-
-    vert_file.read(vertex_code.data(), vert_size);
     frag_file.read(fragment_code.data(), frag_size);
-
-    vert_file.close();
     frag_file.close();
+
+    if (geom_shader_present)
+    {
+        geometry_code.clear();
+        size_t geom_size = (size_t)geom_file.tellg();
+        geometry_code.resize(geom_size);
+
+        geom_file.seekg(0);
+        geom_file.read(geometry_code.data(), geom_size);
+        geom_file.close();
+    }
 
     return true;
 }
 
-void PTShader::createShaderModules(const vector<char>& vertex_code, const vector<char>& fragment_code)
+void PTShader::createShaderModules(const vector<char>& vertex_code, const vector<char>& fragment_code, std::vector<char>& geometry_code)
 {
     // turn a block of bytes into vertex buffer
     VkShaderModuleCreateInfo vert_create_info{ };
@@ -261,6 +333,37 @@ void PTShader::createShaderModules(const vector<char>& vertex_code, const vector
         insertDescriptor(descriptor);
     }
     spvReflectDestroyShaderModule(&reflect);
+
+    if (geom_shader_present)
+    {
+        // turn a block of bytes into a geom buffer
+        VkShaderModuleCreateInfo geom_create_info{ };
+        geom_create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+        geom_create_info.codeSize = geometry_code.size();
+        geom_create_info.pCode = reinterpret_cast<const uint32_t*>(geometry_code.data());
+
+        if (vkCreateShaderModule(device, &geom_create_info, nullptr, &geometry_shader) != VK_SUCCESS)
+            throw runtime_error("unable to create geometry shader module");
+
+        // extract a list of descriptor bindings from the geometry shader
+        spvReflectCreateShaderModule(geometry_code.size(), geometry_code.data(), &reflect);
+        for (size_t i = 0; i < reflect.descriptor_binding_count; i++)
+        {
+            SpvReflectDescriptorBinding binding = reflect.descriptor_bindings[i];
+            BindingInfo descriptor{ binding.name, static_cast<uint16_t>(binding.binding), binding.block.padded_size };
+            if (binding.descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
+                descriptor.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            else if (binding.descriptor_type == SPV_REFLECT_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
+                descriptor.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            else
+            {
+                debugLog("ERROR: geometry shader '" + origin_path + "' contains unsupported descriptor of type " + to_string(binding.descriptor_type));
+                continue;
+            }
+            insertDescriptor(descriptor);
+        }
+        spvReflectDestroyShaderModule(&reflect);
+    }
 }
 
 void PTShader::createDescriptorSetLayout()

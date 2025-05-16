@@ -13,7 +13,7 @@
 ## Engine Stuff
 
 - [ ] verbose debug
-- [ ] marching cubes/tetrahedra using geometry shader (or CPU)
+- [ ] marching cubes/tetrahedra using geometry shader (or CPU)                               (4)
 - [ ] new PTFile module for file IO
       - [ ] engine data packaged into executable
       - [ ] new path resolution system/file loading which allows loading engine data directly out of the executable
@@ -22,13 +22,13 @@
 - [ ] ability to get mouse delta this frame
 - [ ] better way of specifying which keyboard key to check the state of (A vs a, etc)
 - [ ] cross platform controller support (using GLFW probably)
-- [ ] lights                                              (3)
-- [ ] UI system (use STUI to generate charbufs, then pass it into a shader maybe????)
+- [ ] lights                                                                                 (2)
+- [ ] UI system (use STUI to generate charbufs, then pass it into a shader maybe????)        (3)
 - [ ] fix bug with quaternions where something goes to infinity
 - [ ] object and vertex picking
 - [ ] scene editing
 - [ ] mesh editing
-- [ ] live shader editor
+- [ ] live shader editor                                                                     (1)
 - [ ] COMPILED node editing
 - [ ] 3d reconstruction using meshing/shared topology solving (i.e. you draw some geometry from one view, then you draw some from another view and say what's what, then the engine solves the relative orientations of the view and the vertices)
 

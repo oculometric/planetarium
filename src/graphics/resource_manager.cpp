@@ -128,7 +128,7 @@ PTRenderPass* PTResourceManager::createRenderPass(std::vector<PTRenderPass::Atta
     return rp;
 }
 
-PTShader* PTResourceManager::createShader(std::string shader_path_stub, bool is_precompiled, bool force_duplicate)
+PTShader* PTResourceManager::createShader(std::string shader_path_stub, bool is_precompiled, bool has_geometry_shader, bool force_duplicate)
 {
     string identifier = "shader-" + shader_path_stub;
     PTShader* sh = nullptr;
@@ -136,7 +136,7 @@ PTShader* PTResourceManager::createShader(std::string shader_path_stub, bool is_
     if (!force_duplicate)
         sh = tryGetExistingResource<PTShader>(identifier);
     if (sh == nullptr)
-        resources.emplace(identifier, sh = new PTShader(device, shader_path_stub, is_precompiled));
+        resources.emplace(identifier, sh = new PTShader(device, shader_path_stub, is_precompiled, has_geometry_shader));
 
     sh->addReferencer();
 
