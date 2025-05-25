@@ -30,6 +30,10 @@
 - [ ] scene editing
 - [ ] mesh editing
 - [ ] live shader editor                                                                     (1)
+      - [ ] detect when files are changed and should be updated
+      - [ ] re-compile and re-create shader and descriptor set layout
+      - [ ] re-create material with and pipeline, reapply uniforms and textures?
+      - [ ] re-create all descriptor sets that apply (all draw requests)
 - [ ] COMPILED node editing
 - [ ] 3d reconstruction using meshing/shared topology solving (i.e. you draw some geometry from one view, then you draw some from another view and say what's what, then the engine solves the relative orientations of the view and the vertices)
 
