@@ -46,6 +46,8 @@
     <ClInclude Include="inc\math\vector2.h" />
     <ClInclude Include="inc\math\vector3.h" />
     <ClInclude Include="inc\math\vector4.h" />
+    <ClInclude Include="inc\node_graph.h" />
+    <ClInclude Include="inc\render_graph.h" />
     <ClInclude Include="inc\scenegraph\camera_node.h" />
     <ClInclude Include="inc\scenegraph\fly_camera_node.h" />
     <ClInclude Include="inc\scenegraph\gizmo_node.h" />
@@ -77,6 +79,7 @@
     <ClCompile Include="src\input\gamepad.cpp" />
     <ClCompile Include="src\input\input.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\node_graph_node.cpp" />
     <ClCompile Include="src\scenegraph\camera_node.cpp" />
     <ClCompile Include="src\scenegraph\fly_camera_node.cpp" />
     <ClCompile Include="src\scenegraph\gizmo_node.cpp" />
@@ -163,14 +166,14 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Users\maste\OneDrive\Documents\glfw-3.4.bin.WIN64\include;C:\VulkanSDK\1.4.304.1\Include;C:\Programs\Vulkan\Include;C:\Users\jacob\Documents\glfw-3.4.bin.WIN64\include;C:\Users\c025180n\Documents\glfw-3.4.bin.WIN64\include;$(ProjectDir)stui\inc;$(ProjectDir)inc\scenegraph;$(ProjectDir)inc\math;$(ProjectDir)inc\input;$(ProjectDir)inc\graphics;$(ProjectDir)inc;C:\VulkanSDK\1.4.309.0\Include;C:\Users\c025180n\Documents\Vulkan\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\maste\OneDrive\Documents\glfw-3.4.bin.WIN64\include;C:\VulkanSDK\1.4.304.1\Include;C:\Programs\Vulkan\Include;C:\Users\jacob\Documents\glfw-3.4.bin.WIN64\include;C:\Users\c025180n\Documents\glfw-3.4.bin.WIN64\include;$(ProjectDir)stui\inc;$(ProjectDir)inc\scenegraph;$(ProjectDir)inc\math;$(ProjectDir)inc\input;$(ProjectDir)inc\graphics;$(ProjectDir)inc;C:\VulkanSDK\1.4.309.0\Include;C:\Users\c025180n\Documents\Vulkan\Include;C:\Users\cassette\source\glfw-3.4.bin.WIN64\include;C:\VulkanSDK\1.4.313.0\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <WarningLevel>Level3</WarningLevel>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Console</SubSystem>
-      <AdditionalLibraryDirectories>C:\Users\maste\OneDrive\Documents\glfw-3.4.bin.WIN64\lib-vc2019;C:\VulkanSDK\1.4.304.1\Lib;C:\Users\jacob\Documents\glfw-3.4.bin.WIN64\lib-vc2019;C:\Users\c025180n\Documents\glfw-3.4.bin.WIN64\lib-vc2019;C:\Programs\Vulkan\Lib;C:\VulkanSDK\1.4.309.0\Lib;C:\Users\c025180n\Documents\Vulkan\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Users\maste\OneDrive\Documents\glfw-3.4.bin.WIN64\lib-vc2019;C:\VulkanSDK\1.4.304.1\Lib;C:\Users\jacob\Documents\glfw-3.4.bin.WIN64\lib-vc2019;C:\Users\c025180n\Documents\glfw-3.4.bin.WIN64\lib-vc2019;C:\Programs\Vulkan\Lib;C:\VulkanSDK\1.4.309.0\Lib;C:\Users\c025180n\Documents\Vulkan\Lib;C:\Users\cassette\source\glfw-3.4.bin.WIN64\lib-vc2019;C:\VulkanSDK\1.4.313.0\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>

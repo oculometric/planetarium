@@ -135,6 +135,12 @@
     <ClInclude Include="inc\spirv_reflect.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="inc\render_graph.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\node_graph.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\application.cpp">
@@ -225,6 +231,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\graphics\sampler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\node_graph_node.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
