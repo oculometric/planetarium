@@ -79,7 +79,6 @@
     <ClCompile Include="src\input\gamepad.cpp" />
     <ClCompile Include="src\input\input.cpp" />
     <ClCompile Include="src\main.cpp" />
-    <ClCompile Include="src\node_graph_node.cpp" />
     <ClCompile Include="src\scenegraph\camera_node.cpp" />
     <ClCompile Include="src\scenegraph\fly_camera_node.cpp" />
     <ClCompile Include="src\scenegraph\gizmo_node.cpp" />

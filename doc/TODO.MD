@@ -7,11 +7,12 @@
 - [ ] give shader ability to detect where uniforms are used to reduce binding requirements
 - [ ] sampler and image mipmaps
 - [ ] custom buffers for shaders to write extra data into - ability to configure these (add/remove from render pass)
-- [ ] post processing support
+- [ ] post processing support                                                                (0)
 - [ ] ray traced ambient occlusion pass
 
 ## Engine Stuff
 
+- [ ] refactor the way resources work (so we dont have to create everything through the resource manager)
 - [ ] verbose debug
 - [ ] marching cubes/tetrahedra using geometry shader (or CPU)                               (4)
 - [ ] new PTFile module for file IO
