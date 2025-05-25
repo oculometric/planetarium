@@ -20,6 +20,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="inc\application.h" />
+    <ClInclude Include="inc\bitmap.h" />
+    <ClInclude Include="inc\constant.h" />
     <ClInclude Include="inc\debug.h" />
     <ClInclude Include="inc\debug_ui.h" />
     <ClInclude Include="inc\deserialiser.h" />
@@ -33,6 +35,7 @@
     <ClInclude Include="inc\graphics\render_server.h" />
     <ClInclude Include="inc\graphics\resource.h" />
     <ClInclude Include="inc\graphics\resource_manager.h" />
+    <ClInclude Include="inc\graphics\sampler.h" />
     <ClInclude Include="inc\graphics\shader.h" />
     <ClInclude Include="inc\graphics\swapchain.h" />
     <ClInclude Include="inc\input\gamepad.h" />
@@ -49,7 +52,9 @@
     <ClInclude Include="inc\scenegraph\mesh_node.h" />
     <ClInclude Include="inc\scenegraph\node.h" />
     <ClInclude Include="inc\scenegraph\scene.h" />
+    <ClInclude Include="inc\scenegraph\text_node.h" />
     <ClInclude Include="inc\scenegraph\transform.h" />
+    <ClInclude Include="inc\spirv_reflect.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\application.cpp" />
@@ -84,37 +89,8 @@
     <ClCompile Include="src\spirv_reflect.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="doc\TODO.MD" />
-    <None Include="FORMATTING.md" />
-    <None Include="NODE.md" />
-    <None Include="res\default.ptmat" />
     <None Include="res\demo.ptscn" />
     <None Include="res\violent_pink.ptmat" />
-    <None Include="shr\common.glsl" />
-    <None Include="shr\demo.frag" />
-    <None Include="shr\demo.vert" />
-  </ItemGroup>
-  <ItemGroup>
-    <Object Include="res\debug_axes.obj">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </Object>
-    <Object Include="res\desert_surrealism.obj">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </Object>
-    <Object Include="res\suzanne.obj">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </Object>
-    <Object Include="res\teapot.obj">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </Object>
-    <Object Include="res\uvcube.obj">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </Object>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
