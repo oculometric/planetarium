@@ -2,40 +2,40 @@
 
 ## Vulkan Stuff
 
-- [ ] mesh data updating
-- [ ] give pipeline option to use mesh as line
-- [ ] give shader ability to detect where uniforms are used to reduce binding requirements
-- [ ] sampler and image mipmaps
-- [ ] custom buffers for shaders to write extra data into - ability to configure these (add/remove from render pass)
-- [ ] post processing support                                                                (0)
-- [ ] ray traced ambient occlusion pass
+- [ ] mesh data updating                                                                     (4)
+- [ ] give pipeline option to use mesh as line                                               (2)
+- [ ] give shader ability to detect where uniforms are used to reduce binding requirements   (6)
+- [ ] sampler and image mipmaps                                                              (4)
+- [ ] custom buffers for shaders to write extra data into - ability to configure these (add/remove from render pass) (7)
+- [ ] post processing support                                                                (5)
+- [ ] ray traced ambient occlusion pass                                                      (3, depends pp support)
 
 ## Engine Stuff
 
-- [ ] refactor the way resources work (so we dont have to create everything through the resource manager)
-- [ ] verbose debug
-- [ ] marching cubes/tetrahedra using geometry shader (or CPU)                               (4)
-- [ ] new PTFile module for file IO
+- [ ] refactor the way resources work (so we dont have to create everything through the resource manager) (3)
+- [ ] verbose debug                                                                          (1)
+- [ ] marching cubes/tetrahedra using geometry shader (or CPU)                               (8)
+- [ ] new PTFile module for file IO                                                          (6)
       - [ ] engine data packaged into executable
       - [ ] new path resolution system/file loading which allows loading engine data directly out of the executable
       - [ ] organise this, the text-file reading util, and the bitmap loader into the new module
       - [ ] better bitmap image loading (support more formats)
-- [ ] ability to get mouse delta this frame
-- [ ] better way of specifying which keyboard key to check the state of (A vs a, etc)
-- [ ] cross platform controller support (using GLFW probably)
+- [ ] ability to get mouse delta this frame                                                  (1)
+- [ ] better way of specifying which keyboard key to check the state of (A vs a, etc)        (2)
+- [ ] cross platform controller support (using GLFW probably)                                (5)
 - [ ] lights                                                                                 (2)
-- [ ] UI system (use STUI to generate charbufs, then pass it into a shader maybe????)        (3)
-- [ ] fix bug with quaternions where something goes to infinity
-- [ ] object and vertex picking
-- [ ] scene editing
-- [ ] mesh editing
-- [ ] live shader editor                                                                     (1)
+- [ ] UI system (use STUI to generate charbufs, then pass it into a shader maybe????)        (7)
+- [ ] fix bug with quaternions where something goes to infinity                              (1)
+- [ ] object and vertex picking                                                              (3)
+- [ ] scene editing                                                                          (7)
+- [ ] mesh editing                                                                           (10)
+- [ ] live shader editor                                                                     (8)
       - [ ] detect when files are changed and should be updated
       - [ ] re-compile and re-create shader and descriptor set layout
       - [ ] re-create material with and pipeline, reapply uniforms and textures?
       - [ ] re-create all descriptor sets that apply (all draw requests)
-- [ ] COMPILED node editing
-- [ ] 3d reconstruction using meshing/shared topology solving (i.e. you draw some geometry from one view, then you draw some from another view and say what's what, then the engine solves the relative orientations of the view and the vertices)
+- [ ] COMPILED node editing                                                                  (10)
+- [ ] 3d reconstruction using meshing/shared topology solving (i.e. you draw some geometry from one view, then you draw some from another view and say what's what, then the engine solves the relative orientations of the view and the vertices) (11)
 
 ## Art Stuff
 
