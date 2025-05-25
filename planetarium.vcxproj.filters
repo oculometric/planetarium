@@ -13,6 +13,18 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
     </Filter>
+    <Filter Include="Header Files\SceneGraph">
+      <UniqueIdentifier>{0ad34407-94b4-40af-a46e-bdba638a849b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Graphics">
+      <UniqueIdentifier>{3d327f6e-8c1a-4ca3-b3e2-59d3e87a6644}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Math">
+      <UniqueIdentifier>{43d589a7-b87a-43e0-9e7e-e690dbd8a852}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\Input">
+      <UniqueIdentifier>{535f7169-95a9-4c4c-9765-0f6cf3dd83fb}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="inc\application.h">
@@ -24,88 +36,109 @@
     <ClInclude Include="inc\debug_ui.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="inc\scenegraph\scene.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="inc\math\matrix3.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="inc\math\matrix4.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="inc\math\vector2.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="inc\math\vector3.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="inc\math\vector4.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="inc\graphics\buffer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="inc\graphics\image.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="inc\graphics\mesh.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="inc\graphics\physical_device.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="inc\graphics\pipeline.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="inc\graphics\render_pass.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="inc\graphics\resource.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="inc\graphics\resource_manager.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="inc\graphics\shader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="inc\graphics\swapchain.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="inc\deserialiser.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="inc\scenegraph\mesh_node.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="inc\scenegraph\node.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="inc\scenegraph\transform.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="inc\math\quaternion.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="inc\input\gamepad.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="inc\input\input.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="inc\scenegraph\camera_node.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\SceneGraph</Filter>
     </ClInclude>
     <ClInclude Include="inc\scenegraph\fly_camera_node.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\SceneGraph</Filter>
     </ClInclude>
     <ClInclude Include="inc\scenegraph\gizmo_node.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\SceneGraph</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\scenegraph\mesh_node.h">
+      <Filter>Header Files\SceneGraph</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\scenegraph\node.h">
+      <Filter>Header Files\SceneGraph</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\scenegraph\transform.h">
+      <Filter>Header Files\SceneGraph</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\scenegraph\scene.h">
+      <Filter>Header Files\SceneGraph</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\scenegraph\text_node.h">
+      <Filter>Header Files\SceneGraph</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\graphics\swapchain.h">
+      <Filter>Header Files\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\graphics\shader.h">
+      <Filter>Header Files\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\graphics\resource_manager.h">
+      <Filter>Header Files\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\graphics\resource.h">
+      <Filter>Header Files\Graphics</Filter>
     </ClInclude>
     <ClInclude Include="inc\graphics\render_server.h">
-      <Filter>Header Files</Filter>
+      <Filter>Header Files\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\graphics\render_pass.h">
+      <Filter>Header Files\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\graphics\pipeline.h">
+      <Filter>Header Files\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\graphics\physical_device.h">
+      <Filter>Header Files\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\graphics\buffer.h">
+      <Filter>Header Files\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\graphics\image.h">
+      <Filter>Header Files\Graphics</Filter>
     </ClInclude>
     <ClInclude Include="inc\graphics\material.h">
+      <Filter>Header Files\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\graphics\mesh.h">
+      <Filter>Header Files\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\graphics\sampler.h">
+      <Filter>Header Files\Graphics</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\math\vector4.h">
+      <Filter>Header Files\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\math\vector3.h">
+      <Filter>Header Files\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\math\vector2.h">
+      <Filter>Header Files\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\math\matrix4.h">
+      <Filter>Header Files\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\math\matrix3.h">
+      <Filter>Header Files\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\math\quaternion.h">
+      <Filter>Header Files\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\input\input.h">
+      <Filter>Header Files\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\input\gamepad.h">
+      <Filter>Header Files\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\bitmap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\constant.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\spirv_reflect.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\render_graph.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="inc\node_graph.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -200,51 +233,16 @@
     <ClCompile Include="src\graphics\sampler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\node_graph_node.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="FORMATTING.md">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="NODE.md">
-      <Filter>Resource Files</Filter>
-    </None>
     <None Include="res\demo.ptscn">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="res\default.ptmat">
       <Filter>Resource Files</Filter>
     </None>
     <None Include="res\violent_pink.ptmat">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="doc\TODO.MD">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="shr\common.glsl">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="shr\demo.frag">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="shr\demo.vert">
-      <Filter>Resource Files</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Object Include="res\debug_axes.obj">
-      <Filter>Resource Files</Filter>
-    </Object>
-    <Object Include="res\desert_surrealism.obj">
-      <Filter>Resource Files</Filter>
-    </Object>
-    <Object Include="res\suzanne.obj">
-      <Filter>Resource Files</Filter>
-    </Object>
-    <Object Include="res\teapot.obj">
-      <Filter>Resource Files</Filter>
-    </Object>
-    <Object Include="res\uvcube.obj">
-      <Filter>Resource Files</Filter>
-    </Object>
   </ItemGroup>
 </Project>
