@@ -7,6 +7,7 @@
 #include <vector>
 #include <array>
 #include <thread>
+#include <set>
 
 #include "constant.h"
 #include "physical_device.h"
@@ -22,6 +23,7 @@ class PTImage;
 class PTMesh;
 class PTTransform;
 class PTMaterial;
+class PTLightNode;
 
 struct GLFWwindow;
 
@@ -77,6 +79,7 @@ private:
     std::array<PTBuffer*, MAX_FRAMES_IN_FLIGHT> scene_uniform_buffers;
     
     std::multimap<PTNode*, DrawRequest> draw_queue;
+    std::set<PTLightNode*> light_set;
 
     PTMaterial* default_material = nullptr;
     PTRenderPass* render_pass = nullptr;
@@ -104,6 +107,8 @@ public:
     
     void addDrawRequest(PTNode* owner, PTMesh* mesh, PTMaterial* material = nullptr, PTTransform* target_transform = nullptr);
     void removeAllDrawRequests(PTNode* owner);
+    void addLight(PTLightNode* light);
+    void removeLight(PTLightNode* light);
 
     inline PTSwapchain* getSwapchain() const { return swapchain; }
     inline PTRenderPass* getRenderPass() const { return render_pass; }

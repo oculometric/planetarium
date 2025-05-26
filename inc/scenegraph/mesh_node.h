@@ -15,7 +15,8 @@ private:
 protected:
     PTMeshNode(PTDeserialiser::ArgMap arguments);
     ~PTMeshNode();
-    
+
+public:
     inline PTMesh* getMesh() const { return mesh_data; }
     inline PTMaterial* getMaterial() const { return material; }
     void setMesh(PTMesh* _mesh_data);

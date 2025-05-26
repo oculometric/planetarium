@@ -82,7 +82,26 @@ void PTApplication::mainLoop()
         debugFrametiming(frame_time_running_mean_us / 1000.0f, frame_total_number);        
         last_frame_start = now;
 
-        current_scene->update(frame_time.count());
+        if (PTInput::get()->isKeyDown('R'))
+        {
+            debugLog("removing scene!");
+            if (current_scene != nullptr)
+            {
+                current_scene->removeReferencer();
+                current_scene = nullptr;
+            }
+        }
+        else if (PTInput::get()->isKeyDown('L'))
+        {
+            debugLog("loading scene!");
+            if (current_scene == nullptr)
+            {
+                current_scene = PTResourceManager::get()->createScene("res/demo.ptscn");
+            }
+        }
+
+        if (current_scene != nullptr)
+            current_scene->update(frame_time.count());
 
         PTRenderServer::get()->update();
 
@@ -121,6 +140,16 @@ void PTApplication::getCameraMatrix(PTMatrix4f& world_to_view, PTMatrix4f& view_
 		return;
 	
 	current_scene->getCameraMatrix(getAspectRatio(), world_to_view, view_to_clip);
+}
+
+PTVector3f PTApplication::getCameraPosition() const
+{
+    if (current_scene == nullptr)
+        return PTVector3f{ 0, 0, 0 };
+    if (current_scene->getCamera() == nullptr)
+        return PTVector3f{ 0, 0, 0 };
+
+    return current_scene->getCamera()->getTransform()->getPosition();
 }
 
 float PTApplication::getTotalTime()

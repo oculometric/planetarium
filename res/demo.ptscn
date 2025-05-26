@@ -120,6 +120,7 @@ Node() : parent
     MeshNode(data = @4a3b825f, material = @pink, position = [0.5, 1.0, 1.0]) : monkey_a;
     MeshNode(data = @4a3b825f, position = [-1.5, 1.0, 1.0]) : monkey_b;
     MeshNode(data = @teapot_mesh, position = [0, 0, 2], scale = [2.0, 2.0, 2.0]) : teapot;
-    //DirectionalLightNode() : sun_lamp;
+    LightNode(colour = [ 1.0, 0.85, 0.75 ], rotation = [0.129, 0.163, 0.810, 0.548], position = [2, 2, 6]) : light;
 };
 FlyCameraNode(position = [2, 0, 5]);
+LightNode(colour = [1, 0, 0], position = [3, 0, 2], directional = 0, half_angle = 40.0, brightness = 5.0) : spot;

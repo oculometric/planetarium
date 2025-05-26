@@ -51,6 +51,7 @@
     <ClInclude Include="inc\scenegraph\camera_node.h" />
     <ClInclude Include="inc\scenegraph\fly_camera_node.h" />
     <ClInclude Include="inc\scenegraph\gizmo_node.h" />
+    <ClInclude Include="inc\scenegraph\light_node.h" />
     <ClInclude Include="inc\scenegraph\mesh_node.h" />
     <ClInclude Include="inc\scenegraph\node.h" />
     <ClInclude Include="inc\scenegraph\scene.h" />
@@ -82,6 +83,7 @@
     <ClCompile Include="src\scenegraph\camera_node.cpp" />
     <ClCompile Include="src\scenegraph\fly_camera_node.cpp" />
     <ClCompile Include="src\scenegraph\gizmo_node.cpp" />
+    <ClCompile Include="src\scenegraph\light_node.cpp" />
     <ClCompile Include="src\scenegraph\mesh_node.cpp" />
     <ClCompile Include="src\scenegraph\node.cpp" />
     <ClCompile Include="src\scenegraph\scene.cpp" />

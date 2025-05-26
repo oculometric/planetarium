@@ -16,6 +16,8 @@ const uint32_t MAX_FRAMES_IN_FLIGHT = 2;
 const uint16_t TRANSFORM_UNIFORM_BINDING = 0;
 const uint16_t SCENE_UNIFORM_BINDING = 1;
 
+const size_t MAX_LIGHTS = 16;
+
 static const char* DEFAULT_SHADER_PATH = "res/engine/shader/default";
 static const char* DEFAULT_MATERIAL_PATH = "res/engine/material/default.ptmat";
 static const char* DEFAULT_TEXTURE_PATH = "res/engine/texture/blank.bmp";
@@ -34,10 +36,21 @@ struct TransformUniforms
     uint32_t object_id;
 };
 
+struct LightDescription
+{
+    alignas(16) PTVector3f colour = PTVector3f{ 0, 0, 0 };
+    alignas(4) float multiplier = 0.0f;
+    alignas(16) PTVector3f direction = PTVector3f{ 0, 0, -1 };
+    alignas(4) float is_directional = 1.0f;
+    alignas(16) PTVector3f position = PTVector3f{ 0, 0, 0 };
+    alignas(4) float cos_half_ang_radians = 30.0f;
+};
+
 struct SceneUniforms
 {
     PTVector2f viewport_size;
     float time;
+    LightDescription lights[MAX_LIGHTS];
 };
 
 #include <fstream>

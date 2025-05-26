@@ -48,6 +48,7 @@ public:
 	PTVector2u getFramebufferSize();
 
 	void getCameraMatrix(PTMatrix4f& world_to_view, PTMatrix4f& view_to_clip) const;
+    PTVector3f getCameraPosition() const;
 
 	float getTotalTime();
 

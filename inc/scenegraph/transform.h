@@ -31,15 +31,15 @@ public:
         updateWorldFromLocal();
     }
 
-    inline PTVector3f getLocalPosition() { return local_position; }
-    inline PTQuaternion getLocalRotation() { return local_rotation; }
-    inline PTVector3f getLocalScale() { return local_scale; }
+    inline PTVector3f getLocalPosition() const { return local_position; }
+    inline PTQuaternion getLocalRotation() const { return local_rotation; }
+    inline PTVector3f getLocalScale() const { return local_scale; }
 
-    PTVector3f getPosition();
+    PTVector3f getPosition() const;
 
-    PTVector3f getRight();
-    PTVector3f getUp();
-    PTVector3f getForward();
+    PTVector3f getRight() const;
+    PTVector3f getUp() const;
+    PTVector3f getForward() const;
 
     // TODO: getters, world space
 

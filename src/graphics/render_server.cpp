@@ -22,6 +22,7 @@
 #include "debug.h"
 #include "resource_manager.h"
 #include "bitmap.h"
+#include "light_node.h"
 
 #define MAX_OBJECTS 512
 
@@ -206,6 +207,16 @@ void PTRenderServer::removeAllDrawRequests(PTNode* owner)
     endEditLock();
 }
 
+void PTRenderServer::addLight(PTLightNode* light)
+{
+    light_set.insert(light);
+}
+
+void PTRenderServer::removeLight(PTLightNode* light)
+{
+    light_set.erase(light);
+}
+
 void PTRenderServer::beginEditLock()
 {
     while (state < 0);
@@ -290,8 +301,7 @@ void PTRenderServer::initVulkan(GLFWwindow* window, vector<const char*> glfw_ext
 
 	debugLog("    creating default material");
     PTShader* default_shader = PTResourceManager::get()->createShader(DEFAULT_SHADER_PATH, false, false, true);
-    default_material = PTResourceManager::get()->createMaterial(swapchain, render_pass, default_shader, VK_TRUE, VK_TRUE, VK_COMPARE_OP_LESS, VK_CULL_MODE_BACK_BIT, VK_POLYGON_MODE_FILL);
-    default_material->setUniform(2, PTVector3f{ 1.0f, 1.0f, 1.0f });
+    default_material = PTResourceManager::get()->createMaterial(DEFAULT_MATERIAL_PATH, swapchain, render_pass, true);
     default_shader->removeReferencer();
 
     debugLog("done.");
@@ -678,6 +688,27 @@ void PTRenderServer::updateSceneAndTransformUniforms(uint32_t frame_index)
 
         uniforms.viewport_size = PTVector2f{ (float)swapchain->getExtent().width, (float)swapchain->getExtent().height };
         uniforms.time = PTApplication::get()->getTotalTime();
+
+        // figure out the 8 closest lights
+        PTVector3f camera_position = PTApplication::get()->getCameraPosition();
+
+        vector<PTLightNode*> sorted_lights;
+        sorted_lights.reserve(light_set.size());
+        for (auto l : light_set)
+            sorted_lights.push_back(l);
+        sort(sorted_lights.begin(), sorted_lights.end(), [camera_position](PTLightNode*& a, PTLightNode*& b)
+        {
+            return mag(a->getTransform()->getPosition() - camera_position) < mag(b->getTransform()->getPosition() - camera_position);
+        });
+
+        LightDescription tmp = LightDescription();
+        for (size_t i = 0; i < MAX_LIGHTS; i++)
+        {
+            if (i < sorted_lights.size())
+                uniforms.lights[i] = sorted_lights[i]->getDescription();
+            else
+                uniforms.lights[i] = tmp;
+        }
 
         memcpy(scene_uniform_buffers[frame_index]->map(), &uniforms, scene_uniform_buffers[frame_index]->getSize());
     }

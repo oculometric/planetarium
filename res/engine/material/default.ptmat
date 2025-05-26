@@ -8,6 +8,6 @@ Shader(resource = @shader);
 
 Uniform(binding = 2)
 {
-    [ 0.2, 1.0, 0.2, 1.0 ],     // colour
+    [ 1.0, 1.0, 1.0, 1.0 ],     // colour
     0.6                         // roughness
 };

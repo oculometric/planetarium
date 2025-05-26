@@ -7,11 +7,14 @@ using namespace std;
 #include "input.h"
 #include "render_server.h"
 #include "scene.h"
+#include "application.h"
 
 void PTFlyCameraNode::process(float delta_time)
 {
     PTNode* parent = getScene()->findNode<PTNode>("parent");
     parent->getTransform()->rotate(delta_time * 30.0f, PTVector3f::forward(), parent->getTransform()->getPosition());
+    PTNode* spot = getScene()->findNode<PTNode>("spot");
+    spot->getTransform()->translate(PTVector3f{ 0, 0, sin(getApplication()->getTotalTime()) * 0.04f });
 
     PTInput* manager = PTInput::get();
     static PTVector2i mouse_pos = manager->getMousePosition();

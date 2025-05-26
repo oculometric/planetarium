@@ -141,6 +141,9 @@
     <ClInclude Include="inc\node_graph.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="inc\scenegraph\light_node.h">
+      <Filter>Header Files\SceneGraph</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\application.cpp">
@@ -231,6 +234,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\graphics\sampler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\scenegraph\light_node.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

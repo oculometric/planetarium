@@ -278,6 +278,11 @@ inline bool getArg(PTDeserialiser::ArgMap args, std::string name, float& out)
         out = args[name].f_val;
         return true;
     }
+    else if (hasArg(args, name, PTDeserialiser::ArgType::INT_ARG))
+    {
+        out = (float)(args[name].i_val);
+        return true;
+    }
     return false;
 }
 

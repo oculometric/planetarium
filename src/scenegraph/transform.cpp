@@ -1,24 +1,24 @@
 #include "transform.h"
 
-PTVector3f PTTransform::getPosition()
+PTVector3f PTTransform::getPosition() const
 {
     PTVector4f vec = local_to_world.col3();
     return PTVector3f{ vec.x, vec.y, vec.z };
 }
 
-PTVector3f PTTransform::getRight()
+PTVector3f PTTransform::getRight() const
 {
     PTVector4f vec = local_to_world.col0();
     return PTVector3f{ vec.x, vec.y, vec.z };
 }
 
-PTVector3f PTTransform::getUp()
+PTVector3f PTTransform::getUp() const
 {
     PTVector4f vec = local_to_world.col1();
     return PTVector3f{ vec.x, vec.y, vec.z };
 }
 
-PTVector3f PTTransform::getForward()
+PTVector3f PTTransform::getForward() const
 {
     PTVector4f vec = local_to_world.col2();
     return PTVector3f{ vec.x, vec.y, vec.z };

@@ -12,11 +12,21 @@ layout(location = 4) in vec2 vert_uv;
     uint object_id; \
 } transform;
 
-// TODO: add lighting
+struct LightDescription
+{
+    vec3 colour;
+    float multiplier;
+    vec3 direction;
+    float is_directional;
+    vec3 position;
+    float cos_half_ang_radians;
+};
+
 #define UNIFORM_SCENE layout(binding = 1) uniform SceneUniforms \
 { \
 	vec2 viewport_size; \
     float time; \
+    LightDescription[16] lights; \
 } scene;
 
 #define UNIFORM_OFFSET 2

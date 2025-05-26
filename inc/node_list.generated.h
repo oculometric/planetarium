@@ -6,6 +6,7 @@
 #include "scenegraph/gizmo_node.h"
 #include "scenegraph/camera_node.h"
 #include "scenegraph/mesh_node.h"
+#include "scenegraph/light_node.h"
 
 static map<string, PTNodeInstantiateFunc> node_instantiators = 
 {
@@ -14,5 +15,6 @@ static map<string, PTNodeInstantiateFunc> node_instantiators =
 	INSTANTIATE_FUNC(TextNode),
 	INSTANTIATE_FUNC(GizmoNode),
 	INSTANTIATE_FUNC(CameraNode),
+	INSTANTIATE_FUNC(LightNode),
 	INSTANTIATE_FUNC(MeshNode)
 };

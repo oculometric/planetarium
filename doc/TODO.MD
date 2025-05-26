@@ -12,6 +12,9 @@
 
 ## Engine Stuff
 
+- [ ] scene ambient light
+- [ ] come up with a new system for node types (dynamic, not compile-time, runtime instead?)
+- [ ] loading of scenes by choice at runtime, switching of scenes                            (3)
 - [ ] refactor the way resources work (so we dont have to create everything through the resource manager) (3)
 - [ ] verbose debug                                                                          (1)
 - [ ] marching cubes/tetrahedra using geometry shader (or CPU)                               (8)
@@ -23,7 +26,6 @@
 - [ ] ability to get mouse delta this frame                                                  (1)
 - [ ] better way of specifying which keyboard key to check the state of (A vs a, etc)        (2)
 - [ ] cross platform controller support (using GLFW probably)                                (5)
-- [ ] lights                                                                                 (2)
 - [ ] UI system (use STUI to generate charbufs, then pass it into a shader maybe????)        (7)
 - [ ] fix bug with quaternions where something goes to infinity                              (1)
 - [ ] object and vertex picking                                                              (3)
@@ -144,3 +146,4 @@
       - [x] raw motion?
       - [x] getting cursor in window
 - [x] text shader
+- [x] lights
