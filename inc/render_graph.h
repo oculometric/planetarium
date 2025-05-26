@@ -24,7 +24,10 @@
                                  buf a   buf b
 */
 
+// TODO: right now custom camera support is impossible. we would need extra uniform buffers (and descriptor sets, ugh) to support it
 // TODO: support custom render pass with different output attachments
+// TODO: support non-swapchain-shaped texture rendering
+// TODO: support custom clear values for each image/buffer
 struct PTRGStep
 {
     int colour_buffer_binding = 0;
@@ -35,8 +38,18 @@ struct PTRGStep
     bool is_camera_step = true;
     size_t camera_slot = 0;
 
-    PTMaterial* process_material;
+    PTMaterial* process_material = nullptr;
     std::vector<std::pair<int, uint16_t>> process_inputs;
+};
+
+struct PTRGStepInfo
+{
+    PTRenderPass* render_pass = nullptr;
+    VkFramebuffer framebuffer = VK_NULL_HANDLE;
+    PTImage* colour_image   = nullptr;  bool colour_is_needed = false;
+    PTImage* depth_image    = nullptr;  bool depth_is_needed = false;
+    PTImage* normal_image   = nullptr;  bool normal_is_needed = false;
+    PTImage* extra_image    = nullptr;  bool extra_is_needed = false;
 };
 
 class PTRGGraph
@@ -47,6 +60,7 @@ private:
 
     std::vector<PTRGStep> timeline_steps;
     std::vector<std::pair<PTImage*, VkImageView>> image_buffers;
+    std::vector<VkFramebuffer> framebuffers;
 
     PTImage* spare_colour_image = nullptr;
     VkImageView spare_colour_image_view = VK_NULL_HANDLE;
@@ -58,11 +72,20 @@ private:
     VkImageView spare_extra_image_view = VK_NULL_HANDLE;
 
     PTRGGraph(VkDevice _device, std::string timeline_path);
+    PTRGGraph(VkDevice _device);
     ~PTRGGraph();
+
+    void generateRenderPasses();
+    void generateImagesAndFramebuffers();
+    void updateMaterialTextureBindings();
+    void discardAllResources();
 
 public:
 
-    
+    inline size_t getStepCount() const { return timeline_steps.size(); }
+    PTRGStepInfo getStep(size_t step_index) const;
+
+    // OH GOD IT HAS TO GENERATE RENDERPASSES TOO
     // should manage the buffers and steps required
     // minimise the extra code required by render server
     // simplify render server to have a function to draw into a provided buffer, not just the framebuffer

@@ -731,6 +731,7 @@ void PTRenderServer::updateTextureBindings()
 void PTRenderServer::drawFrame(uint32_t frame_index)
 {
 	updateSceneAndTransformUniforms(frame_index);
+    updateTextureBindings();
 
     vkWaitForFences(device, 1, &in_flight_fences[frame_index], VK_TRUE, UINT64_MAX);
 
@@ -780,59 +781,24 @@ void PTRenderServer::drawFrame(uint32_t frame_index)
     scissor.offset = {0, 0};
     scissor.extent = swapchain->getExtent();
 
-    VkRenderPassBeginInfo render_pass_begin_info{ };
-    render_pass_begin_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    render_pass_begin_info.renderPass = render_pass->getRenderPass();
-    render_pass_begin_info.framebuffer = framebuffers[image_index];
-    render_pass_begin_info.renderArea.offset = { 0, 0 };
-    render_pass_begin_info.renderArea.extent = swapchain->getExtent();
-    array<VkClearValue, 3> clear_values{ };
-    clear_values[0].color = { { 1.0f, 0.0f, 1.0f, 1.0f } };
-    clear_values[1].color = { { 0.0f, 0.0f, 0.0f, 1.0f } };
-    clear_values[2].depthStencil = { 1.0f, 0 };
-    render_pass_begin_info.clearValueCount = static_cast<uint32_t>(clear_values.size());
-    render_pass_begin_info.pClearValues = clear_values.data();
-
     beginDrawLock();
-    
+
     if (vkBeginCommandBuffer(command_buffers[frame_index], &command_buffer_begin_info) != VK_SUCCESS)
         throw runtime_error("unable to begin recording command buffer");
 
     vkCmdSetViewport(command_buffers[frame_index], 0, 1, &viewport);
     vkCmdSetScissor(command_buffers[frame_index], 0, 1, &scissor);
-    vkCmdBeginRenderPass(command_buffers[frame_index], &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
 
-    PTMaterial* mat = nullptr;
-    PTMesh* mesh = nullptr;
-    for (auto instruction : sorted_queue)
-    {
-        if (instruction.material != mat)
-        {
-            // for each material, bind the shader and pipeline, and the material-specific descriptor set
-            mat = instruction.material;
-            vkCmdBindPipeline(command_buffers[frame_index], VK_PIPELINE_BIND_POINT_GRAPHICS, mat->getPipeline()->getPipeline());
-        }
+    // TODO: from here on we should be working according to the render graph, so the order of things is:
+    // FOR each step, we need to prepare a render pass begin info which points to the correct framebuffer to render into
+    // this framebuffer should have been set up in advance by the render graph and should point to all the correct buffers
+    // THEN depending on the step type, we either render all the objects in the scene, or we render a quad with a specific
+    // material (pipeline) bound, which will have been configured to point to the correct input buffers by the render graph
+    // THEN we will convert the resulting framebuffer images into a standard format (probably a presentable one) to be used
+    // in the next step, otherwise we will convert the colour buffer into a presentable image, and submit it on the present
+    // queue (and we're done)
 
-        if (instruction.mesh != mesh)
-        {
-            // for each mesh, bind the vertex and index buffers
-            mesh = instruction.mesh;
-            VkBuffer vbuf = mesh->getVertexBuffer();
-            VkBuffer ibuf = mesh->getIndexBuffer();
-            if (vbuf == VK_NULL_HANDLE || ibuf == VK_NULL_HANDLE)
-                continue;
-            VkBuffer vertex_buffers[] = { vbuf };
-            VkDeviceSize offsets[] = { 0 };
-            vkCmdBindVertexBuffers(command_buffers[frame_index], 0, 1, vertex_buffers, offsets);
-            vkCmdBindIndexBuffer(command_buffers[frame_index], ibuf, 0, VK_INDEX_TYPE_UINT16);
-        }
-
-        // for each object, bind the object-specific common descriptor set, then draw indexed
-        vkCmdBindDescriptorSets(command_buffers[frame_index], VK_PIPELINE_BIND_POINT_GRAPHICS, mat->getPipeline()->getLayout(), 0, 1, &(instruction.descriptor_sets[frame_index]), 0, nullptr);
-        vkCmdDrawIndexed(command_buffers[frame_index], static_cast<uint32_t>(mesh->getIndexCount()), 1, 0, 0, 0);
-    }
-
-    vkCmdEndRenderPass(command_buffers[frame_index]);
+    generateCameraRenderStepCommands(frame_index, command_buffers[frame_index], , sorted_queue);
 
     if (vkEndCommandBuffer(command_buffers[frame_index]) != VK_SUCCESS)
         throw std::runtime_error("unable to record command buffer");
@@ -879,6 +845,56 @@ void PTRenderServer::drawFrame(uint32_t frame_index)
 
     vkWaitForFences(device, 1, &in_flight_fences[frame_index], VK_TRUE, UINT64_MAX);
     endDrawLock();
+}
+
+void PTRenderServer::generateCameraRenderStepCommands(uint32_t frame_index, VkCommandBuffer command_buffer, PTRGStepInfo step_info, vector<DrawRequest>& sorted_queue)
+{
+    VkRenderPassBeginInfo render_pass_begin_info{ };
+    render_pass_begin_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    render_pass_begin_info.renderPass = render_pass->getRenderPass();
+    render_pass_begin_info.framebuffer = step_info.framebuffer;
+    render_pass_begin_info.renderArea.offset = { 0, 0 };
+    render_pass_begin_info.renderArea.extent = swapchain->getExtent();
+    array<VkClearValue, 3> clear_values{ };
+    clear_values[0].color = { { 1.0f, 0.0f, 1.0f, 1.0f } };
+    clear_values[1].color = { { 0.0f, 0.0f, 0.0f, 1.0f } };
+    clear_values[2].depthStencil = { 1.0f, 0 };
+    render_pass_begin_info.clearValueCount = static_cast<uint32_t>(clear_values.size());
+    render_pass_begin_info.pClearValues = clear_values.data();
+
+    vkCmdBeginRenderPass(command_buffer, &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+
+    PTMaterial* mat = nullptr;
+    PTMesh* mesh = nullptr;
+    for (auto instruction : sorted_queue)
+    {
+        if (instruction.material != mat)
+        {
+            // for each material, bind the shader and pipeline
+            mat = instruction.material;
+            vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->getPipeline()->getPipeline());
+        }
+
+        if (instruction.mesh != mesh)
+        {
+            // for each mesh, bind the vertex and index buffers
+            mesh = instruction.mesh;
+            VkBuffer vbuf = mesh->getVertexBuffer();
+            VkBuffer ibuf = mesh->getIndexBuffer();
+            if (vbuf == VK_NULL_HANDLE || ibuf == VK_NULL_HANDLE)
+                continue;
+            VkBuffer vertex_buffers[] = { vbuf };
+            VkDeviceSize offsets[] = { 0 };
+            vkCmdBindVertexBuffers(command_buffer, 0, 1, vertex_buffers, offsets);
+            vkCmdBindIndexBuffer(command_buffer, ibuf, 0, VK_INDEX_TYPE_UINT16);
+        }
+
+        // for each object, bind the object-specific common descriptor set, then draw indexed
+        vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->getPipeline()->getLayout(), 0, 1, &(instruction.descriptor_sets[frame_index]), 0, nullptr);
+        vkCmdDrawIndexed(command_buffer, static_cast<uint32_t>(mesh->getIndexCount()), 1, 0, 0, 0);
+    }
+
+    vkCmdEndRenderPass(command_buffer);
 }
 
 void PTRenderServer::resizeSwapchain()
