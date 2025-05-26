@@ -46,10 +46,12 @@ struct PTRGStepInfo
 {
     PTRenderPass* render_pass = nullptr;
     VkFramebuffer framebuffer = VK_NULL_HANDLE;
+    VkExtent2D extent;
     PTImage* colour_image   = nullptr;  bool colour_is_needed = false;
     PTImage* depth_image    = nullptr;  bool depth_is_needed = false;
     PTImage* normal_image   = nullptr;  bool normal_is_needed = false;
     PTImage* extra_image    = nullptr;  bool extra_is_needed = false;
+    array<VkClearValue, 4> clear_values;
 };
 
 class PTRGGraph
@@ -83,7 +85,10 @@ private:
 public:
 
     inline size_t getStepCount() const { return timeline_steps.size(); }
-    PTRGStepInfo getStep(size_t step_index) const;
+    inline bool getStepIsCamera(size_t step_index) const { return timeline_steps[step_index].is_camera_step; }
+    //inline size_t getStepCameraSlot(size_t step_index) const { return timeline_steps[step_index].camera_slot; }
+    inline PTMaterial* getStepMaterial(size_t step_index) const { return timeline_steps[step_index].process_material; }
+    PTRGStepInfo getStepInfo(size_t step_index) const;
 
     // OH GOD IT HAS TO GENERATE RENDERPASSES TOO
     // should manage the buffers and steps required

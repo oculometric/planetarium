@@ -769,25 +769,10 @@ void PTRenderServer::drawFrame(uint32_t frame_index)
     command_buffer_begin_info.flags = 0;
     command_buffer_begin_info.pInheritanceInfo = nullptr;
 
-    VkViewport viewport{ };
-    viewport.x = 0.0f;
-    viewport.y = 0.0f;
-    viewport.width = static_cast<float>(swapchain->getExtent().width);
-    viewport.height = static_cast<float>(swapchain->getExtent().height);
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
-
-    VkRect2D scissor{ };
-    scissor.offset = {0, 0};
-    scissor.extent = swapchain->getExtent();
-
     beginDrawLock();
 
     if (vkBeginCommandBuffer(command_buffers[frame_index], &command_buffer_begin_info) != VK_SUCCESS)
         throw runtime_error("unable to begin recording command buffer");
-
-    vkCmdSetViewport(command_buffers[frame_index], 0, 1, &viewport);
-    vkCmdSetScissor(command_buffers[frame_index], 0, 1, &scissor);
 
     // TODO: from here on we should be working according to the render graph, so the order of things is:
     // FOR each step, we need to prepare a render pass begin info which points to the correct framebuffer to render into
@@ -798,7 +783,16 @@ void PTRenderServer::drawFrame(uint32_t frame_index)
     // in the next step, otherwise we will convert the colour buffer into a presentable image, and submit it on the present
     // queue (and we're done)
 
-    generateCameraRenderStepCommands(frame_index, command_buffers[frame_index], , sorted_queue);
+    for (size_t step_index = 0; step_index < render_graph->getStepCount(); step_index++)
+    {
+        PTRGStepInfo step_info = render_graph->getStepInfo(step_index);
+        if (render_graph->getStepIsCamera(step_index))
+            generateCameraRenderStepCommands(frame_index, command_buffers[frame_index], step_info, sorted_queue);
+        else
+            generatePostProcessRenderStepCommands(frame_index, command_buffers[frame_index], step_info, render_graph->getStepMaterial(step_index));
+    }
+
+    // TODO: copy the last set of images to the framebuffer
 
     if (vkEndCommandBuffer(command_buffers[frame_index]) != VK_SUCCESS)
         throw std::runtime_error("unable to record command buffer");
@@ -849,18 +843,29 @@ void PTRenderServer::drawFrame(uint32_t frame_index)
 
 void PTRenderServer::generateCameraRenderStepCommands(uint32_t frame_index, VkCommandBuffer command_buffer, PTRGStepInfo step_info, vector<DrawRequest>& sorted_queue)
 {
+    VkViewport viewport{ };
+    viewport.x = 0.0f;
+    viewport.y = 0.0f;
+    viewport.width = static_cast<float>(step_info.extent.width);
+    viewport.height = static_cast<float>(step_info.extent.height);
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+
+    VkRect2D scissor{ };
+    scissor.offset = { 0, 0 };
+    scissor.extent = step_info.extent;
+    
     VkRenderPassBeginInfo render_pass_begin_info{ };
     render_pass_begin_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    render_pass_begin_info.renderPass = render_pass->getRenderPass();
+    render_pass_begin_info.renderPass = step_info.render_pass->getRenderPass();
     render_pass_begin_info.framebuffer = step_info.framebuffer;
     render_pass_begin_info.renderArea.offset = { 0, 0 };
-    render_pass_begin_info.renderArea.extent = swapchain->getExtent();
-    array<VkClearValue, 3> clear_values{ };
-    clear_values[0].color = { { 1.0f, 0.0f, 1.0f, 1.0f } };
-    clear_values[1].color = { { 0.0f, 0.0f, 0.0f, 1.0f } };
-    clear_values[2].depthStencil = { 1.0f, 0 };
-    render_pass_begin_info.clearValueCount = static_cast<uint32_t>(clear_values.size());
-    render_pass_begin_info.pClearValues = clear_values.data();
+    render_pass_begin_info.renderArea.extent = step_info.extent;
+    render_pass_begin_info.clearValueCount = static_cast<uint32_t>(step_info.clear_values.size());
+    render_pass_begin_info.pClearValues = step_info.clear_values.data();
+
+    vkCmdSetViewport(command_buffers[frame_index], 0, 1, &viewport);
+    vkCmdSetScissor(command_buffers[frame_index], 0, 1, &scissor);
 
     vkCmdBeginRenderPass(command_buffer, &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
 
@@ -895,6 +900,8 @@ void PTRenderServer::generateCameraRenderStepCommands(uint32_t frame_index, VkCo
     }
 
     vkCmdEndRenderPass(command_buffer);
+
+    // TODO: if images are staying around, transition them all to be in the same format (which is easy to bind to shader)
 }
 
 void PTRenderServer::resizeSwapchain()
