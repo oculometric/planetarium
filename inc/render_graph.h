@@ -24,10 +24,16 @@
                                  buf a   buf b
 */
 
+class PTRenderPass;
+class PTImage;
+class PTMaterial;
+class PTSwapchain;
+
 // TODO: right now custom camera support is impossible. we would need extra uniform buffers (and descriptor sets, ugh) to support it
 // TODO: support custom render pass with different output attachments
 // TODO: support non-swapchain-shaped texture rendering
 // TODO: support custom clear values for each image/buffer
+// TODO: needs to handle resizing when swapchain resizes
 struct PTRGStep
 {
     int colour_buffer_binding = 0;
@@ -54,15 +60,17 @@ struct PTRGStepInfo
     array<VkClearValue, 4> clear_values;
 };
 
-class PTRGGraph
+class PTRGGraph : public PTResource
 {
     friend class PTResourceManager;
 private:
     VkDevice device = VK_NULL_HANDLE;
+    PTSwapchain* swapchain = nullptr;
 
     std::vector<PTRGStep> timeline_steps;
     std::vector<std::pair<PTImage*, VkImageView>> image_buffers;
     std::vector<VkFramebuffer> framebuffers;
+    std::vector<PTRenderPass*> render_passes;
 
     PTImage* spare_colour_image = nullptr;
     VkImageView spare_colour_image_view = VK_NULL_HANDLE;
@@ -73,8 +81,8 @@ private:
     PTImage* spare_extra_image = nullptr;
     VkImageView spare_extra_image_view = VK_NULL_HANDLE;
 
-    PTRGGraph(VkDevice _device, std::string timeline_path);
-    PTRGGraph(VkDevice _device);
+    PTRGGraph(VkDevice _device, PTSwapchain* _swapchain, std::string timeline_path);
+    PTRGGraph(VkDevice _device, PTSwapchain* _swapchain);
     ~PTRGGraph();
 
     void generateRenderPasses();

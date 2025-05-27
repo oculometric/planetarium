@@ -116,9 +116,9 @@ PTPipeline* PTResourceManager::createPipeline(PTShader* shader, PTRenderPass* re
     return pipe;
 }
 
-PTRenderPass* PTResourceManager::createRenderPass(std::vector<PTRenderPass::Attachment> attachments)
+PTRenderPass* PTResourceManager::createRenderPass(std::vector<PTRenderPass::Attachment> attachments, bool transition_to_readable)
 {
-    PTRenderPass* rp = new PTRenderPass(device, attachments);
+    PTRenderPass* rp = new PTRenderPass(device, attachments, transition_to_readable);
     string identifier = "renderpass-" + to_string((size_t)rp);
     
     resources.emplace(identifier, rp);

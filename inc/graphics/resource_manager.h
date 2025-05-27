@@ -42,7 +42,7 @@ public:
     PTMesh* createMesh(std::string file_name, bool force_duplicate = false);
     PTMesh* createMesh(std::vector<PTVertex> vertices, std::vector<uint16_t> indices);
     PTPipeline* createPipeline(PTShader* shader, PTRenderPass* render_pass, PTSwapchain* swapchain, VkBool32 depth_write, VkBool32 depth_test, VkCompareOp depth_op, VkCullModeFlags culling, VkFrontFace winding_order, VkPolygonMode polygon_mode, std::vector<VkDynamicState> dynamic_states);
-    PTRenderPass* createRenderPass(std::vector<PTRenderPass::Attachment> attachments);
+    PTRenderPass* createRenderPass(std::vector<PTRenderPass::Attachment> attachments, bool transition_to_readable = false);
     PTShader* createShader(std::string shader_path_stub, bool is_precompiled, bool has_geometry_shader = false, bool force_duplicate = false);
     PTSwapchain* createSwapchain(VkSurfaceKHR surface, int window_x, int window_y);
     PTMaterial* createMaterial(std::string material_path, PTSwapchain* swapchain = nullptr, PTRenderPass* render_pass = nullptr, bool force_duplicate = false);

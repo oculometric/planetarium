@@ -33,7 +33,7 @@ private:
     VkRenderPass render_pass = VK_NULL_HANDLE;
     std::vector<Attachment> attachments;
 
-    PTRenderPass(VkDevice _device, std::vector<Attachment> _attachments = { });
+    PTRenderPass(VkDevice _device, std::vector<Attachment> _attachments = { }, bool transition_to_readable = false);
 
     ~PTRenderPass();
 
