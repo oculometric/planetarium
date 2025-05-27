@@ -71,6 +71,7 @@ private:
     std::vector<VkSemaphore> render_finished_semaphores;
     std::vector<VkFence> in_flight_fences;
 
+    PTRGGraph* render_graph = nullptr;
     std::vector<VkFramebuffer> framebuffers;
     PTImage* depth_image = nullptr;
     VkImageView depth_image_view = VK_NULL_HANDLE;
@@ -140,7 +141,7 @@ private:
     void updateSceneAndTransformUniforms(uint32_t frame_index);
     void updateTextureBindings();
     void drawFrame(uint32_t frame_index);
-    void generateCameraRenderStepCommands(uint32_t frame_index, VkCommandBuffer command_buffer, PTRGStepInfo step_info, vector<DrawRequest>& sorted_queue);
+    void generateCameraRenderStepCommands(uint32_t frame_index, VkCommandBuffer command_buffer, PTRGStepInfo step_info, std::vector<DrawRequest>& sorted_queue);
     void generatePostProcessRenderStepCommands(uint32_t frame_index, VkCommandBuffer command_buffer, PTRGStepInfo step_info, PTMaterial* material);
         
     void resizeSwapchain();

@@ -23,6 +23,7 @@
 #include "resource_manager.h"
 #include "bitmap.h"
 #include "light_node.h"
+#include "render_graph.h"
 
 #define MAX_OBJECTS 512
 
@@ -282,6 +283,9 @@ void PTRenderServer::initVulkan(GLFWwindow* window, vector<const char*> glfw_ext
 	PTVector2u size = PTApplication::get()->getFramebufferSize();
     swapchain = PTResourceManager::get()->createSwapchain(surface, size.x, size.y);
     
+    debugLog("    creating render graph");
+    render_graph = PTResourceManager::get()->createRenderGraph(swapchain);
+
 	debugLog("    creating render pass");
     PTRenderPass::Attachment colour_att;
     colour_att.format = swapchain->getImageFormat();
@@ -379,7 +383,7 @@ void PTRenderServer::initVulkanInstance(vector<const char*>& layers, vector<cons
 
     bool debug_layer_found = false;
     const char* target_debug_layer = "VK_LAYER_KHRONOS_validation";
-    for (VkLayerProperties layer : available_layers)
+    for (const VkLayerProperties& layer : available_layers)
     {
         if (strcmp(layer.layerName, target_debug_layer))
         {
@@ -758,7 +762,7 @@ void PTRenderServer::drawFrame(uint32_t frame_index)
     // before we start drawing, make a list of draw requests, sorted by priority, then by material, then by mesh
     vector<DrawRequest> sorted_queue;
     sorted_queue.reserve(draw_queue.size());
-    for (auto p : draw_queue)
+    for (const auto& p : draw_queue)
         sorted_queue.push_back(p.second);
     sort(sorted_queue.begin(), sorted_queue.end(), DrawRequest::compare);
 
@@ -895,7 +899,11 @@ void PTRenderServer::generateCameraRenderStepCommands(uint32_t frame_index, VkCo
         }
 
         // for each object, bind the object-specific common descriptor set, then draw indexed
+        if (mat == nullptr)
+            continue;
         vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->getPipeline()->getLayout(), 0, 1, &(instruction.descriptor_sets[frame_index]), 0, nullptr);
+        if (mesh == nullptr)
+            continue;
         vkCmdDrawIndexed(command_buffer, static_cast<uint32_t>(mesh->getIndexCount()), 1, 0, 0, 0);
     }
 

@@ -11,6 +11,7 @@
 #include "swapchain.h"
 #include "render_server.h"
 #include "sampler.h"
+#include "render_graph.h"
 
 using namespace std;
 
@@ -173,7 +174,7 @@ PTMaterial* PTResourceManager::createMaterial(std::string material_path, PTSwapc
 PTMaterial* PTResourceManager::createMaterial(PTSwapchain* swapchain, PTRenderPass* _render_pass, PTShader* _shader, VkBool32 depth_write, VkBool32 depth_test, VkCompareOp depth_op, VkCullModeFlags culling, VkPolygonMode polygon_mode)
 {
     PTMaterial* mt = new PTMaterial(device, _render_pass, swapchain, _shader, depth_write, depth_test, depth_op, culling, polygon_mode);
-    string identifier = "material-" + '-' + to_string((size_t)mt) + '-' + to_string((size_t)_shader);
+    string identifier = "material-" + to_string((size_t)mt) + '-' + to_string((size_t)_shader);
     resources.emplace(identifier, mt);
 
     mt->addReferencer();
@@ -184,7 +185,7 @@ PTMaterial* PTResourceManager::createMaterial(PTSwapchain* swapchain, PTRenderPa
 PTSampler* PTResourceManager::createSampler(VkSamplerAddressMode _address_mode, VkFilter _min_filter, VkFilter _mag_filter, uint32_t _max_anisotropy, bool force_duplicate)
 {
     string identifier = "sampler-" + to_string(_address_mode) + '-' + to_string(_min_filter) + '-' + to_string(_mag_filter) + '-' + to_string(_max_anisotropy);
-    PTSampler* sm;
+    PTSampler* sm = nullptr;
 
     if (!force_duplicate)
         sm = tryGetExistingResource<PTSampler>(identifier);
@@ -194,6 +195,17 @@ PTSampler* PTResourceManager::createSampler(VkSamplerAddressMode _address_mode, 
     sm->addReferencer();
 
     return sm;
+}
+
+PTRGGraph* PTResourceManager::createRenderGraph(PTSwapchain* swapchain)
+{
+    PTRGGraph* rg = new PTRGGraph(device, swapchain);
+    string identifier = "rendergraph-" + to_string((size_t)rg);
+    resources.emplace(identifier, rg);
+
+    rg->addReferencer();
+
+    return rg;
 }
 
 PTScene* PTResourceManager::createScene(string file_name, bool force_duplicate)

@@ -51,4 +51,5 @@ void PTRGGraph::generateRenderPasses()
 void PTRGGraph::generateImagesAndFramebuffers()
 {
 	// TODO: here
+	// images need to be in the right format (ie we cant reuse a depth image as a colour image)
 }

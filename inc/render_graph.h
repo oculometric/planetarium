@@ -34,6 +34,7 @@ class PTSwapchain;
 // TODO: support non-swapchain-shaped texture rendering
 // TODO: support custom clear values for each image/buffer
 // TODO: needs to handle resizing when swapchain resizes
+// TODO: simple copy step
 struct PTRGStep
 {
     int colour_buffer_binding = 0;
@@ -57,7 +58,7 @@ struct PTRGStepInfo
     PTImage* depth_image    = nullptr;  bool depth_is_needed = false;
     PTImage* normal_image   = nullptr;  bool normal_is_needed = false;
     PTImage* extra_image    = nullptr;  bool extra_is_needed = false;
-    array<VkClearValue, 4> clear_values;
+    std::array<VkClearValue, 4> clear_values;
 };
 
 class PTRGGraph : public PTResource
@@ -84,6 +85,11 @@ private:
     PTRGGraph(VkDevice _device, PTSwapchain* _swapchain, std::string timeline_path);
     PTRGGraph(VkDevice _device, PTSwapchain* _swapchain);
     ~PTRGGraph();
+
+    PTRGGraph(const PTRGGraph& other) = delete;
+    PTRGGraph(const PTRGGraph&& other) = delete;
+    PTRGGraph operator=(const PTRGGraph& other) = delete;
+    PTRGGraph operator=(const PTRGGraph&& other) = delete;
 
     void generateRenderPasses();
     void generateImagesAndFramebuffers();

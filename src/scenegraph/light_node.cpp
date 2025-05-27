@@ -25,7 +25,7 @@ LightDescription PTLightNode::getDescription()
 	desc.is_directional = directional ? 1.0f : 0.0f;
 	desc.multiplier = brightness;
 	desc.position = getTransform()->getPosition();
-	desc.cos_half_ang_radians = cos(half_angle * (M_PI / 180.0f));
+	desc.cos_half_ang_radians = cos((float)(half_angle * (M_PI / 180.0f)));
 	desc.direction = -getTransform()->getForward();
 
 	return desc;
