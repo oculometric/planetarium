@@ -25,16 +25,19 @@ void main()
     for (int i = 0; i < 16; i++)
     {
         LightDescription light = scene.lights[i];
-        float light_dot = clamp(dot(-light.direction, varyings.world_normal), 0, 1);
+        float light_dot = 1.0f;
+        vec3 light_dir = light.direction;
         if (light.is_directional < 0.5)
         {
-            float dot_dir = dot(light.direction, normalize(varyings.world_position - light.position));
+            vec3 offset = varyings.world_position - light.position;
+            light_dir = normalize(offset);
+            float dot_dir = dot(light.direction, light_dir);
             if (dot_dir < light.cos_half_ang_radians)
                 light_dot = 0;
             
-            vec3 offset = varyings.world_position - light.position;
             light_dot *= 1.0f / (dot(offset, offset) + 0.01f);
         }
+        light_dot *= clamp(dot(-light_dir, varyings.world_normal), 0, 1);
 
         surface_lit += surface_colour * light.colour * light_dot * light.multiplier;
     }
