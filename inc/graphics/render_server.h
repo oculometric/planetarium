@@ -72,11 +72,6 @@ private:
     std::vector<VkFence> in_flight_fences;
 
     PTRGGraph* render_graph = nullptr;
-    std::vector<VkFramebuffer> framebuffers;
-    PTImage* depth_image = nullptr;
-    VkImageView depth_image_view = VK_NULL_HANDLE;
-    PTImage* normal_image = nullptr;
-    VkImageView normal_image_view = VK_NULL_HANDLE;
 
     std::array<PTBuffer*, MAX_FRAMES_IN_FLIGHT> scene_uniform_buffers;
     
@@ -84,7 +79,6 @@ private:
     std::set<PTLightNode*> light_set;
 
     PTMaterial* default_material = nullptr;
-    PTRenderPass* render_pass = nullptr;
 
     static constexpr char* required_device_extensions[1] =
     {
@@ -113,7 +107,7 @@ public:
     void removeLight(PTLightNode* light);
 
     inline PTSwapchain* getSwapchain() const { return swapchain; }
-    inline PTRenderPass* getRenderPass() const { return render_pass; }
+    inline PTRenderPass* getRenderPass() const { return render_graph->getRenderPass(); }
 
     void beginEditLock();
     void endEditLock();

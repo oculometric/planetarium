@@ -286,14 +286,6 @@ void PTRenderServer::initVulkan(GLFWwindow* window, vector<const char*> glfw_ext
     debugLog("    creating render graph");
     render_graph = PTResourceManager::get()->createRenderGraph(swapchain);
 
-	debugLog("    creating render pass");
-    PTRenderPass::Attachment colour_att;
-    colour_att.format = swapchain->getImageFormat();
-    PTRenderPass::Attachment normal_att;
-    normal_att.format = VK_FORMAT_R16G16B16A16_SNORM;
-    normal_att.final_layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    render_pass = PTResourceManager::get()->createRenderPass({ colour_att, normal_att });
-
 	debugLog("    creating command pool");
 	createCommandPoolAndBuffers();
 
@@ -305,7 +297,7 @@ void PTRenderServer::initVulkan(GLFWwindow* window, vector<const char*> glfw_ext
 
 	debugLog("    creating default material");
     PTShader* default_shader = PTResourceManager::get()->createShader(DEFAULT_SHADER_PATH, false, false, true);
-    default_material = PTResourceManager::get()->createMaterial(DEFAULT_MATERIAL_PATH, swapchain, render_pass, true);
+    default_material = PTResourceManager::get()->createMaterial(DEFAULT_MATERIAL_PATH, swapchain, render_graph->getRenderPass(), true);
     default_shader->removeReferencer();
 
     debugLog("done.");
@@ -339,8 +331,6 @@ void PTRenderServer::deinitVulkan()
         scene_uniform_buffers[i]->removeReferencer();
     
     vkDestroyCommandPool(device, command_pool, nullptr);
-
-    render_pass->removeReferencer();
 
     swapchain->removeReferencer();
 
@@ -558,44 +548,6 @@ void PTRenderServer::createDescriptorPoolAndSets()
 
 void PTRenderServer::createFramebufferAndSyncResources()
 {
-	// create depth and normal images
-	{
-		debugLog("creating Gbuffer resources...");
-		depth_image = PTResourceManager::get()->createImage(swapchain->getExtent(), VK_FORMAT_D32_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-		depth_image_view = depth_image->createImageView(VK_IMAGE_ASPECT_DEPTH_BIT);
-		debugLog("    created depth image and view");
-		
-		normal_image = PTResourceManager::get()->createImage(swapchain->getExtent(), VK_FORMAT_R16G16B16A16_SNORM, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-		normal_image_view = normal_image->createImageView(VK_IMAGE_ASPECT_COLOR_BIT);
-		debugLog("    created normal image and view");
-		debugLog("done.");
-	}
-
-	// create new framebuffers, linked to the image views we just created
-	{
-		debugLog("creating framebuffers...");
-		VkFramebufferCreateInfo framebuffer_create_info{ };
-		framebuffer_create_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-		framebuffer_create_info.renderPass = render_pass->getRenderPass();
-		framebuffer_create_info.attachmentCount = 3;
-		framebuffer_create_info.width = swapchain->getExtent().width;
-		framebuffer_create_info.height = swapchain->getExtent().height;
-		framebuffer_create_info.layers = 1;
-
-		framebuffers.resize(swapchain->getImageCount());
-		for (uint32_t i = 0; i < swapchain->getImageCount(); i++)
-		{
-			VkImageView attachments[] = { swapchain->getImageView(i), normal_image_view, depth_image_view };
-			
-			framebuffer_create_info.pAttachments = attachments;
-		
-			if (vkCreateFramebuffer(device, &framebuffer_create_info, nullptr, &framebuffers[i]) != VK_SUCCESS)
-				throw std::runtime_error("unable to create framebuffer");
-    	}
-		debugLog("    created " + to_string(framebuffers.size()) + " framebuffer objects");
-		debugLog("done.");
-	}
-
 	// create framebuffer image sync resources
 	{
 		debugLog("creating sync resources...");
@@ -637,15 +589,6 @@ void PTRenderServer::destroyFramebufferAndSyncResources()
         vkDestroyFence(device, in_flight_fences[i], nullptr);
     }
 
-    for (auto framebuffer : framebuffers)
-        vkDestroyFramebuffer(device, framebuffer, nullptr);
-    framebuffers.clear();
-
-    vkDestroyImageView(device, depth_image_view, nullptr);
-    depth_image->removeReferencer();
-
-    vkDestroyImageView(device, normal_image_view, nullptr);
-    normal_image->removeReferencer();
 	debugLog("done.");
 }
 
@@ -924,6 +867,7 @@ void PTRenderServer::resizeSwapchain()
 
     debugLog("    new size: " + to_string(size.x) + ", " + to_string(size.y));
     swapchain->resize(surface, size.x, size.y);   // tooootally doesnt completely recreate the swapchain....
+    render_graph->resize();
 
     createFramebufferAndSyncResources();
 
