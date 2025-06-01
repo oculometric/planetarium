@@ -302,6 +302,28 @@ void PTRenderServer::initVulkan(GLFWwindow* window, vector<const char*> glfw_ext
     default_material = PTResourceManager::get()->createMaterial(DEFAULT_MATERIAL_PATH, swapchain, render_graph->getRenderPass(), true);
     default_shader->removeReferencer();
 
+    PTRGStep basic_step{ };
+    basic_step.is_camera_step = true;
+    basic_step.camera_slot = 0;
+    basic_step.colour_buffer_binding = 0;
+    basic_step.depth_buffer_binding = 1;
+    basic_step.normal_buffer_binding = 2;
+    basic_step.extra_buffer_binding = 3;
+
+    PTRGStep pp_step{ };
+    pp_step.is_camera_step = false;
+    pp_step.colour_buffer_binding = 4;
+    pp_step.process_material = PTResourceManager::get()->createMaterial("res/pp_demo.ptmat");
+    pp_step.process_inputs = { { 0, 2 }, { 1, 3 }, { 2, 4 }, { 3, 5 } };
+
+    PTRGStep pp_step2{ };
+    pp_step2.is_camera_step = false;
+    pp_step2.colour_buffer_binding = 5;
+    pp_step2.process_material = PTResourceManager::get()->createMaterial("res/pp_demo.ptmat", nullptr, nullptr, true);
+    pp_step2.process_inputs = { { 4, 2 }, { 1, 3 }, { 2, 4 }, { 3, 5 } };
+    
+    render_graph->configure({ basic_step, pp_step, pp_step2 }, 5);
+
     debugLog("    loading quad");
     quad_mesh = PTResourceManager::get()->createMesh(
         {

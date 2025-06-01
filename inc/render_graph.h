@@ -31,12 +31,17 @@ class PTSwapchain;
 
 // TODO: right now multi camera support is impossible. we would need extra uniform buffers (and descriptor sets, ugh) to support it
 // TODO: support custom render pass with different output attachments
+// FIXME: ensure inputs to PP passes are not used as outputs on the same pass
 // TODO: support non-swapchain-shaped texture rendering
 // TODO: support custom clear values for each image/buffer
-// TODO: needs to handle resizing when swapchain resizes
 // TODO: simple copy step
 struct PTRGStep
 {
+    friend class PTRGGraph;
+private:
+    std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> descriptor_sets;
+
+public:
     int colour_buffer_binding = 0;
     int depth_buffer_binding = -1;
     int normal_buffer_binding = -1;
@@ -70,10 +75,10 @@ private:
     VkDescriptorPool descriptor_pool = VK_NULL_HANDLE;
 
     std::vector<PTRGStep> timeline_steps;
-    std::vector<std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT>> descriptor_sets;
     PTBuffer* shared_transform_uniforms;
     std::array<PTBuffer*, MAX_FRAMES_IN_FLIGHT> shared_scene_uniforms;
     std::vector<std::pair<PTImage*, VkImageView>> image_buffers;
+    int final_image_index = -1;
     std::vector<VkFramebuffer> framebuffers;
     PTRenderPass* render_pass;
 
@@ -103,16 +108,18 @@ private:
 
 public:
     inline PTRenderPass* getRenderPass() const { return render_pass; }
-    inline PTImage* getFinalImage() const { return image_buffers[image_buffers.size() - 1].first; }
+    inline PTImage* getFinalImage() const { return final_image_index < 0 ? spare_colour_image : image_buffers[final_image_index].first; }
     inline size_t getStepCount() const { return timeline_steps.size(); }
     inline bool getStepIsCamera(size_t step_index) const { return timeline_steps[step_index].is_camera_step; }
     //inline size_t getStepCameraSlot(size_t step_index) const { return timeline_steps[step_index].camera_slot; }
     inline std::pair<PTMaterial*, VkDescriptorSet> getStepMaterial(size_t step_index, uint32_t frame_index) const
     {
-        return std::pair<PTMaterial*, VkDescriptorSet>(timeline_steps[step_index].process_material, descriptor_sets[step_index][frame_index]);
+        return std::pair<PTMaterial*, VkDescriptorSet>(timeline_steps[step_index].process_material, timeline_steps[step_index].descriptor_sets[frame_index]);
     }
     PTRGStepInfo getStepInfo(size_t step_index) const;
 
     void resize();
     void updateUniforms(const SceneUniforms& scene_uniforms, const TransformUniforms& transform_uniforms, uint32_t frame_index);
+
+    void configure(const std::vector<PTRGStep>& steps, int final_image);
 };

@@ -12,6 +12,7 @@
 
 ## Engine Stuff
 
+- [ ] explicit material duplication                                                          (1)
 - [ ] scene ambient light
 - [ ] come up with a new system for node types (dynamic, not compile-time, runtime instead?)
 - [ ] loading of scenes by choice at runtime, switching of scenes                            (3)

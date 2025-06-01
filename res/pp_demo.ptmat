@@ -1,0 +1,7 @@
+Resource(shader, "res/pp_demo") : shader;
+
+Depth(operation = "ALWAYS", test = 0, write = 1);
+Culling(mode = "NONE");
+Polygon(mode = "FILL");
+
+Shader(resource = @shader);
