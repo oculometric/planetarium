@@ -6,7 +6,7 @@
 #include "swapchain.h"
 #include "resource_manager.h"
 
-const VkImageUsageFlags IMAGE_USAGE = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+const VkImageUsageFlags IMAGE_USAGE = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 const VkFormat EXTRA_FORMAT = VK_FORMAT_R16G16B16A16_SNORM;
 
 using namespace std;
@@ -15,6 +15,7 @@ PTRGGraph::PTRGGraph(VkDevice _device, PTSwapchain* _swapchain)
 {
 	device = _device;
 	swapchain = _swapchain;
+	addDependency(swapchain);
 
 	PTRGStep basic_step;
 	basic_step.is_camera_step = true;
@@ -23,7 +24,21 @@ PTRGGraph::PTRGGraph(VkDevice _device, PTSwapchain* _swapchain)
 
 	timeline_steps.push_back(basic_step);
 
-	// TODO: allocate descriptor pool
+	array<VkDescriptorPoolSize, 2> pool_sizes{ };
+	pool_sizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	pool_sizes[0].descriptorCount = MAX_FRAMES_IN_FLIGHT * 256 * 16;
+	pool_sizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	pool_sizes[1].descriptorCount = MAX_FRAMES_IN_FLIGHT * 256 * 16;
+
+	VkDescriptorPoolCreateInfo pool_create_info{ };
+	pool_create_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+	pool_create_info.maxSets = MAX_FRAMES_IN_FLIGHT * 256;
+	pool_create_info.poolSizeCount = static_cast<uint32_t>(pool_sizes.size());
+	pool_create_info.pPoolSizes = pool_sizes.data();
+	pool_create_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+
+	if (vkCreateDescriptorPool(device, &pool_create_info, nullptr, &descriptor_pool) != VK_SUCCESS)
+		throw runtime_error("unable to create descriptor pool");
 
 	generateRenderPasses();
 	generateImagesAndFramebuffers();
@@ -71,12 +86,12 @@ void PTRGGraph::generateImagesAndFramebuffers()
 		// prepare depth buffer
 		if (step.depth_buffer_binding == -1 && spare_depth_image == nullptr)
 		{
-			spare_depth_image = PTResourceManager::get()->createImage(swapchain->getExtent(), VK_FORMAT_D32_SFLOAT, VK_IMAGE_TILING_OPTIMAL, IMAGE_USAGE, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-			spare_depth_image_view = spare_depth_image->createImageView(VK_IMAGE_ASPECT_COLOR_BIT);
+			spare_depth_image = PTResourceManager::get()->createImage(swapchain->getExtent(), VK_FORMAT_D32_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+			spare_depth_image_view = spare_depth_image->createImageView(VK_IMAGE_ASPECT_DEPTH_BIT);
 		}
 		else if (step.depth_buffer_binding >= image_buffers.size())
 		{
-			PTImage* new_image = PTResourceManager::get()->createImage(swapchain->getExtent(), VK_FORMAT_D32_SFLOAT, VK_IMAGE_TILING_OPTIMAL, IMAGE_USAGE, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+			PTImage* new_image = PTResourceManager::get()->createImage(swapchain->getExtent(), VK_FORMAT_D32_SFLOAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 			image_buffers.push_back(pair<PTImage*, VkImageView>(new_image, new_image->createImageView(VK_IMAGE_ASPECT_DEPTH_BIT)));
 		}
 
@@ -148,7 +163,7 @@ void PTRGGraph::createMaterialDescriptorSets()
 		addDependency(shared_scene_uniforms[i], false);
 	}
 
-	// TODO: ensure that materials are unique to each step
+	// FIXME: ensure that materials are unique to each step
 	for (PTRGStep& step : timeline_steps)
 	{
 		if (step.is_camera_step)
@@ -170,6 +185,7 @@ void PTRGGraph::createMaterialDescriptorSets()
 		if (vkAllocateDescriptorSets(device, &set_allocation_info, sets.data()) != VK_SUCCESS)
 			throw runtime_error("unable to allocate descriptor sets");
 
+		// hook the descriptor sets up to the transform, scene, and material uniform buffers
 		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 		{
 			VkDescriptorBufferInfo transform_buffer_info{ };
@@ -202,17 +218,111 @@ void PTRGGraph::createMaterialDescriptorSets()
 
 			std::array<VkWriteDescriptorSet, 2> write_sets = { write_set, write_set2 };
 
-			vkUpdateDescriptorSets(device, write_sets.size(), write_sets.data(), 0, nullptr);
+			vkUpdateDescriptorSets(device, static_cast<uint32_t>(write_sets.size()), write_sets.data(), 0, nullptr);
 			step.process_material->applySetWrites(sets[i]);
 		}
 
 		descriptor_sets.push_back(sets);
 	}
+}
 
-	// TODO: need to update transforms and scene uniforms along with the rest of the scene
+void PTRGGraph::discardAllResources()
+{
+	removeDependency(shared_transform_uniforms);
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+		removeDependency(shared_scene_uniforms[i]);
+
+	destroyImages();
+
+	removeDependency(render_pass);
+
+	vkDestroyDescriptorPool(device, descriptor_pool, nullptr);
+	removeDependency(swapchain);
+}
+
+void PTRGGraph::destroyImages()
+{
+	for (VkFramebuffer fb : framebuffers)
+		vkDestroyFramebuffer(device, fb, nullptr);
+	framebuffers.clear();
+
+	for (auto pair : image_buffers)
+	{
+		vkDestroyImageView(device, pair.second, nullptr);
+		removeDependency(pair.first);
+	}
+	image_buffers.clear();
+
+	if (spare_colour_image != nullptr)
+	{
+		vkDestroyImageView(device, spare_colour_image_view, nullptr);
+		removeDependency(spare_colour_image);
+	}
+	if (spare_depth_image != nullptr)
+	{
+		vkDestroyImageView(device, spare_depth_image_view, nullptr);
+		removeDependency(spare_depth_image);
+	}
+	if (spare_normal_image != nullptr)
+	{
+		vkDestroyImageView(device, spare_normal_image_view, nullptr);
+		removeDependency(spare_normal_image);
+	}
+	if (spare_extra_image != nullptr)
+	{
+		vkDestroyImageView(device, spare_extra_image_view, nullptr);
+		removeDependency(spare_extra_image);
+	}
 }
 
 PTRGStepInfo PTRGGraph::getStepInfo(size_t step_index) const
 {
-	// TODO: generate step info struct
+	PTRGStepInfo step_info{ };
+	step_info.render_pass = render_pass;
+	step_info.framebuffer = framebuffers[step_index];
+	step_info.extent = swapchain->getExtent();
+	int col_binding = timeline_steps[step_index].colour_buffer_binding;
+	step_info.colour_is_needed = col_binding >= 0;
+	step_info.colour_image = step_info.colour_is_needed ? image_buffers[col_binding].first : spare_colour_image;
+	int dep_binding = timeline_steps[step_index].depth_buffer_binding;
+	step_info.depth_is_needed = dep_binding >= 0;
+	step_info.depth_image = step_info.depth_is_needed ? image_buffers[dep_binding].first : spare_depth_image;
+	int nor_binding = timeline_steps[step_index].normal_buffer_binding;
+	step_info.normal_is_needed = nor_binding >= 0;
+	step_info.normal_image = step_info.normal_is_needed ? image_buffers[nor_binding].first : spare_normal_image;
+	int ext_binding = timeline_steps[step_index].extra_buffer_binding;
+	step_info.extra_is_needed = ext_binding >= 0;
+	step_info.extra_image = step_info.extra_is_needed ? image_buffers[ext_binding].first : spare_extra_image;
+	step_info.clear_values[0].color = { { 1.0f, 0.0f, 1.0f, 1.0f } };
+	step_info.clear_values[1].color = { { 0.0f, 0.0f, 0.0f, 1.0f } };
+	step_info.clear_values[2].color = { { 0.0f, 0.0f, 0.0f, 1.0f } };
+	step_info.clear_values[3].depthStencil = { 1.0f, 0 };
+
+	return step_info;
+}
+
+void PTRGGraph::resize()
+{
+	destroyImages();
+	generateImagesAndFramebuffers();
+
+	for (size_t i = 0; i < timeline_steps.size(); i++)
+	{
+		PTRGStep step = timeline_steps[i];
+
+		if (step.is_camera_step)
+			continue;
+
+		for (const auto& pair : step.process_inputs)
+			step.process_material->setTexture(pair.second, image_buffers[pair.second].first);
+
+		for (size_t j = 0; j < MAX_FRAMES_IN_FLIGHT; j++)
+			step.process_material->applySetWrites(descriptor_sets[i][j]);
+	}
+}
+
+void PTRGGraph::updateUniforms(const SceneUniforms& scene_uniforms, const TransformUniforms& transform_uniforms, uint32_t frame_index)
+{
+	memcpy(shared_scene_uniforms[frame_index]->map(), &scene_uniforms, sizeof(scene_uniforms));
+	memcpy(shared_transform_uniforms->map(), &transform_uniforms, sizeof(transform_uniforms));
 }

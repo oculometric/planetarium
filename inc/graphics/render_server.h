@@ -79,6 +79,7 @@ private:
     std::set<PTLightNode*> light_set;
 
     PTMaterial* default_material = nullptr;
+    PTMesh* quad_mesh = nullptr;
 
     static constexpr char* required_device_extensions[1] =
     {
@@ -136,7 +137,8 @@ private:
     void updateTextureBindings();
     void drawFrame(uint32_t frame_index);
     void generateCameraRenderStepCommands(uint32_t frame_index, VkCommandBuffer command_buffer, PTRGStepInfo step_info, std::vector<DrawRequest>& sorted_queue);
-    void generatePostProcessRenderStepCommands(uint32_t frame_index, VkCommandBuffer command_buffer, PTRGStepInfo step_info, PTMaterial* material);
+    void generatePostProcessRenderStepCommands(uint32_t frame_index, VkCommandBuffer command_buffer, PTRGStepInfo step_info, std::pair<PTMaterial*, VkDescriptorSet> material);
+    void generateImageLayoutTransitionCommands(VkCommandBuffer command_buffer, VkImage image, VkImageLayout old_layout, VkImageLayout new_layout, VkAccessFlags src_access, VkAccessFlags dst_access, VkPipelineStageFlags src_stage, VkPipelineStageFlags dst_stage);
 
     void resizeSwapchain();
     void takeScreenshot(uint32_t frame_index);

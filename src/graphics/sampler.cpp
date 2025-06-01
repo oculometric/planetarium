@@ -31,7 +31,7 @@ void PTSampler::createSampler()
     sampler_info.addressModeW = address_mode;
     sampler_info.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
     sampler_info.anisotropyEnable = max_anisotropy > 0;
-    sampler_info.maxAnisotropy = max_anisotropy;
+    sampler_info.maxAnisotropy = static_cast<float>(max_anisotropy);
     sampler_info.unnormalizedCoordinates = VK_FALSE;
     sampler_info.compareEnable = VK_FALSE;
     sampler_info.compareOp = VK_COMPARE_OP_ALWAYS;

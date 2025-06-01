@@ -67,6 +67,7 @@ class PTRGGraph : public PTResource
 private:
     VkDevice device = VK_NULL_HANDLE;
     PTSwapchain* swapchain = nullptr;
+    VkDescriptorPool descriptor_pool = VK_NULL_HANDLE;
 
     std::vector<PTRGStep> timeline_steps;
     std::vector<std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT>> descriptor_sets;
@@ -98,14 +99,20 @@ private:
     void generateImagesAndFramebuffers();
     void createMaterialDescriptorSets();
     void discardAllResources();
+    void destroyImages();
 
 public:
     inline PTRenderPass* getRenderPass() const { return render_pass; }
+    inline PTImage* getFinalImage() const { return image_buffers[image_buffers.size() - 1].first; }
     inline size_t getStepCount() const { return timeline_steps.size(); }
     inline bool getStepIsCamera(size_t step_index) const { return timeline_steps[step_index].is_camera_step; }
     //inline size_t getStepCameraSlot(size_t step_index) const { return timeline_steps[step_index].camera_slot; }
-    inline PTMaterial* getStepMaterial(size_t step_index) const { return timeline_steps[step_index].process_material; }
+    inline std::pair<PTMaterial*, VkDescriptorSet> getStepMaterial(size_t step_index, uint32_t frame_index) const
+    {
+        return std::pair<PTMaterial*, VkDescriptorSet>(timeline_steps[step_index].process_material, descriptor_sets[step_index][frame_index]);
+    }
     PTRGStepInfo getStepInfo(size_t step_index) const;
 
     void resize();
+    void updateUniforms(const SceneUniforms& scene_uniforms, const TransformUniforms& transform_uniforms, uint32_t frame_index);
 };

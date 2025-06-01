@@ -260,6 +260,8 @@ PTRenderServer::~PTRenderServer()
 
 void PTRenderServer::initVulkan(GLFWwindow* window, vector<const char*> glfw_extensions)
 {
+    render_server = this;
+
 	debugLog("initialising vulkan...");
 
     // initialise vulkan app instance
@@ -300,6 +302,20 @@ void PTRenderServer::initVulkan(GLFWwindow* window, vector<const char*> glfw_ext
     default_material = PTResourceManager::get()->createMaterial(DEFAULT_MATERIAL_PATH, swapchain, render_graph->getRenderPass(), true);
     default_shader->removeReferencer();
 
+    debugLog("    loading quad");
+    quad_mesh = PTResourceManager::get()->createMesh(
+        {
+            PTVertex{ { -1, -1, 0 }, {}, {}, {}, { 0, 0 } },
+            PTVertex{ { 1, -1, 0 }, {}, {}, {}, { 1, 0 } },
+            PTVertex{ { 1, 1, 0 }, {}, {}, {}, { 1, 1 } },
+            PTVertex{ { -1, 1, 0 }, {}, {}, {}, { 0, 1 } }
+        },
+        {
+            0, 3, 1,
+            1, 3, 2
+        }
+    );
+
     debugLog("done.");
 }
 
@@ -320,6 +336,7 @@ void PTRenderServer::deinitVulkan()
 
 	vkDeviceWaitIdle(device);
 
+    quad_mesh->removeReferencer();
     default_material->removeReferencer();
 
     while (!draw_queue.empty())
@@ -560,11 +577,11 @@ void PTRenderServer::createFramebufferAndSyncResources()
 		fence_create_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 		fence_create_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 		
-		image_available_semaphores.resize(MAX_FRAMES_IN_FLIGHT);
-		render_finished_semaphores.resize(MAX_FRAMES_IN_FLIGHT);
-		in_flight_fences.resize(MAX_FRAMES_IN_FLIGHT);
+		image_available_semaphores.resize(swapchain->getImageCount());
+		render_finished_semaphores.resize(swapchain->getImageCount());
+		in_flight_fences.resize(swapchain->getImageCount());
 		
-		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+		for (size_t i = 0; i < swapchain->getImageCount(); i++)
 		{
 			if (vkCreateSemaphore(device, &semaphore_create_info, nullptr, &image_available_semaphores[i]) != VK_SUCCESS)
             	throw std::runtime_error("unable to create semaphore");
@@ -584,7 +601,7 @@ void PTRenderServer::destroyFramebufferAndSyncResources()
 	debugLog("destroying framebuffer and sync resources...");
     vkDeviceWaitIdle(device);
 
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    for (size_t i = 0; i < image_available_semaphores.size(); i++)
     {
         vkDestroySemaphore(device, image_available_semaphores[i], nullptr);
         vkDestroySemaphore(device, render_finished_semaphores[i], nullptr);
@@ -612,6 +629,8 @@ void PTRenderServer::destroyDebugUtilsMessenger(VkInstance instance, VkDebugUtil
 
 void PTRenderServer::updateSceneAndTransformUniforms(uint32_t frame_index)
 {
+    TransformUniforms blank_transform;
+
 	{
         // update transforms of each draw request
         TransformUniforms uniforms;
@@ -620,7 +639,9 @@ void PTRenderServer::updateSceneAndTransformUniforms(uint32_t frame_index)
         PTMatrix4f view_to_clip;
         PTApplication::get()->getCameraMatrix(world_to_view, view_to_clip);
         world_to_view.getColumnMajor(uniforms.world_to_view);
+        world_to_view.getColumnMajor(blank_transform.world_to_view);
         view_to_clip.getColumnMajor(uniforms.view_to_clip);
+        view_to_clip.getColumnMajor(blank_transform.view_to_clip);
 
         for (auto instruction : draw_queue)
         {
@@ -660,6 +681,8 @@ void PTRenderServer::updateSceneAndTransformUniforms(uint32_t frame_index)
         }
 
         memcpy(scene_uniform_buffers[frame_index]->map(), &uniforms, scene_uniform_buffers[frame_index]->getSize());
+
+        render_graph->updateUniforms(uniforms, blank_transform, frame_index);
     }
 }
 
@@ -686,7 +709,6 @@ void PTRenderServer::drawFrame(uint32_t frame_index)
 
     uint32_t image_index;
     VkResult result = vkAcquireNextImageKHR(device, swapchain->getSwapchain(), UINT64_MAX, image_available_semaphores[frame_index], VK_NULL_HANDLE, &image_index);
-
     if (result == VK_ERROR_OUT_OF_DATE_KHR)
     {
         debugLog("swapchain out of date during acquire image!");
@@ -723,25 +745,51 @@ void PTRenderServer::drawFrame(uint32_t frame_index)
     if (vkBeginCommandBuffer(command_buffers[frame_index], &command_buffer_begin_info) != VK_SUCCESS)
         throw runtime_error("unable to begin recording command buffer");
 
-    // TODO: from here on we should be working according to the render graph, so the order of things is:
-    // FOR each step, we need to prepare a render pass begin info which points to the correct framebuffer to render into
-    // this framebuffer should have been set up in advance by the render graph and should point to all the correct buffers
-    // THEN depending on the step type, we either render all the objects in the scene, or we render a quad with a specific
-    // material (pipeline) bound, which will have been configured to point to the correct input buffers by the render graph
-    // THEN we will convert the resulting framebuffer images into a standard format (probably a presentable one) to be used
-    // in the next step, otherwise we will convert the colour buffer into a presentable image, and submit it on the present
-    // queue (and we're done)
-
+    // step through the render graph
     for (size_t step_index = 0; step_index < render_graph->getStepCount(); step_index++)
     {
         PTRGStepInfo step_info = render_graph->getStepInfo(step_index);
         if (render_graph->getStepIsCamera(step_index))
             generateCameraRenderStepCommands(frame_index, command_buffers[frame_index], step_info, sorted_queue);
         else
-            generatePostProcessRenderStepCommands(frame_index, command_buffers[frame_index], step_info, render_graph->getStepMaterial(step_index));
+            generatePostProcessRenderStepCommands(frame_index, command_buffers[frame_index], step_info, render_graph->getStepMaterial(step_index, frame_index));
     }
 
-    // TODO: copy the last set of images to the framebuffer
+    // transition the swapchain and result images into copiable layouts
+    generateImageLayoutTransitionCommands(command_buffers[frame_index], swapchain->getImage(image_index),
+        VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 
+        VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_ACCESS_TRANSFER_WRITE_BIT,
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+
+    generateImageLayoutTransitionCommands(command_buffers[frame_index], render_graph->getFinalImage()->getImage(),
+        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+        VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT,
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+
+    VkImageSubresourceLayers src_layers{ };
+    src_layers.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    src_layers.baseArrayLayer = 0;
+    src_layers.layerCount = 1;
+    src_layers.mipLevel = 0;
+
+    VkImageCopy copy_region{ };
+    copy_region.srcOffset = VkOffset3D{ 0, 0, 0 };
+    copy_region.dstOffset = VkOffset3D{ 0, 0, 0 };
+    copy_region.srcSubresource = src_layers;
+    copy_region.dstSubresource = src_layers;
+    copy_region.extent = VkExtent3D{ static_cast<uint32_t>(swapchain->getExtent().width), static_cast<uint32_t>(swapchain->getExtent().height), 1 };
+
+    vkCmdCopyImage(command_buffers[frame_index], render_graph->getFinalImage()->getImage(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, swapchain->getImage(image_index), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
+
+    generateImageLayoutTransitionCommands(command_buffers[frame_index], swapchain->getImage(image_index),
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+        VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+        VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+
+    generateImageLayoutTransitionCommands(command_buffers[frame_index], render_graph->getFinalImage()->getImage(),
+        VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+        VK_ACCESS_TRANSFER_READ_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+        VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
 
     if (vkEndCommandBuffer(command_buffers[frame_index]) != VK_SUCCESS)
         throw std::runtime_error("unable to record command buffer");
@@ -755,7 +803,7 @@ void PTRenderServer::drawFrame(uint32_t frame_index)
     submit_info.pWaitDstStageMask = submit_wait_stages;
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &command_buffers[frame_index];
-    VkSemaphore signal_semaphores[] = { render_finished_semaphores[frame_index] };
+    VkSemaphore signal_semaphores[] = { render_finished_semaphores[image_index] };
     submit_info.signalSemaphoreCount = 1;
     submit_info.pSignalSemaphores = signal_semaphores;
 
@@ -853,8 +901,74 @@ void PTRenderServer::generateCameraRenderStepCommands(uint32_t frame_index, VkCo
     }
 
     vkCmdEndRenderPass(command_buffer);
+}
 
-    // FIXME: maybe if images are staying around, transition them all to be in the same format (which is easy to bind to shader)?
+void PTRenderServer::generatePostProcessRenderStepCommands(uint32_t frame_index, VkCommandBuffer command_buffer, PTRGStepInfo step_info, std::pair<PTMaterial*, VkDescriptorSet> material)
+{
+    VkViewport viewport{ };
+    viewport.x = 0.0f;
+    viewport.y = 0.0f;
+    viewport.width = static_cast<float>(step_info.extent.width);
+    viewport.height = static_cast<float>(step_info.extent.height);
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+
+    VkRect2D scissor{ };
+    scissor.offset = { 0, 0 };
+    scissor.extent = step_info.extent;
+
+    VkRenderPassBeginInfo render_pass_begin_info{ };
+    render_pass_begin_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    render_pass_begin_info.renderPass = step_info.render_pass->getRenderPass();
+    render_pass_begin_info.framebuffer = step_info.framebuffer;
+    render_pass_begin_info.renderArea.offset = { 0, 0 };
+    render_pass_begin_info.renderArea.extent = step_info.extent;
+    render_pass_begin_info.clearValueCount = static_cast<uint32_t>(step_info.clear_values.size());
+    render_pass_begin_info.pClearValues = step_info.clear_values.data();
+
+    vkCmdSetViewport(command_buffers[frame_index], 0, 1, &viewport);
+    vkCmdSetScissor(command_buffers[frame_index], 0, 1, &scissor);
+
+    vkCmdBeginRenderPass(command_buffer, &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+
+    vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, material.first->getPipeline()->getPipeline());
+
+    VkBuffer vertex_buffers[] = { quad_mesh->getVertexBuffer() };
+    VkDeviceSize offsets[] = { 0 };
+    vkCmdBindVertexBuffers(command_buffer, 0, 1, vertex_buffers, offsets);
+    vkCmdBindIndexBuffer(command_buffer, quad_mesh->getIndexBuffer(), 0, VK_INDEX_TYPE_UINT16);
+    vkCmdBindDescriptorSets(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, material.first->getPipeline()->getLayout(), 0, 1, &(material.second), 0, nullptr);
+    vkCmdDrawIndexed(command_buffer, static_cast<uint32_t>(quad_mesh->getIndexCount()), 1, 0, 0, 0);
+    
+    vkCmdEndRenderPass(command_buffer);
+}
+
+void PTRenderServer::generateImageLayoutTransitionCommands(VkCommandBuffer command_buffer, VkImage image, VkImageLayout old_layout, VkImageLayout new_layout, VkAccessFlags src_access, VkAccessFlags dst_access, VkPipelineStageFlags src_stage, VkPipelineStageFlags dst_stage)
+{
+    VkImageMemoryBarrier image_barrier{ };
+    image_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    image_barrier.image = image;
+    image_barrier.oldLayout = old_layout;
+    image_barrier.newLayout = new_layout;
+    image_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    image_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    image_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    image_barrier.subresourceRange.baseMipLevel = 0;
+    image_barrier.subresourceRange.levelCount = 1;
+    image_barrier.subresourceRange.baseArrayLayer = 0;
+    image_barrier.subresourceRange.layerCount = 1;
+    image_barrier.srcAccessMask = src_access;
+    image_barrier.dstAccessMask = dst_access;
+
+    vkCmdPipelineBarrier
+    (
+        command_buffer,
+        src_stage, dst_stage,
+        0,
+        0, nullptr,
+        0, nullptr,
+        1, &image_barrier
+    );
 }
 
 void PTRenderServer::resizeSwapchain()
