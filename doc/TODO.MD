@@ -6,9 +6,17 @@
 - [ ] give pipeline option to use mesh as line                                               (2)
 - [ ] give shader ability to detect where uniforms are used to reduce binding requirements   (6)
 - [ ] sampler and image mipmaps                                                              (4)
-- [ ] custom buffers for shaders to write extra data into - ability to configure these (add/remove from render pass) (7)
-- [ ] post processing support                                                                (5)
 - [ ] ray traced ambient occlusion pass                                                      (3, depends pp support)
+- [ ] render graph improvements
+      - [ ] ensure textures are not reused for incorrect purposes
+      - [ ] ensure that materials are unique to each step
+      - [ ] document code
+      - [ ] support multiple cameras
+      - [ ] ensure inputs to post-process passes are not also used as outputs
+      - [ ] implement a 'simple copy' timeline step
+      - [ ] support custom clear values for each output buffer on each step
+      - [ ] support custom resolutions for each step
+      - [ ] allow configuration of render graph through a text config file
 
 ## Engine Stuff
 
@@ -148,3 +156,4 @@
       - [x] getting cursor in window
 - [x] text shader
 - [x] lights
+- [x] post processing support

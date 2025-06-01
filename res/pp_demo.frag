@@ -23,6 +23,7 @@ void main()
     vec3 c_left = texture(albedo_texture, varyings.uv + (inv_size * vec2(-1, 0))).rgb;
     vec3 c_right = texture(albedo_texture, varyings.uv + (inv_size * vec2(1, 0))).rgb;
     vec3 c_center = texture(albedo_texture, varyings.uv).rgb;
+    vec3 c_sharp = (5.0f * c_center) - ((c_up + c_down + c_left + c_right));
 
-    frag_colour = vec4((5.0f * c_center) - ((c_up + c_down + c_left + c_right)), 1);
+    frag_colour = vec4(c_sharp, 1);
 }

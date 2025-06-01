@@ -56,4 +56,5 @@ varyings.world_normal = (normalize(transform.model_to_world * vec4(varyings.norm
 gl_Position = transform.view_to_clip * transform.world_to_view * vec4(varyings.world_position, 1.0f);
 
 #define FRAGMENT_OUTPUTS layout(location = 0) out vec4 frag_colour; \
-layout(location = 1) out vec3 frag_normal;
+layout(location = 1) out vec4 frag_normal; \
+layout(location = 2) out vec4 frag_custom;

@@ -30,7 +30,6 @@ class PTMaterial;
 class PTSwapchain;
 
 // TODO: right now multi camera support is impossible. we would need extra uniform buffers (and descriptor sets, ugh) to support it
-// TODO: support custom render pass with different output attachments
 // FIXME: ensure inputs to PP passes are not used as outputs on the same pass
 // TODO: support non-swapchain-shaped texture rendering
 // TODO: support custom clear values for each image/buffer
