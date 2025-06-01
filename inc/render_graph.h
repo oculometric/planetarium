@@ -69,6 +69,9 @@ private:
     PTSwapchain* swapchain = nullptr;
 
     std::vector<PTRGStep> timeline_steps;
+    std::vector<std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT>> descriptor_sets;
+    PTBuffer* shared_transform_uniforms;
+    std::array<PTBuffer*, MAX_FRAMES_IN_FLIGHT> shared_scene_uniforms;
     std::vector<std::pair<PTImage*, VkImageView>> image_buffers;
     std::vector<VkFramebuffer> framebuffers;
     PTRenderPass* render_pass;
@@ -93,7 +96,7 @@ private:
 
     void generateRenderPasses();
     void generateImagesAndFramebuffers();
-    void updateMaterialTextureBindings();
+    void createMaterialDescriptorSets();
     void discardAllResources();
 
 public:

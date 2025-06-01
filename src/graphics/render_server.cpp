@@ -325,6 +325,8 @@ void PTRenderServer::deinitVulkan()
     while (!draw_queue.empty())
         removeAllDrawRequests(draw_queue.begin()->first);
 
+    render_graph->removeReferencer();
+
     destroyFramebufferAndSyncResources();
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
@@ -852,7 +854,7 @@ void PTRenderServer::generateCameraRenderStepCommands(uint32_t frame_index, VkCo
 
     vkCmdEndRenderPass(command_buffer);
 
-    // TODO: if images are staying around, transition them all to be in the same format (which is easy to bind to shader)
+    // FIXME: maybe if images are staying around, transition them all to be in the same format (which is easy to bind to shader)?
 }
 
 void PTRenderServer::resizeSwapchain()

@@ -23,9 +23,11 @@ PTRGGraph::PTRGGraph(VkDevice _device, PTSwapchain* _swapchain)
 
 	timeline_steps.push_back(basic_step);
 
+	// TODO: allocate descriptor pool
+
 	generateRenderPasses();
 	generateImagesAndFramebuffers();
-	updateMaterialTextureBindings();
+	createMaterialDescriptorSets();
 }
 
 PTRGGraph::~PTRGGraph()
@@ -49,6 +51,7 @@ void PTRGGraph::generateRenderPasses()
 
 void PTRGGraph::generateImagesAndFramebuffers()
 {
+	// FIXME: ensure that textures are not re-used for the wrong purposes!
 	for (const PTRGStep& step : timeline_steps)
 	{
 		// prepare colour buffer
@@ -134,8 +137,18 @@ void PTRGGraph::generateImagesAndFramebuffers()
 	for (const auto& pair : image_buffers) addDependency(pair.first, false);
 }
 
-void PTRGGraph::updateMaterialTextureBindings()
+void PTRGGraph::createMaterialDescriptorSets()
 {
+	// create shared scene and transform buffers used by all steps here
+	shared_transform_uniforms = PTResourceManager::get()->createBuffer(sizeof(TransformUniforms), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+	addDependency(shared_transform_uniforms, false);
+	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+	{
+		shared_scene_uniforms[i] = PTResourceManager::get()->createBuffer(sizeof(SceneUniforms), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+		addDependency(shared_scene_uniforms[i], false);
+	}
+
+	// TODO: ensure that materials are unique to each step
 	for (PTRGStep& step : timeline_steps)
 	{
 		if (step.is_camera_step)
@@ -143,7 +156,63 @@ void PTRGGraph::updateMaterialTextureBindings()
 
 		for (const auto& pair : step.process_inputs)
 			step.process_material->setTexture(pair.second, image_buffers[pair.second].first);
+
+		std::array<VkDescriptorSetLayout, MAX_FRAMES_IN_FLIGHT> layouts;
+		layouts.fill(step.process_material->getShader()->getDescriptorSetLayout());
+		VkDescriptorSetAllocateInfo set_allocation_info{ };
+		set_allocation_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+		set_allocation_info.descriptorPool = descriptor_pool;
+		set_allocation_info.descriptorSetCount = static_cast<uint32_t>(layouts.size());
+		set_allocation_info.pSetLayouts = layouts.data();
+
+		std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> sets;
+
+		if (vkAllocateDescriptorSets(device, &set_allocation_info, sets.data()) != VK_SUCCESS)
+			throw runtime_error("unable to allocate descriptor sets");
+
+		for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+		{
+			VkDescriptorBufferInfo transform_buffer_info{ };
+			transform_buffer_info.buffer = shared_transform_uniforms->getBuffer();
+			transform_buffer_info.offset = 0;
+			transform_buffer_info.range = sizeof(TransformUniforms);
+
+			VkDescriptorBufferInfo scene_buffer_info{ };
+			transform_buffer_info.buffer = shared_scene_uniforms[i]->getBuffer();
+			transform_buffer_info.offset = 0;
+			transform_buffer_info.range = sizeof(SceneUniforms);
+
+			VkWriteDescriptorSet write_set{ };
+			write_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			write_set.dstSet = sets[i];
+			write_set.dstBinding = TRANSFORM_UNIFORM_BINDING;
+			write_set.dstArrayElement = 0;
+			write_set.descriptorCount = 1;
+			write_set.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			write_set.pBufferInfo = &transform_buffer_info;
+
+			VkWriteDescriptorSet write_set2{ };
+			write_set2.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			write_set2.dstSet = sets[i];
+			write_set2.dstBinding = SCENE_UNIFORM_BINDING;
+			write_set2.dstArrayElement = 0;
+			write_set2.descriptorCount = 1;
+			write_set2.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			write_set2.pBufferInfo = &scene_buffer_info;
+
+			std::array<VkWriteDescriptorSet, 2> write_sets = { write_set, write_set2 };
+
+			vkUpdateDescriptorSets(device, write_sets.size(), write_sets.data(), 0, nullptr);
+			step.process_material->applySetWrites(sets[i]);
+		}
+
+		descriptor_sets.push_back(sets);
 	}
 
-	// TODO: create descriptor sets (and buffers) for the post process steps here
+	// TODO: need to update transforms and scene uniforms along with the rest of the scene
+}
+
+PTRGStepInfo PTRGGraph::getStepInfo(size_t step_index) const
+{
+	// TODO: generate step info struct
 }
