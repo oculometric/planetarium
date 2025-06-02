@@ -49,7 +49,7 @@ public:
     inline int getPriority() const { return priority; }
     inline void setPriority(int p) { priority = p; }
 
-    void setTexture(uint16_t bind_point, PTImage* texture, VkSamplerAddressMode repeat_mode = VK_SAMPLER_ADDRESS_MODE_REPEAT, VkFilter filtering = VK_FILTER_NEAREST);
+    void setTexture(uint16_t bind_point, PTImage* texture, VkSamplerAddressMode repeat_mode = VK_SAMPLER_ADDRESS_MODE_REPEAT, VkFilter filtering = VK_FILTER_NEAREST, VkImageAspectFlags aspect = VK_IMAGE_ASPECT_COLOR_BIT);
     PTImage* getTexture(uint16_t bind_point);
     inline bool getTextureUpdateFlag() { bool b = needs_texture_update; needs_texture_update = false; return b; }
 

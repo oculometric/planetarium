@@ -47,5 +47,6 @@ void main()
     //surface = (floor(scaled) + vec3(greaterThan(fract(scaled), vec3(val)))) / divs;
 
     frag_colour = vec4(surface_lit, 1);
-    frag_normal = normalize(varyings.world_normal);
+    frag_normal = vec4(normalize(varyings.world_normal), 1.0f);
+    frag_custom = vec4(varyings.uv, 0.5f, 1.0f);
 }

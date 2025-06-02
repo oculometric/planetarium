@@ -70,6 +70,7 @@
     <ClCompile Include="src\graphics\mesh.cpp" />
     <ClCompile Include="src\graphics\physical_device.cpp" />
     <ClCompile Include="src\graphics\pipeline.cpp" />
+    <ClCompile Include="src\graphics\render_graph.cpp" />
     <ClCompile Include="src\graphics\render_pass.cpp" />
     <ClCompile Include="src\graphics\render_server.cpp" />
     <ClCompile Include="src\graphics\resource.cpp" />

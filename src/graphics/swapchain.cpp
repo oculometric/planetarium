@@ -105,7 +105,7 @@ void PTSwapchain::createSwapchain(VkSurfaceKHR surface)
     swap_chain_create_info.imageColorSpace = surface_format.colorSpace;
     swap_chain_create_info.imageExtent = extent;
     swap_chain_create_info.imageArrayLayers = 1;
-    swap_chain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+    swap_chain_create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
     if (sharing_mode == VK_SHARING_MODE_CONCURRENT)
     {
         swap_chain_create_info.queueFamilyIndexCount = static_cast<uint32_t>(queue_families.size());

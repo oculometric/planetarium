@@ -31,7 +31,11 @@ void PTResource::addDependency(PTResource* resource, bool increment_counter)
 {
     // if we already have the resource, don't add it again!
     if (dependencies.contains(resource))
+    {
+        if (increment_counter)
+            resource->addReferencer();
         return;
+    }
     else
     {
         // add to the deps list, then maybe increment its reference counter

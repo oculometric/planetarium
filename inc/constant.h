@@ -48,8 +48,8 @@ struct LightDescription
 
 struct SceneUniforms
 {
-    PTVector2f viewport_size;
-    float time;
+    PTVector2f viewport_size = PTVector2f{ 640, 480 };
+    float time = 0.0f;
     LightDescription lights[MAX_LIGHTS];
 };
 

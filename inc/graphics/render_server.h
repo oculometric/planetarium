@@ -11,6 +11,7 @@
 
 #include "constant.h"
 #include "physical_device.h"
+#include "render_graph.h"
 
 class PTScene;
 class PTNode;
@@ -70,11 +71,7 @@ private:
     std::vector<VkSemaphore> render_finished_semaphores;
     std::vector<VkFence> in_flight_fences;
 
-    std::vector<VkFramebuffer> framebuffers;
-    PTImage* depth_image = nullptr;
-    VkImageView depth_image_view = VK_NULL_HANDLE;
-    PTImage* normal_image = nullptr;
-    VkImageView normal_image_view = VK_NULL_HANDLE;
+    PTRGGraph* render_graph = nullptr;
 
     std::array<PTBuffer*, MAX_FRAMES_IN_FLIGHT> scene_uniform_buffers;
     
@@ -82,7 +79,7 @@ private:
     std::set<PTLightNode*> light_set;
 
     PTMaterial* default_material = nullptr;
-    PTRenderPass* render_pass = nullptr;
+    PTMesh* quad_mesh = nullptr;
 
     static constexpr char* required_device_extensions[1] =
     {
@@ -111,7 +108,7 @@ public:
     void removeLight(PTLightNode* light);
 
     inline PTSwapchain* getSwapchain() const { return swapchain; }
-    inline PTRenderPass* getRenderPass() const { return render_pass; }
+    inline PTRenderPass* getRenderPass() const { return render_graph->getRenderPass(); }
 
     void beginEditLock();
     void endEditLock();
@@ -139,6 +136,9 @@ private:
     void updateSceneAndTransformUniforms(uint32_t frame_index);
     void updateTextureBindings();
     void drawFrame(uint32_t frame_index);
+    void generateCameraRenderStepCommands(uint32_t frame_index, VkCommandBuffer command_buffer, PTRGStepInfo step_info, std::vector<DrawRequest>& sorted_queue);
+    void generatePostProcessRenderStepCommands(uint32_t frame_index, VkCommandBuffer command_buffer, PTRGStepInfo step_info, std::pair<PTMaterial*, VkDescriptorSet> material);
+    void generateImageLayoutTransitionCommands(VkCommandBuffer command_buffer, VkImage image, VkImageLayout old_layout, VkImageLayout new_layout, VkAccessFlags src_access, VkAccessFlags dst_access, VkPipelineStageFlags src_stage, VkPipelineStageFlags dst_stage);
 
     void resizeSwapchain();
     void takeScreenshot(uint32_t frame_index);

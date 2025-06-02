@@ -56,5 +56,5 @@ void main()
         discard;
 
     frag_colour = vec4(colour.rgb, 1.0f);
-    frag_normal = varyings.normal;
+    frag_normal = vec4(varyings.normal, 1.0f);
 }

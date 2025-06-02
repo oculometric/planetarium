@@ -4,7 +4,7 @@
 
 using namespace std;
 
-PTRenderPass::PTRenderPass(VkDevice _device, vector<Attachment> _attachments)
+PTRenderPass::PTRenderPass(VkDevice _device, vector<Attachment> _attachments, bool transition_to_readable)
 {
     device = _device;
     attachments = _attachments;
@@ -49,7 +49,7 @@ PTRenderPass::PTRenderPass(VkDevice _device, vector<Attachment> _attachments)
     depth_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     depth_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     depth_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    depth_attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    depth_attachment.finalLayout = transition_to_readable ? VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
     // here index is always one greater than the last location requested
     VkAttachmentReference depth_attachment_ref{ };
@@ -65,14 +65,30 @@ PTRenderPass::PTRenderPass(VkDevice _device, vector<Attachment> _attachments)
     subpass.pColorAttachments = colour_attachment_refs.data();
     subpass.pDepthStencilAttachment = &depth_attachment_ref;
 
-    // create a dependency for the subpass
+    // create dependencies for the subpass
+    vector<VkSubpassDependency> dependencies;
     VkSubpassDependency dependency{ };
     dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
     dependency.dstSubpass = 0;
-    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-    dependency.srcAccessMask = 0;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
     dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    dependency.srcAccessMask = VK_ACCESS_NONE_KHR;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+    dependency.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+    dependencies.push_back(dependency);
+
+    if (transition_to_readable)
+    {
+        VkSubpassDependency dependency2{ };
+        dependency2.srcSubpass = 0;
+        dependency2.dstSubpass = VK_SUBPASS_EXTERNAL;
+        dependency2.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+        dependency2.dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+        dependency2.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        dependency2.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+        dependency2.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
+        dependencies.push_back(dependency2);
+    }
 
     // create a render pass referencing all of the attachments (colour and depth), the subpass and dependency
     VkRenderPassCreateInfo render_pass_create_info{ };
@@ -81,8 +97,8 @@ PTRenderPass::PTRenderPass(VkDevice _device, vector<Attachment> _attachments)
     render_pass_create_info.pAttachments = colour_attachments.data();
     render_pass_create_info.subpassCount = 1;
     render_pass_create_info.pSubpasses = &subpass;
-    render_pass_create_info.dependencyCount = 1;
-    render_pass_create_info.pDependencies = &dependency;
+    render_pass_create_info.dependencyCount = static_cast<uint32_t>(dependencies.size());
+    render_pass_create_info.pDependencies = dependencies.data();
 
     if (vkCreateRenderPass(device, &render_pass_create_info, nullptr, &render_pass) != VK_SUCCESS)
         throw runtime_error("unable to create render pass");

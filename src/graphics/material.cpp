@@ -167,6 +167,8 @@ void PTMaterial::applySetWrites(VkDescriptorSet descriptor_set)
 {
     vector<VkWriteDescriptorSet> set_writes;
     size_t descriptors = getShader()->getDescriptorCount();
+    vector< VkDescriptorBufferInfo> buffer_infos;
+    buffer_infos.reserve(descriptors);
     for (size_t b = 0; b < descriptors; b++)
     {
         // get the binding and check if it's one of the engine bindings
@@ -184,6 +186,7 @@ void PTMaterial::applySetWrites(VkDescriptorSet descriptor_set)
         buffer_info.buffer = uniform_buffers[binding_info.bind_point]->getBuffer();
         buffer_info.offset = 0;
         buffer_info.range = binding_info.size;
+        buffer_infos.push_back(buffer_info);
 
         VkWriteDescriptorSet write_set{ };
         write_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -192,10 +195,12 @@ void PTMaterial::applySetWrites(VkDescriptorSet descriptor_set)
         write_set.dstArrayElement = 0;
         write_set.descriptorCount = 1;
         write_set.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        write_set.pBufferInfo = &buffer_info;
+        write_set.pBufferInfo = &(buffer_infos[buffer_infos.size() - 1]);
         set_writes.push_back(write_set);
     }
 
+    vector<VkDescriptorImageInfo> image_infos;
+    image_infos.reserve(textures.size());
     for (auto pair : textures)
     {
         // configure a write operation which hooks the material texture up to the descriptor set
@@ -203,6 +208,7 @@ void PTMaterial::applySetWrites(VkDescriptorSet descriptor_set)
         image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         image_info.imageView = pair.second.second.first;
         image_info.sampler = pair.second.second.second->getSampler();
+        image_infos.push_back(image_info);
 
         VkWriteDescriptorSet write_set{ };
         write_set.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -211,14 +217,14 @@ void PTMaterial::applySetWrites(VkDescriptorSet descriptor_set)
         write_set.dstArrayElement = 0;
         write_set.descriptorCount = 1;
         write_set.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        write_set.pImageInfo = &image_info;
+        write_set.pImageInfo = image_infos.data() + (image_infos.size() - 1);
         set_writes.push_back(write_set);
     }
 
     vkUpdateDescriptorSets(device, static_cast<uint32_t>(set_writes.size()), set_writes.data(), 0, nullptr);
 }
 
-void PTMaterial::setTexture(uint16_t bind_point, PTImage* texture, VkSamplerAddressMode repeat_mode, VkFilter filtering)
+void PTMaterial::setTexture(uint16_t bind_point, PTImage* texture, VkSamplerAddressMode repeat_mode, VkFilter filtering, VkImageAspectFlags aspect)
 {
     PTShader::BindingInfo binding;
     size_t _;
@@ -251,7 +257,7 @@ void PTMaterial::setTexture(uint16_t bind_point, PTImage* texture, VkSamplerAddr
         addDependency(texture);
         textures[bind_point] = { texture, 
         {
-            texture->createImageView(VK_IMAGE_ASPECT_COLOR_BIT),
+            texture->createImageView(aspect),
             PTResourceManager::get()->createSampler(repeat_mode, filtering, filtering, 2)
         } };
         addDependency(textures[bind_point].second.second, false);
