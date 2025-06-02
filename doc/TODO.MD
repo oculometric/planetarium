@@ -10,7 +10,7 @@
 - [ ] render graph improvements                                                              (7) [H]
       - [x] ensure textures are not reused for incorrect purposes
       - [x] ensure that materials are unique to each step
-      - [ ] document code
+      - [x] document code
       - [ ] support multiple cameras
       - [x] ensure inputs to post-process passes are not also used as outputs
       - [ ] implement a 'simple copy' timeline step

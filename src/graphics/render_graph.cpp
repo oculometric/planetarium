@@ -36,7 +36,7 @@ PTRGGraph::PTRGGraph(VkDevice _device, PTSwapchain* _swapchain)
 		throw runtime_error("unable to create descriptor pool");
 
 	// create render pass and material uniform buffers
-	generateRenderPasses();
+	generateRenderPassAndUniformBuffers();
 }
 
 PTRGGraph::~PTRGGraph()
@@ -44,7 +44,7 @@ PTRGGraph::~PTRGGraph()
 	discardAllResources();
 }
 
-void PTRGGraph::generateRenderPasses()
+void PTRGGraph::generateRenderPassAndUniformBuffers()
 {
 	PTRenderPass::Attachment colour_attachment;
 	colour_attachment.format = swapchain->getImageFormat();
@@ -138,11 +138,8 @@ void PTRGGraph::generateImagesAndFramebuffers()
 		};
 		framebuffer_create_info.pAttachments = attachments;
 
-		VkFramebuffer fb;
-		if (vkCreateFramebuffer(device, &framebuffer_create_info, nullptr, &fb) != VK_SUCCESS)
+		if (vkCreateFramebuffer(device, &framebuffer_create_info, nullptr, &step.framebuffer) != VK_SUCCESS)
 			throw runtime_error("unable to create framebuffer");
-
-		framebuffers.push_back(fb);
 	}
 
 	// ensure all of the images are dependencies
@@ -152,6 +149,29 @@ void PTRGGraph::generateImagesAndFramebuffers()
 	if (spare_extra_image != nullptr) addDependency(spare_extra_image, false);
 
 	for (const auto& pair : image_buffers) addDependency(pair.first, false);
+}
+
+void PTRGGraph::linkTexturesToMaterial(const PTRGStep& step)
+{
+	for (const auto& pair : step.process_inputs)
+	{
+		if (pair.first == step.colour_buffer_binding || pair.first == step.depth_buffer_binding || pair.first == step.normal_buffer_binding || pair.first == step.extra_buffer_binding)
+		{
+			debugLog("ERROR: render graph process step is using a texture as both an input and a render attachment, which is not allowed. it will be unbound");
+			continue;
+		}
+		if (pair.first >= image_buffers.size())
+		{
+			debugLog("ERROR: render graph process step is referencing a texture which does not exist. it will be unbound");
+			continue;
+		}
+		if (pair.first < 0)
+		{
+			debugLog("WARNING: render graph process step is bound to spare image buffers, which is not allowed. it will be unbound");
+			continue;
+		}
+		step.process_material->setTexture(pair.second, image_buffers[pair.first].first, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_NEAREST, (image_buffers[pair.first].first->getFormat() != DEPTH_FORMAT) ? VK_IMAGE_ASPECT_COLOR_BIT : VK_IMAGE_ASPECT_DEPTH_BIT);
+	}
 }
 
 void PTRGGraph::createMaterialDescriptorSets()
@@ -167,15 +187,7 @@ void PTRGGraph::createMaterialDescriptorSets()
 		materials_set.insert(step.process_material);
 
 		// link material texture slots to image buffers
-		for (const auto& pair : step.process_inputs)
-		{
-			if (pair.first == step.colour_buffer_binding || pair.first == step.depth_buffer_binding || pair.first == step.normal_buffer_binding || pair.first == step.extra_buffer_binding)
-			{
-				debugLog("ERROR: render graph process step is using a texture as both an input and a render attachment, which is not allowed. the input will not be bound");
-				continue;
-			}
-			step.process_material->setTexture(pair.second, image_buffers[pair.first].first, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_NEAREST, (image_buffers[pair.first].first->getFormat() != DEPTH_FORMAT) ? VK_IMAGE_ASPECT_COLOR_BIT : VK_IMAGE_ASPECT_DEPTH_BIT);
-		}
+		linkTexturesToMaterial(step);
 
 		// allocate descriptor sets for the material
 		std::array<VkDescriptorSetLayout, MAX_FRAMES_IN_FLIGHT> layouts;
@@ -249,9 +261,11 @@ void PTRGGraph::discardAllResources()
 void PTRGGraph::destroyImages()
 {
 	// destroy framebuffers first
-	for (VkFramebuffer fb : framebuffers)
-		vkDestroyFramebuffer(device, fb, nullptr);
-	framebuffers.clear();
+	for (PTRGStep& step : timeline_steps)
+	{
+		vkDestroyFramebuffer(device, step.framebuffer, nullptr);
+		step.framebuffer = VK_NULL_HANDLE;
+	}
 
 	// destroy image views and images in the array
 	for (auto pair : image_buffers)
@@ -293,7 +307,7 @@ PTRGStepInfo PTRGGraph::getStepInfo(size_t step_index) const
 	PTRGStepInfo step_info{ };
 	// assign info necessary for starting a render pass
 	step_info.render_pass = render_pass;
-	step_info.framebuffer = framebuffers[step_index];
+	step_info.framebuffer = timeline_steps[step_index].framebuffer;
 	step_info.extent = swapchain->getExtent();
 	// assign clear values for each attachment
 	PTVector4f c_col = timeline_steps[step_index].colour_clear_value;
@@ -322,8 +336,7 @@ void PTRGGraph::resize()
 		if (step.is_camera_step)
 			continue;
 
-		for (const auto& pair : step.process_inputs)
-			step.process_material->setTexture(pair.second, image_buffers[pair.first].first);
+		linkTexturesToMaterial(step);
 
 		for (size_t j = 0; j < MAX_FRAMES_IN_FLIGHT; j++)
 			step.process_material->applySetWrites(step.descriptor_sets[j]);
@@ -351,4 +364,10 @@ void PTRGGraph::configure(const std::vector<PTRGStep>& steps, int final_image)
 	// generate images and descriptors
 	generateImagesAndFramebuffers();
 	createMaterialDescriptorSets();
+
+	if (final_image < -1 || final_image >= image_buffers.size())
+	{
+		final_image = -1;
+		createImageBufferForBinding(final_image, spare_colour_image, spare_colour_image_view, swapchain->getImageFormat());
+	}
 }
