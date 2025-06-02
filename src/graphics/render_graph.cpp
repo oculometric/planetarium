@@ -1,5 +1,7 @@
 #include "render_graph.h"
 
+#include <set>
+
 #include "material.h"
 #include "render_pass.h"
 #include "image.h"

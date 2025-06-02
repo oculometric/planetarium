@@ -29,9 +29,11 @@ void PTResource::removeReferencer()
 
 void PTResource::addDependency(PTResource* resource, bool increment_counter)
 {
+    auto it = dependencies.find(resource);
     // if we already have the resource, don't add it again!
-    if (dependencies.contains(resource))
+    if (it != dependencies.end())
     {
+        it->second = it->second + 1;
         if (increment_counter)
             resource->addReferencer();
         return;
@@ -39,7 +41,7 @@ void PTResource::addDependency(PTResource* resource, bool increment_counter)
     else
     {
         // add to the deps list, then maybe increment its reference counter
-        dependencies.insert(resource);
+        dependencies[resource] = 1;
         if (increment_counter)
             resource->addReferencer();
     }
@@ -47,10 +49,13 @@ void PTResource::addDependency(PTResource* resource, bool increment_counter)
 
 void PTResource::removeDependency(PTResource* resource, bool decrement_counter)
 {
-    if (dependencies.contains(resource))
+    auto it = dependencies.find(resource);
+    if (it != dependencies.end())
     {
         // remove from the deps list, then maybe decrement its reference counter
-        dependencies.erase(resource);
+        it->second = it->second - 1;
+        if (it->second == 0)
+            dependencies.erase(it);
         if (decrement_counter)
             resource->removeReferencer();
     }

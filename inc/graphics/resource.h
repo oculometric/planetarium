@@ -1,6 +1,6 @@
 #pragma once
 
-#include <set>
+#include <map>
 
 class PTResourceManager;
 
@@ -8,7 +8,7 @@ class PTResource
 {
     friend class PTResourceManager;
 private:
-    std::set<PTResource*> dependencies;
+    std::map<PTResource*, int> dependencies;
     size_t reference_counter = 0;
 
 protected:
