@@ -30,26 +30,29 @@ class PTMaterial;
 class PTSwapchain;
 
 // TODO: right now multi camera support is impossible. we would need extra uniform buffers (and descriptor sets, ugh) to support it
-// FIXME: ensure inputs to PP passes are not used as outputs on the same pass
 // TODO: support non-swapchain-shaped texture rendering
 // TODO: support custom clear values for each image/buffer
 // TODO: simple copy step
+
 struct PTRGStep
 {
     friend class PTRGGraph;
 private:
+    // assigned by the graph class, do not touch
     std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> descriptor_sets;
 
 public:
-    int colour_buffer_binding = 0;
-    int depth_buffer_binding = -1;
-    int normal_buffer_binding = -1;
-    int extra_buffer_binding = -1;
+    int colour_buffer_binding = 0;  // image index to send colour output to
+    int depth_buffer_binding = -1;  // image index to send depth output to
+    int normal_buffer_binding = -1; // image index to send normal output to
+    int extra_buffer_binding = -1;  // image index to send extra output to
 
-    bool is_camera_step = true;
-    size_t camera_slot = 0;
+    bool is_camera_step = true;     // true if this should be a camera render step, false for a post-process step
+    size_t camera_slot = 0;         // camera index to use for rendering, if camera-ing (currently does nothing)
 
+    // material to use for rendering, if post-processing
     PTMaterial* process_material = nullptr;
+    // mappings between image buffer indices to material texture slots
     std::vector<std::pair<int, uint16_t>> process_inputs;
 };
 
@@ -58,10 +61,6 @@ struct PTRGStepInfo
     PTRenderPass* render_pass = nullptr;
     VkFramebuffer framebuffer = VK_NULL_HANDLE;
     VkExtent2D extent;
-    PTImage* colour_image   = nullptr;  bool colour_is_needed = false;
-    PTImage* depth_image    = nullptr;  bool depth_is_needed = false;
-    PTImage* normal_image   = nullptr;  bool normal_is_needed = false;
-    PTImage* extra_image    = nullptr;  bool extra_is_needed = false;
     std::array<VkClearValue, 4> clear_values;
 };
 
@@ -100,6 +99,8 @@ private:
     PTRGGraph operator=(const PTRGGraph&& other) = delete;
 
     void generateRenderPasses();
+    VkImageView prepareImage(PTImage*& target, VkFormat format);
+    void createImageBufferForBinding(int& binding, PTImage*& spare_image, VkImageView& spare_image_view, VkFormat format);
     void generateImagesAndFramebuffers();
     void createMaterialDescriptorSets();
     void discardAllResources();

@@ -18,6 +18,7 @@ PTRGGraph::PTRGGraph(VkDevice _device, PTSwapchain* _swapchain)
 	swapchain = _swapchain;
 	addDependency(swapchain);
 
+	// construct descriptor pool for internal use
 	array<VkDescriptorPoolSize, 2> pool_sizes{ };
 	pool_sizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	pool_sizes[0].descriptorCount = MAX_FRAMES_IN_FLIGHT * 256 * 16;
@@ -34,6 +35,7 @@ PTRGGraph::PTRGGraph(VkDevice _device, PTSwapchain* _swapchain)
 	if (vkCreateDescriptorPool(device, &pool_create_info, nullptr, &descriptor_pool) != VK_SUCCESS)
 		throw runtime_error("unable to create descriptor pool");
 
+	// create render pass and material uniform buffers
 	generateRenderPasses();
 }
 
@@ -55,7 +57,7 @@ void PTRGGraph::generateRenderPasses()
 	render_pass = PTResourceManager::get()->createRenderPass({ colour_attachment, normal_and_extra_attachment, normal_and_extra_attachment }, true);
 	addDependency(render_pass, false);
 
-	// create shared scene and transform buffers used by all steps
+	// create shared scene and transform uniform buffers used by all steps
 	shared_transform_uniforms = PTResourceManager::get()->createBuffer(sizeof(TransformUniforms), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 	addDependency(shared_transform_uniforms, false);
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
@@ -65,60 +67,59 @@ void PTRGGraph::generateRenderPasses()
 	}
 }
 
+VkImageView PTRGGraph::prepareImage(PTImage*& target, VkFormat format)
+{
+	VkImageUsageFlags usage = IMAGE_USAGE;
+	if (format == DEPTH_FORMAT)
+		usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+
+	target = PTResourceManager::get()->createImage(swapchain->getExtent(), format, VK_IMAGE_TILING_OPTIMAL, usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	return target->createImageView((format == DEPTH_FORMAT) ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT);
+}
+
+void PTRGGraph::createImageBufferForBinding(int& binding, PTImage*& spare_image, VkImageView& spare_image_view, VkFormat format)
+{
+	// prepare colour buffer
+	if (binding < 0)
+	{
+		// initialise spare colour buffer
+		if (spare_image == nullptr)
+			spare_image_view = prepareImage(spare_image, format);
+	}
+	else
+	{
+		// initialise a new colour buffer in the image buffer array or check usage
+		if (binding >= image_buffers.size())
+		{
+			PTImage* tmp;
+			image_buffers.push_back({ tmp, prepareImage(tmp, format) });
+		}
+		else if (image_buffers[binding].first->getFormat() != format)
+		{
+			// if texture is being reused by the wrong attachment, just replace this binding with the spare image
+			debugLog("ERROR: render graph image re-used in incorrect format. discarding second usage");
+			binding = -1;
+			if (spare_image == nullptr)
+				spare_image_view = prepareImage(spare_image, format);
+		}
+	}
+}
+
 void PTRGGraph::generateImagesAndFramebuffers()
 {
-	// FIXME: ensure that textures are not re-used for the wrong purposes!
-	for (const PTRGStep& step : timeline_steps)
+	for (PTRGStep& step : timeline_steps)
 	{
 		// prepare colour buffer
-		if (step.colour_buffer_binding == -1 && spare_colour_image == nullptr)
-		{
-			// initialise spare colour buffer
-			spare_colour_image = PTResourceManager::get()->createImage(swapchain->getExtent(), swapchain->getImageFormat(), VK_IMAGE_TILING_OPTIMAL, IMAGE_USAGE, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-			spare_colour_image_view = spare_colour_image->createImageView(VK_IMAGE_ASPECT_COLOR_BIT);
-		}
-		else if (step.colour_buffer_binding >= image_buffers.size())
-		{
-			// initialise a new colour buffer in the image buffer array
-			PTImage* new_image = PTResourceManager::get()->createImage(swapchain->getExtent(), swapchain->getImageFormat(), VK_IMAGE_TILING_OPTIMAL, IMAGE_USAGE, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-			image_buffers.push_back(pair<PTImage*, VkImageView>(new_image, new_image->createImageView(VK_IMAGE_ASPECT_COLOR_BIT)));
-		}
+		createImageBufferForBinding(step.colour_buffer_binding, spare_colour_image, spare_colour_image_view, swapchain->getImageFormat());
 
 		// prepare depth buffer
-		if (step.depth_buffer_binding == -1 && spare_depth_image == nullptr)
-		{
-			spare_depth_image = PTResourceManager::get()->createImage(swapchain->getExtent(), DEPTH_FORMAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-			spare_depth_image_view = spare_depth_image->createImageView(VK_IMAGE_ASPECT_DEPTH_BIT);
-		}
-		else if (step.depth_buffer_binding >= image_buffers.size())
-		{
-			PTImage* new_image = PTResourceManager::get()->createImage(swapchain->getExtent(), DEPTH_FORMAT, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-			image_buffers.push_back(pair<PTImage*, VkImageView>(new_image, new_image->createImageView(VK_IMAGE_ASPECT_DEPTH_BIT)));
-		}
+		createImageBufferForBinding(step.depth_buffer_binding, spare_depth_image, spare_depth_image_view, DEPTH_FORMAT);
 
 		// prepare normal buffer
-		if (step.normal_buffer_binding == -1 && spare_normal_image == nullptr)
-		{
-			spare_normal_image = PTResourceManager::get()->createImage(swapchain->getExtent(), EXTRA_FORMAT, VK_IMAGE_TILING_OPTIMAL, IMAGE_USAGE, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-			spare_normal_image_view = spare_normal_image->createImageView(VK_IMAGE_ASPECT_COLOR_BIT);
-		}
-		else if (step.normal_buffer_binding >= image_buffers.size())
-		{
-			PTImage* new_image = PTResourceManager::get()->createImage(swapchain->getExtent(), EXTRA_FORMAT, VK_IMAGE_TILING_OPTIMAL, IMAGE_USAGE, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-			image_buffers.push_back(pair<PTImage*, VkImageView>(new_image, new_image->createImageView(VK_IMAGE_ASPECT_COLOR_BIT)));
-		}
+		createImageBufferForBinding(step.normal_buffer_binding, spare_normal_image, spare_normal_image_view, EXTRA_FORMAT);
 
-		// prepare normal buffer
-		if (step.extra_buffer_binding == -1 && spare_extra_image == nullptr)
-		{
-			spare_extra_image = PTResourceManager::get()->createImage(swapchain->getExtent(), EXTRA_FORMAT, VK_IMAGE_TILING_OPTIMAL, IMAGE_USAGE, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-			spare_extra_image_view = spare_extra_image->createImageView(VK_IMAGE_ASPECT_COLOR_BIT);
-		}
-		else if (step.extra_buffer_binding >= image_buffers.size())
-		{
-			PTImage* new_image = PTResourceManager::get()->createImage(swapchain->getExtent(), EXTRA_FORMAT, VK_IMAGE_TILING_OPTIMAL, IMAGE_USAGE, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-			image_buffers.push_back(pair<PTImage*, VkImageView>(new_image, new_image->createImageView(VK_IMAGE_ASPECT_COLOR_BIT)));
-		}
+		// prepare extra buffer
+		createImageBufferForBinding(step.extra_buffer_binding, spare_extra_image, spare_extra_image_view, EXTRA_FORMAT);
 
 		// create framebuffer using render pass and images
 		VkFramebufferCreateInfo framebuffer_create_info{ };
@@ -155,15 +156,28 @@ void PTRGGraph::generateImagesAndFramebuffers()
 
 void PTRGGraph::createMaterialDescriptorSets()
 {
-	// FIXME: ensure that materials are unique to each step
+	std::set<PTMaterial*> materials_set;
 	for (PTRGStep& step : timeline_steps)
 	{
 		if (step.is_camera_step)
 			continue;
 
-		for (const auto& pair : step.process_inputs)
-			step.process_material->setTexture(pair.second, image_buffers[pair.first].first, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_NEAREST, (image_buffers[pair.first].first->getFormat() != DEPTH_FORMAT) ? VK_IMAGE_ASPECT_COLOR_BIT : VK_IMAGE_ASPECT_DEPTH_BIT);
+		if (materials_set.contains(step.process_material))
+			debugLog("WARNING: material asset used in multiple render graph steps. this will cause undefined behaviour for all but the last instance");
+		materials_set.insert(step.process_material);
 
+		// link material texture slots to image buffers
+		for (const auto& pair : step.process_inputs)
+		{
+			if (pair.first == step.colour_buffer_binding || pair.first == step.depth_buffer_binding || pair.first == step.normal_buffer_binding || pair.first == step.extra_buffer_binding)
+			{
+				debugLog("ERROR: render graph process step is using a texture as both an input and a render attachment, which is not allowed. the input will not be bound");
+				continue;
+			}
+			step.process_material->setTexture(pair.second, image_buffers[pair.first].first, VK_SAMPLER_ADDRESS_MODE_REPEAT, VK_FILTER_NEAREST, (image_buffers[pair.first].first->getFormat() != DEPTH_FORMAT) ? VK_IMAGE_ASPECT_COLOR_BIT : VK_IMAGE_ASPECT_DEPTH_BIT);
+		}
+
+		// allocate descriptor sets for the material
 		std::array<VkDescriptorSetLayout, MAX_FRAMES_IN_FLIGHT> layouts;
 		layouts.fill(step.process_material->getShader()->getDescriptorSetLayout());
 		VkDescriptorSetAllocateInfo set_allocation_info{ };
@@ -216,24 +230,30 @@ void PTRGGraph::createMaterialDescriptorSets()
 
 void PTRGGraph::discardAllResources()
 {
+	// release uniform buffers
 	removeDependency(shared_transform_uniforms);
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 		removeDependency(shared_scene_uniforms[i]);
 
+	// destroy images and views
 	destroyImages();
 
+	// kill render pass
 	removeDependency(render_pass);
 
+	// destroy descriptors and pool
 	vkDestroyDescriptorPool(device, descriptor_pool, nullptr);
 	removeDependency(swapchain);
 }
 
 void PTRGGraph::destroyImages()
 {
+	// destroy framebuffers first
 	for (VkFramebuffer fb : framebuffers)
 		vkDestroyFramebuffer(device, fb, nullptr);
 	framebuffers.clear();
 
+	// destroy image views and images in the array
 	for (auto pair : image_buffers)
 	{
 		vkDestroyImageView(device, pair.second, nullptr);
@@ -241,6 +261,7 @@ void PTRGGraph::destroyImages()
 	}
 	image_buffers.clear();
 
+	// destroy spare image views and images
 	if (spare_colour_image != nullptr)
 	{
 		vkDestroyImageView(device, spare_colour_image_view, nullptr);
@@ -270,21 +291,11 @@ void PTRGGraph::destroyImages()
 PTRGStepInfo PTRGGraph::getStepInfo(size_t step_index) const
 {
 	PTRGStepInfo step_info{ };
+	// assign info necessary for starting a render pass
 	step_info.render_pass = render_pass;
 	step_info.framebuffer = framebuffers[step_index];
 	step_info.extent = swapchain->getExtent();
-	int col_binding = timeline_steps[step_index].colour_buffer_binding;
-	step_info.colour_is_needed = col_binding >= 0;
-	step_info.colour_image = step_info.colour_is_needed ? image_buffers[col_binding].first : spare_colour_image;
-	int dep_binding = timeline_steps[step_index].depth_buffer_binding;
-	step_info.depth_is_needed = dep_binding >= 0;
-	step_info.depth_image = step_info.depth_is_needed ? image_buffers[dep_binding].first : spare_depth_image;
-	int nor_binding = timeline_steps[step_index].normal_buffer_binding;
-	step_info.normal_is_needed = nor_binding >= 0;
-	step_info.normal_image = step_info.normal_is_needed ? image_buffers[nor_binding].first : spare_normal_image;
-	int ext_binding = timeline_steps[step_index].extra_buffer_binding;
-	step_info.extra_is_needed = ext_binding >= 0;
-	step_info.extra_image = step_info.extra_is_needed ? image_buffers[ext_binding].first : spare_extra_image;
+	// assign clear values for each attachment
 	step_info.clear_values[0].color = { { 1.0f, 0.0f, 1.0f, 1.0f } };
 	step_info.clear_values[1].color = { { 0.0f, 0.0f, 0.0f, 1.0f } };
 	step_info.clear_values[2].color = { { 0.0f, 0.0f, 0.0f, 1.0f } };
@@ -295,9 +306,11 @@ PTRGStepInfo PTRGGraph::getStepInfo(size_t step_index) const
 
 void PTRGGraph::resize()
 {
+	// destroy the images and regenerate them
 	destroyImages();
 	generateImagesAndFramebuffers();
 
+	// re-hook up all the textures to the materials
 	for (size_t i = 0; i < timeline_steps.size(); i++)
 	{
 		PTRGStep step = timeline_steps[i];
@@ -315,20 +328,23 @@ void PTRGGraph::resize()
 
 void PTRGGraph::updateUniforms(const SceneUniforms& scene_uniforms, const TransformUniforms& transform_uniforms, uint32_t frame_index)
 {
+	// update the shared buffers holding uniforms
 	memcpy(shared_scene_uniforms[frame_index]->map(), &scene_uniforms, sizeof(scene_uniforms));
 	memcpy(shared_transform_uniforms->map(), &transform_uniforms, sizeof(transform_uniforms));
 }
 
 void PTRGGraph::configure(const std::vector<PTRGStep>& steps, int final_image)
 {
-	final_image_index = final_image;
+	// destroy images
 	destroyImages();
 
+	// copy configuration into internal array
+	final_image_index = final_image;
 	timeline_steps.clear();
-
 	for (const PTRGStep& step : steps)
 		timeline_steps.push_back(step);
 
+	// generate images and descriptors
 	generateImagesAndFramebuffers();
 	createMaterialDescriptorSets();
 }

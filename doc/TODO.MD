@@ -2,17 +2,17 @@
 
 ## Vulkan Stuff
 
-- [ ] mesh data updating                                                                     (4)
-- [ ] give pipeline option to use mesh as line                                               (2)
-- [ ] give shader ability to detect where uniforms are used to reduce binding requirements   (6)
-- [ ] sampler and image mipmaps                                                              (4)
-- [ ] ray traced ambient occlusion pass                                                      (3, depends pp support)
-- [ ] render graph improvements
-      - [ ] ensure textures are not reused for incorrect purposes
-      - [ ] ensure that materials are unique to each step
+- [ ] mesh data updating                                                                     (4) [M]
+- [ ] give pipeline option to use mesh as line                                               (2) [L]
+- [ ] give shader ability to detect where uniforms are used to reduce binding requirements   (6) [L]
+- [ ] sampler and image mipmaps                                                              (4) [L]
+- [ ] ray traced ambient occlusion pass                                                      (3) [M]
+- [ ] render graph improvements                                                              (7) [H]
+      - [x] ensure textures are not reused for incorrect purposes
+      - [x] ensure that materials are unique to each step
       - [ ] document code
       - [ ] support multiple cameras
-      - [ ] ensure inputs to post-process passes are not also used as outputs
+      - [x] ensure inputs to post-process passes are not also used as outputs
       - [ ] implement a 'simple copy' timeline step
       - [ ] support custom clear values for each output buffer on each step
       - [ ] support custom resolutions for each step
@@ -20,33 +20,34 @@
 
 ## Engine Stuff
 
-- [ ] explicit material duplication                                                          (1)
-- [ ] scene ambient light
-- [ ] come up with a new system for node types (dynamic, not compile-time, runtime instead?)
-- [ ] loading of scenes by choice at runtime, switching of scenes                            (3)
-- [ ] refactor the way resources work (so we dont have to create everything through the resource manager) (3)
-- [ ] verbose debug                                                                          (1)
-- [ ] marching cubes/tetrahedra using geometry shader (or CPU)                               (8)
-- [ ] new PTFile module for file IO                                                          (6)
+- [ ] fix warnings when removing re-used texture on material                                 (3) [H]
+- [ ] explicit material duplication                                                          (3) [L]
+- [ ] scene ambient light                                                                    (2) [M]
+- [ ] come up with a new system for node types (dynamic, not compile-time, runtime instead?) (5) [M]
+- [ ] loading of scenes by choice at runtime, switching of scenes                            (3) [H]
+- [ ] refactor the way resources work (so we dont have to create everything through the resource manager, use a proper reference counting system based on copying) (3) [H]
+- [ ] verbose debug                                                                          (1) [M]
+- [ ] marching cubes/tetrahedra using geometry shader (or CPU)                               (8) [L]
+- [ ] new PTFile module for file IO                                                          (6) [H]
       - [ ] engine data packaged into executable
       - [ ] new path resolution system/file loading which allows loading engine data directly out of the executable
       - [ ] organise this, the text-file reading util, and the bitmap loader into the new module
       - [ ] better bitmap image loading (support more formats)
-- [ ] ability to get mouse delta this frame                                                  (1)
-- [ ] better way of specifying which keyboard key to check the state of (A vs a, etc)        (2)
-- [ ] cross platform controller support (using GLFW probably)                                (5)
-- [ ] UI system (use STUI to generate charbufs, then pass it into a shader maybe????)        (7)
-- [ ] fix bug with quaternions where something goes to infinity                              (1)
-- [ ] object and vertex picking                                                              (3)
-- [ ] scene editing                                                                          (7)
-- [ ] mesh editing                                                                           (10)
-- [ ] live shader editor                                                                     (8)
+- [ ] ability to get mouse delta this frame                                                  (1) [L]
+- [ ] better way of specifying which keyboard key to check the state of (A vs a, etc)        (2) [M]
+- [ ] cross platform controller support (using GLFW probably)                                (5) [H]
+- [ ] UI system (use STUI to generate charbufs, then pass it into a shader maybe????)        (7) [M]
+- [ ] fix bug with quaternions where something goes to infinity                              (1) [H]
+- [ ] object and vertex picking                                                              (3) [M]
+- [ ] scene editing                                                                          (7) [L]
+- [ ] mesh editing                                                                           (10) [L]
+- [ ] live shader editor                                                                     (8) [M]
       - [ ] detect when files are changed and should be updated
       - [ ] re-compile and re-create shader and descriptor set layout
       - [ ] re-create material with and pipeline, reapply uniforms and textures?
       - [ ] re-create all descriptor sets that apply (all draw requests)
-- [ ] COMPILED node editing                                                                  (10)
-- [ ] 3d reconstruction using meshing/shared topology solving (i.e. you draw some geometry from one view, then you draw some from another view and say what's what, then the engine solves the relative orientations of the view and the vertices) (11)
+- [ ] COMPILED node editing                                                                  (10) [L]
+- [ ] 3d reconstruction using meshing/shared topology solving (i.e. you draw some geometry from one view, then you draw some from another view and say what's what, then the engine solves the relative orientations of the view and the vertices) (11) [L]
 
 ## Art Stuff
 
