@@ -50,6 +50,20 @@ std::string runOpenDialog()
     }
     return ret;
 }
+#elif defined(__linux__)
+std::string runOpenDialog()
+{
+    const char zenityP[] = "/usr/bin/zenity";
+    char call[2048];
+
+    sprintf(call,"%s  --file-selection --modal --title=\"%s\" ", zenityP, "Select file");
+    char filename[1024] = { 0 };
+    FILE *f = popen(call,"r");
+    fgets(filename, 1024, f); 
+    pclose(f);
+
+    return std::string(filename);
+}
 #endif
 
 using namespace std;
