@@ -6,10 +6,6 @@
 #include "swapchain.h"
 #include "resource_manager.h"
 
-const VkImageUsageFlags IMAGE_USAGE = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-const VkFormat EXTRA_FORMAT = VK_FORMAT_R16G16B16A16_SNORM;
-const VkFormat DEPTH_FORMAT = VK_FORMAT_D32_SFLOAT;
-
 using namespace std;
 
 PTRGGraph::PTRGGraph(VkDevice _device, PTSwapchain* _swapchain)
@@ -67,24 +63,31 @@ void PTRGGraph::generateRenderPassAndUniformBuffers()
 	}
 }
 
-VkImageView PTRGGraph::prepareImage(PTImage*& target, VkFormat format)
+VkImageView PTRGGraph::prepareImage(PTImage*& target, VkFormat format, VkExtent2D extent)
 {
 	VkImageUsageFlags usage = IMAGE_USAGE;
 	if (format == DEPTH_FORMAT)
 		usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 
-	target = PTResourceManager::get()->createImage(swapchain->getExtent(), format, VK_IMAGE_TILING_OPTIMAL, usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	target = PTResourceManager::get()->createImage(extent, format, VK_IMAGE_TILING_OPTIMAL, usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	return target->createImageView((format == DEPTH_FORMAT) ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT);
 }
 
-void PTRGGraph::createImageBufferForBinding(int& binding, PTImage*& spare_image, VkImageView& spare_image_view, VkFormat format)
+void PTRGGraph::createImageBufferForBinding(int& binding, PTImage*& spare_image, VkImageView& spare_image_view, VkFormat format, VkExtent2D _extent)
 {
+	VkExtent2D extent = _extent;
+	if (extent.width == 0 || extent.height == 0)
+		extent = swapchain->getExtent();
 	// prepare colour buffer
 	if (binding < 0)
 	{
 		// initialise spare colour buffer
 		if (spare_image == nullptr)
-			spare_image_view = prepareImage(spare_image, format);
+			spare_image_view = prepareImage(spare_image, format, extent);
+		else if (extent.width != spare_image->getSize().width || extent.height != spare_image->getSize().height)
+		{
+			debugLog("ERROR: render graph spare image re-used in an incorrect size. this will generate vulkan errors");
+		}
 	}
 	else
 	{
@@ -92,7 +95,7 @@ void PTRGGraph::createImageBufferForBinding(int& binding, PTImage*& spare_image,
 		if (binding >= image_buffers.size())
 		{
 			PTImage* tmp;
-			image_buffers.push_back({ tmp, prepareImage(tmp, format) });
+			image_buffers.push_back({ tmp, prepareImage(tmp, format, extent) });
 		}
 		else if (image_buffers[binding].first->getFormat() != format)
 		{
@@ -100,7 +103,22 @@ void PTRGGraph::createImageBufferForBinding(int& binding, PTImage*& spare_image,
 			debugLog("ERROR: render graph image re-used in incorrect format. discarding second usage");
 			binding = -1;
 			if (spare_image == nullptr)
-				spare_image_view = prepareImage(spare_image, format);
+				spare_image_view = prepareImage(spare_image, format, extent);
+			else if (extent.width != spare_image->getSize().width || extent.height != spare_image->getSize().height)
+			{
+				debugLog("ERROR: render graph spare image re-used in an incorrect size. this will generate vulkan errors");
+			}
+		}
+		else if (image_buffers[binding].first->getSize().width != extent.width || image_buffers[binding].first->getSize().height != extent.height)
+		{
+			debugLog("ERROR: render graph image re-used in an incorrect size. discarding second usage");
+			binding = -1;
+			if (spare_image == nullptr)
+				spare_image_view = prepareImage(spare_image, format, extent);
+			else if (extent.width != spare_image->getSize().width || extent.height != spare_image->getSize().height)
+			{
+				debugLog("ERROR: render graph spare image re-used in an incorrect size. this will generate vulkan errors");
+			}
 		}
 	}
 }
@@ -110,24 +128,27 @@ void PTRGGraph::generateImagesAndFramebuffers()
 	for (PTRGStep& step : timeline_steps)
 	{
 		// prepare colour buffer
-		createImageBufferForBinding(step.colour_buffer_binding, spare_colour_image, spare_colour_image_view, swapchain->getImageFormat());
+		createImageBufferForBinding(step.colour_buffer_binding, spare_colour_image, spare_colour_image_view, swapchain->getImageFormat(), step.custom_extent);
 
 		// prepare depth buffer
-		createImageBufferForBinding(step.depth_buffer_binding, spare_depth_image, spare_depth_image_view, DEPTH_FORMAT);
+		createImageBufferForBinding(step.depth_buffer_binding, spare_depth_image, spare_depth_image_view, DEPTH_FORMAT, step.custom_extent);
 
 		// prepare normal buffer
-		createImageBufferForBinding(step.normal_buffer_binding, spare_normal_image, spare_normal_image_view, EXTRA_FORMAT);
+		createImageBufferForBinding(step.normal_buffer_binding, spare_normal_image, spare_normal_image_view, EXTRA_FORMAT, step.custom_extent);
 
 		// prepare extra buffer
-		createImageBufferForBinding(step.extra_buffer_binding, spare_extra_image, spare_extra_image_view, EXTRA_FORMAT);
+		createImageBufferForBinding(step.extra_buffer_binding, spare_extra_image, spare_extra_image_view, EXTRA_FORMAT, step.custom_extent);
 
 		// create framebuffer using render pass and images
 		VkFramebufferCreateInfo framebuffer_create_info{ };
 		framebuffer_create_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
 		framebuffer_create_info.renderPass = render_pass->getRenderPass();
 		framebuffer_create_info.attachmentCount = 4;
-		framebuffer_create_info.width = swapchain->getExtent().width;
-		framebuffer_create_info.height = swapchain->getExtent().height;
+		VkExtent2D extent = step.custom_extent;
+		if (extent.width == 0 || extent.height == 0)
+			extent = swapchain->getExtent();
+		framebuffer_create_info.width = extent.width;
+		framebuffer_create_info.height = extent.height;
 		framebuffer_create_info.layers = 1;
 		VkImageView attachments[] = 
 		{
@@ -304,16 +325,18 @@ void PTRGGraph::destroyImages()
 
 PTRGStepInfo PTRGGraph::getStepInfo(size_t step_index) const
 {
+	PTRGStep step = timeline_steps[step_index];
+
 	PTRGStepInfo step_info{ };
 	// assign info necessary for starting a render pass
 	step_info.render_pass = render_pass;
-	step_info.framebuffer = timeline_steps[step_index].framebuffer;
-	step_info.extent = swapchain->getExtent();
+	step_info.framebuffer = step.framebuffer;
+	step_info.extent = (step.custom_extent.width == 0 || step.custom_extent.height == 0) ? swapchain->getExtent() : step.custom_extent;
 	// assign clear values for each attachment
-	PTVector4f c_col = timeline_steps[step_index].colour_clear_value;
-	PTVector4f c_nor = timeline_steps[step_index].normal_clear_value;
-	PTVector4f c_ext = timeline_steps[step_index].extra_clear_value;
-	float c_dep = timeline_steps[step_index].depth_clear_value;
+	PTVector4f c_col = step.colour_clear_value;
+	PTVector4f c_nor = step.normal_clear_value;
+	PTVector4f c_ext = step.extra_clear_value;
+	float c_dep = step.depth_clear_value;
 	step_info.clear_values[0].color = { { c_col.x, c_col.y, c_col.z, c_col.w } };
 	step_info.clear_values[1].color = { { c_nor.x, c_nor.y, c_nor.z, c_nor.w } };
 	step_info.clear_values[2].color = { { c_ext.x, c_ext.y, c_ext.z, c_ext.w } };
@@ -368,6 +391,6 @@ void PTRGGraph::configure(const std::vector<PTRGStep>& steps, int final_image)
 	if (final_image < -1 || final_image >= image_buffers.size())
 	{
 		final_image = -1;
-		createImageBufferForBinding(final_image, spare_colour_image, spare_colour_image_view, swapchain->getImageFormat());
+		createImageBufferForBinding(final_image, spare_colour_image, spare_colour_image_view, swapchain->getImageFormat(), swapchain->getExtent());
 	}
 }

@@ -25,5 +25,13 @@ void main()
     vec3 c_center = texture(albedo_texture, varyings.uv).rgb;
     vec3 c_sharp = (5.0f * c_center) - ((c_up + c_down + c_left + c_right));
 
-    frag_colour = vec4(c_sharp, 1);
+    float blend = floor((varyings.uv.x * 4.0f) + (varyings.uv.y * 0.5f) - 0.5f);
+    if (blend < 1.0f)
+        frag_colour = vec4(texture(albedo_texture, varyings.uv).rgb, 1.0f);
+    else if (blend < 2.0f)
+        frag_colour = vec4(vec3(pow(texture(depth_texture, varyings.uv).r, 3.0f)), 1.0f);
+    else if (blend < 3.0f)
+        frag_colour = vec4(texture(normal_texture, varyings.uv).rgb, 1.0f);
+    else
+        frag_colour = vec4(texture(extra_texture, varyings.uv).rgb, 1.0f);
 }

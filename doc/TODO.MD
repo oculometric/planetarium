@@ -14,9 +14,11 @@
       - [ ] support multiple cameras
       - [x] ensure inputs to post-process passes are not also used as outputs
       - [ ] implement a 'simple copy' timeline step
+      - [ ] allow different sampling methods for textures
+      - [ ] resolve errors when showing the depth buffer on screen
       - [x] support custom clear values for each output buffer on each step
-      - [ ] support custom resolutions for each step
-      - [ ] allow configuration of render graph through a text config file
+      - [x] support custom resolutions for each step
+- [ ] allow configuration of render graph through a text config file                         (5) [M]
 
 ## Engine Stuff
 

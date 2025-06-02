@@ -309,6 +309,7 @@ void PTRenderServer::initVulkan(GLFWwindow* window, vector<const char*> glfw_ext
     basic_step.depth_buffer_binding = 1;
     basic_step.normal_buffer_binding = 2;
     basic_step.extra_buffer_binding = 3;
+    basic_step.custom_extent = VkExtent2D{ 64, 64 };
 
     PTRGStep pp_step{ };
     pp_step.is_camera_step = false;
@@ -771,38 +772,67 @@ void PTRenderServer::drawFrame(uint32_t frame_index)
             generatePostProcessRenderStepCommands(frame_index, command_buffers[frame_index], step_info, render_graph->getStepMaterial(step_index, frame_index));
     }
 
+    VkImage source_image = render_graph->getFinalImage()->getImage();
+    VkImage swap_image = swapchain->getImage(image_index);
+
     // transition the swapchain and result images into copiable layouts
-    generateImageLayoutTransitionCommands(command_buffers[frame_index], swapchain->getImage(image_index),
+    generateImageLayoutTransitionCommands(command_buffers[frame_index], swap_image,
         VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 
         VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_ACCESS_TRANSFER_WRITE_BIT,
         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
-    generateImageLayoutTransitionCommands(command_buffers[frame_index], render_graph->getFinalImage()->getImage(),
+    generateImageLayoutTransitionCommands(command_buffers[frame_index], source_image,
         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
         VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT,
         VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
+    VkExtent2D swap_ext = swapchain->getExtent();
+    VkExtent2D source_ext = render_graph->getFinalImage()->getSize();
+
     VkImageSubresourceLayers src_layers{ };
-    src_layers.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    src_layers.aspectMask = (render_graph->getFinalImage()->getFormat() == DEPTH_FORMAT) ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
     src_layers.baseArrayLayer = 0;
     src_layers.layerCount = 1;
     src_layers.mipLevel = 0;
 
-    VkImageCopy copy_region{ };
-    copy_region.srcOffset = VkOffset3D{ 0, 0, 0 };
-    copy_region.dstOffset = VkOffset3D{ 0, 0, 0 };
-    copy_region.srcSubresource = src_layers;
-    copy_region.dstSubresource = src_layers;
-    copy_region.extent = VkExtent3D{ static_cast<uint32_t>(swapchain->getExtent().width), static_cast<uint32_t>(swapchain->getExtent().height), 1 };
+    VkImageSubresourceLayers dst_layers{ };
+    dst_layers.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    dst_layers.baseArrayLayer = 0;
+    dst_layers.layerCount = 1;
+    dst_layers.mipLevel = 0;
 
-    vkCmdCopyImage(command_buffers[frame_index], render_graph->getFinalImage()->getImage(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, swapchain->getImage(image_index), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
+    if (render_graph->getFinalImage()->getFormat() == swapchain->getImageFormat()
+        && swap_ext.width == source_ext.width
+        && swap_ext.height == source_ext.height)
+    {
+        VkImageCopy copy_region{ };
+        copy_region.srcOffset = VkOffset3D{ 0, 0, 0 };
+        copy_region.dstOffset = VkOffset3D{ 0, 0, 0 };
+        copy_region.srcSubresource = src_layers;
+        copy_region.dstSubresource = dst_layers;
+        copy_region.extent = VkExtent3D{ static_cast<uint32_t>(swap_ext.width), static_cast<uint32_t>(swap_ext.height), 1 };
 
-    generateImageLayoutTransitionCommands(command_buffers[frame_index], swapchain->getImage(image_index),
+        vkCmdCopyImage(command_buffers[frame_index], source_image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, swap_image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy_region);
+    }
+    else
+    {
+        VkImageBlit blit_region{ };
+        blit_region.srcOffsets[0] = VkOffset3D{ 0, 0, 0 };
+        blit_region.srcOffsets[1] = VkOffset3D{ static_cast<int32_t>(source_ext.width), static_cast<int32_t>(source_ext.height), 1 };
+        blit_region.dstOffsets[0] = VkOffset3D{ 0, 0, 0 };
+        blit_region.dstOffsets[1] = VkOffset3D{ static_cast<int32_t>(swap_ext.width), static_cast<int32_t>(swap_ext.height), 1 };
+        blit_region.srcSubresource = src_layers;
+        blit_region.dstSubresource = dst_layers;
+
+        vkCmdBlitImage(command_buffers[frame_index], render_graph->getFinalImage()->getImage(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, swapchain->getImage(image_index), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &blit_region, VK_FILTER_LINEAR);
+    }
+
+    generateImageLayoutTransitionCommands(command_buffers[frame_index], swap_image,
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
         VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
         VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
 
-    generateImageLayoutTransitionCommands(command_buffers[frame_index], render_graph->getFinalImage()->getImage(),
+    generateImageLayoutTransitionCommands(command_buffers[frame_index], source_image,
         VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
         VK_ACCESS_TRANSFER_READ_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
         VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);

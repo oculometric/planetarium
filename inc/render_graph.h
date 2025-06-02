@@ -24,13 +24,16 @@
                                  buf a   buf b
 */
 
+const VkImageUsageFlags IMAGE_USAGE = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+const VkFormat EXTRA_FORMAT = VK_FORMAT_R16G16B16A16_SNORM;
+const VkFormat DEPTH_FORMAT = VK_FORMAT_D32_SFLOAT;
+
 class PTRenderPass;
 class PTImage;
 class PTMaterial;
 class PTSwapchain;
 
 // TODO: right now multi camera support is impossible. we would need extra uniform buffers (and descriptor sets, ugh) to support it
-// TODO: support non-swapchain-shaped texture rendering
 // TODO: simple copy step
 
 /**
@@ -58,6 +61,9 @@ public:
     int extra_buffer_binding = -1;  // image index to send extra output to
     // clear value for the extra buffer
     PTVector4f extra_clear_value = PTVector4f{ 0.0f, 0.0f, 0.0f, 1.0f };
+
+    // custom extent, leave set to zero to use swapchain extent
+    VkExtent2D custom_extent = VkExtent2D{ 0, 0 };
 
     bool is_camera_step = true;     // true if this should be a camera render step, false for a post-process step
     size_t camera_slot = 0;         // camera index to use for rendering, if camera-ing (currently does nothing)
@@ -135,9 +141,10 @@ private:
      * 
      * @param target image pointer to initialise
      * @param format format to use for the image. determines some other flags for image and view creation
+     * @param extent extent to use for image creation
      * @returns generated image view, appropriate for the format given
      */
-    VkImageView prepareImage(PTImage*& target, VkFormat format);
+    VkImageView prepareImage(PTImage*& target, VkFormat format, VkExtent2D extent);
     /**
      * @brief configure the image for a binding, either by creating a new image in the array or
      * by initialising the spare image
@@ -146,8 +153,9 @@ private:
      * @param spare_image spare image pointer to initialise if binding is -1 and spare image is nullptr
      * @param spare_image_view image view to pair with the spare image
      * @param format format of the image to generate, passed into `prepareImage`
+     * @param _extent size of the image to generate
      */
-    void createImageBufferForBinding(int& binding, PTImage*& spare_image, VkImageView& spare_image_view, VkFormat format);
+    void createImageBufferForBinding(int& binding, PTImage*& spare_image, VkImageView& spare_image_view, VkFormat format, VkExtent2D _extent);
     /**
      * @brief construct the images needed for all the timeline steps and combine them into framebuffers
      */
