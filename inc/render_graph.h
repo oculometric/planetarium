@@ -31,7 +31,6 @@ class PTSwapchain;
 
 // TODO: right now multi camera support is impossible. we would need extra uniform buffers (and descriptor sets, ugh) to support it
 // TODO: support non-swapchain-shaped texture rendering
-// TODO: support custom clear values for each image/buffer
 // TODO: simple copy step
 
 struct PTRGStep
@@ -43,9 +42,17 @@ private:
 
 public:
     int colour_buffer_binding = 0;  // image index to send colour output to
+    // clear value for the colour buffer
+    PTVector4f colour_clear_value = PTVector4f{ 1.0f, 0.0f, 1.0f, 1.0f };
     int depth_buffer_binding = -1;  // image index to send depth output to
+    // clear value for the depth buffer
+    float depth_clear_value = 1.0f;
     int normal_buffer_binding = -1; // image index to send normal output to
+    // clear value for the normal buffer
+    PTVector4f normal_clear_value = PTVector4f{ 0.0f, 0.0f, 0.0f, 1.0f };
     int extra_buffer_binding = -1;  // image index to send extra output to
+    // clear value for the extra buffer
+    PTVector4f extra_clear_value = PTVector4f{ 0.0f, 0.0f, 0.0f, 1.0f };
 
     bool is_camera_step = true;     // true if this should be a camera render step, false for a post-process step
     size_t camera_slot = 0;         // camera index to use for rendering, if camera-ing (currently does nothing)
@@ -58,10 +65,10 @@ public:
 
 struct PTRGStepInfo
 {
-    PTRenderPass* render_pass = nullptr;
-    VkFramebuffer framebuffer = VK_NULL_HANDLE;
-    VkExtent2D extent;
-    std::array<VkClearValue, 4> clear_values;
+    PTRenderPass* render_pass = nullptr;        // render pass to be used for rendering
+    VkFramebuffer framebuffer = VK_NULL_HANDLE; // framebuffer to be used when rendering (combines assigned image buffers)
+    VkExtent2D extent;                          // size of the target buffers (should be used for scissor and viewport)
+    std::array<VkClearValue, 4> clear_values;   // clear values to use when starting render pass
 };
 
 class PTRGGraph : public PTResource
@@ -111,7 +118,7 @@ public:
     inline PTImage* getFinalImage() const { return final_image_index < 0 ? spare_colour_image : image_buffers[final_image_index].first; }
     inline size_t getStepCount() const { return timeline_steps.size(); }
     inline bool getStepIsCamera(size_t step_index) const { return timeline_steps[step_index].is_camera_step; }
-    //inline size_t getStepCameraSlot(size_t step_index) const { return timeline_steps[step_index].camera_slot; }
+    inline size_t getStepCameraSlot(size_t step_index) const { return timeline_steps[step_index].camera_slot; }
     inline std::pair<PTMaterial*, VkDescriptorSet> getStepMaterial(size_t step_index, uint32_t frame_index) const
     {
         return std::pair<PTMaterial*, VkDescriptorSet>(timeline_steps[step_index].process_material, timeline_steps[step_index].descriptor_sets[frame_index]);

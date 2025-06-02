@@ -14,7 +14,7 @@
       - [ ] support multiple cameras
       - [x] ensure inputs to post-process passes are not also used as outputs
       - [ ] implement a 'simple copy' timeline step
-      - [ ] support custom clear values for each output buffer on each step
+      - [x] support custom clear values for each output buffer on each step
       - [ ] support custom resolutions for each step
       - [ ] allow configuration of render graph through a text config file
 

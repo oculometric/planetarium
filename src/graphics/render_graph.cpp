@@ -296,10 +296,14 @@ PTRGStepInfo PTRGGraph::getStepInfo(size_t step_index) const
 	step_info.framebuffer = framebuffers[step_index];
 	step_info.extent = swapchain->getExtent();
 	// assign clear values for each attachment
-	step_info.clear_values[0].color = { { 1.0f, 0.0f, 1.0f, 1.0f } };
-	step_info.clear_values[1].color = { { 0.0f, 0.0f, 0.0f, 1.0f } };
-	step_info.clear_values[2].color = { { 0.0f, 0.0f, 0.0f, 1.0f } };
-	step_info.clear_values[3].depthStencil = { 1.0f, 0 };
+	PTVector4f c_col = timeline_steps[step_index].colour_clear_value;
+	PTVector4f c_nor = timeline_steps[step_index].normal_clear_value;
+	PTVector4f c_ext = timeline_steps[step_index].extra_clear_value;
+	float c_dep = timeline_steps[step_index].depth_clear_value;
+	step_info.clear_values[0].color = { { c_col.x, c_col.y, c_col.z, c_col.w } };
+	step_info.clear_values[1].color = { { c_nor.x, c_nor.y, c_nor.z, c_nor.w } };
+	step_info.clear_values[2].color = { { c_ext.x, c_ext.y, c_ext.z, c_ext.w } };
+	step_info.clear_values[3].depthStencil = { c_dep, 0 };
 
 	return step_info;
 }
