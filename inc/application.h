@@ -31,6 +31,8 @@ private:
     uint32_t frame_time_running_mean_us;
 
     PTScene* current_scene = nullptr;
+    bool wants_new_scene = false;
+    std::string new_scene_path = "";
 public:
     PTApplication(unsigned int _width, unsigned int _height);
 
@@ -51,6 +53,8 @@ public:
     PTVector3f getCameraPosition() const;
 
 	float getTotalTime();
+
+    inline void openScene(std::string path) { wants_new_scene = true; new_scene_path = path; }
 
 private:
     void initWindow();

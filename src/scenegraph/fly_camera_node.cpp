@@ -2,6 +2,56 @@
 
 #include <string>
 
+#if defined(_WIN32)
+#include <windows.h>
+#include <shobjidl.h> 
+
+std::string runOpenDialog()
+{
+    std::string ret = "";
+    HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED |
+        COINIT_DISABLE_OLE1DDE);
+    if (SUCCEEDED(hr))
+    {
+        IFileOpenDialog* pFileOpen;
+
+        // Create the FileOpenDialog object.
+        hr = CoCreateInstance(CLSID_FileOpenDialog, NULL, CLSCTX_ALL,
+            IID_IFileOpenDialog, reinterpret_cast<void**>(&pFileOpen));
+
+        if (SUCCEEDED(hr))
+        {
+            // Show the Open dialog box.
+            hr = pFileOpen->Show(NULL);
+
+            // Get the file name from the dialog box.
+            if (SUCCEEDED(hr))
+            {
+                IShellItem* pItem;
+                hr = pFileOpen->GetResult(&pItem);
+                if (SUCCEEDED(hr))
+                {
+                    PWSTR pszFilePath;
+                    hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
+
+                    // Display the file name to the user.
+                    if (SUCCEEDED(hr))
+                    {
+                        for (size_t i = 0; pszFilePath[i] != '\0'; i++)
+                            ret.push_back(pszFilePath[i]);
+                        CoTaskMemFree(pszFilePath);
+                    }
+                    pItem->Release();
+                }
+            }
+            pFileOpen->Release();
+        }
+        CoUninitialize();
+    }
+    return ret;
+}
+#endif
+
 using namespace std;
 
 #include "input.h"
@@ -24,6 +74,12 @@ void PTFlyCameraNode::process(float delta_time)
     // set screenshot wanted
     if (manager->wasKeyPressed('P') || manager->getButtonState(PTGamepad::Button::CONTROL_NORTH))
         PTRenderServer::get()->setWantsScreenshot();
+
+    if (manager->wasKeyPressed('O') || manager->getButtonState(PTGamepad::Button::CONTROL_EAST))
+    {
+        string file_name = runOpenDialog();
+        PTApplication::get()->openScene(file_name);
+    }
         
     if (manager->wasMousePressed(PTInput::MouseButton::MOUSE_RIGHT))
         manager->setMouseVisible(false);

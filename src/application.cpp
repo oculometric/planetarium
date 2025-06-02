@@ -100,6 +100,14 @@ void PTApplication::mainLoop()
             }
         }
 
+        if (wants_new_scene)
+        {
+            wants_new_scene = false;
+            debugLog("loading new scene: " + new_scene_path);
+            current_scene->removeReferencer();
+            current_scene = PTResourceManager::get()->createScene(new_scene_path);
+        }
+
         if (current_scene != nullptr)
             current_scene->update(frame_time.count());
 

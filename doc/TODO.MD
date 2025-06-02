@@ -19,14 +19,13 @@
       - [x] support custom clear values for each output buffer on each step
       - [x] support custom resolutions for each step
 - [ ] allow configuration of render graph through a text config file                         (5) [M]
+      - [ ] make render graph per-scene
 
 ## Engine Stuff
 
-- [ ] fix warnings when removing re-used texture on material                                 (3) [H]
 - [ ] explicit material duplication                                                          (3) [L]
 - [ ] scene ambient light                                                                    (2) [M]
 - [ ] come up with a new system for node types (dynamic, not compile-time, runtime instead?) (5) [M]
-- [ ] loading of scenes by choice at runtime, switching of scenes                            (3) [H]
 - [ ] refactor the way resources work (so we dont have to create everything through the resource manager, use a proper reference counting system based on copying) (3) [H]
 - [ ] verbose debug                                                                          (1) [M]
 - [ ] marching cubes/tetrahedra using geometry shader (or CPU)                               (8) [L]
@@ -160,3 +159,5 @@
 - [x] text shader
 - [x] lights
 - [x] post processing support
+- [x] fix warnings when removing re-used texture on material
+- [x] loading of scenes by choice at runtime, switching of scenes
