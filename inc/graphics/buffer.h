@@ -2,12 +2,11 @@
 
 #include <vulkan/vulkan.h>
 
-#include "resource.h"
+#include "reference_counter.h"
 #include "physical_device.h"
 
-class PTBuffer : public PTResource
+class PTBuffer_T
 {
-    friend class PTResourceManager;
 private:
     VkDevice device;
 
@@ -17,16 +16,18 @@ private:
     VkDeviceMemory device_memory;
     void* mapped_memory = nullptr;
     
-    PTBuffer(VkDevice _device, PTPhysicalDevice physical_device, VkDeviceSize buffer_size, VkBufferUsageFlags usage_flags, VkMemoryPropertyFlags memory_flags);
-    
-    ~PTBuffer();
+    PTBuffer_T(VkDeviceSize buffer_size, VkBufferUsageFlags usage_flags, VkMemoryPropertyFlags memory_flags);
 
 public:
-    PTBuffer() = delete;
-    PTBuffer(const PTBuffer& other) = delete;
-    PTBuffer(const PTBuffer&& other) = delete;
-    PTBuffer operator=(const PTBuffer& other) = delete;
-    PTBuffer operator=(const PTBuffer&& other) = delete;
+    PTBuffer_T() = delete;
+    PTBuffer_T(const PTBuffer_T& other) = delete;
+    PTBuffer_T(const PTBuffer_T&& other) = delete;
+    PTBuffer_T operator=(const PTBuffer_T& other) = delete;
+    PTBuffer_T operator=(const PTBuffer_T&& other) = delete;
+    ~PTBuffer_T();
+
+    static inline PTCountedPointer<PTBuffer_T> createBuffer(VkDeviceSize buffer_size, VkBufferUsageFlags usage_flags, VkMemoryPropertyFlags memory_flags)
+    { return PTCountedPointer<PTBuffer_T>(new PTBuffer_T(buffer_size, usage_flags, memory_flags)); }
 
     inline VkDeviceSize getSize() { return size; }
     inline VkBuffer getBuffer() { return buffer; }
@@ -35,8 +36,9 @@ public:
     void* map(VkMemoryMapFlags mapping_flags = 0);
     inline void* getMappedMemory() { return mapped_memory; }
     void unmap();
-    void copyTo(PTBuffer* destination, VkDeviceSize length, VkDeviceSize source_offset = 0, VkDeviceSize destination_offset = 0);
+    void copyTo(PTCountedPointer<PTBuffer_T> destination, VkDeviceSize length, VkDeviceSize source_offset = 0, VkDeviceSize destination_offset = 0);
 
     static uint32_t findMemoryType(uint32_t type_bits, VkMemoryPropertyFlags properties, PTPhysicalDevice physical_device);
-
 };
+
+typedef PTCountedPointer<PTBuffer_T> PTBuffer;

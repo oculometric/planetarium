@@ -13,13 +13,18 @@
 #include "physical_device.h"
 #include "render_graph.h"
 
+#include "resource.h"
+#include "reference_counter.h"
+
+class PTBuffer_T;
+typedef PTCountedPointer<PTBuffer_T> PTBuffer;
+
 class PTScene;
 class PTNode;
 class PTSwapchain;
 class PTShader;
 class PTRenderPass;
 class PTPipeline;
-class PTBuffer;
 class PTImage;
 class PTMesh;
 class PTTransform;
@@ -37,7 +42,7 @@ private:
         PTTransform* transform = nullptr;
         PTMaterial* material = nullptr;
         std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> descriptor_sets;
-        std::array<PTBuffer*, MAX_FRAMES_IN_FLIGHT> descriptor_buffers;
+        std::array<PTBuffer, MAX_FRAMES_IN_FLIGHT> descriptor_buffers;
 
         static bool compare(const DrawRequest& a, const DrawRequest& b);
     };
@@ -73,7 +78,7 @@ private:
 
     PTRGGraph* render_graph = nullptr;
 
-    std::array<PTBuffer*, MAX_FRAMES_IN_FLIGHT> scene_uniform_buffers;
+    std::array<PTBuffer, MAX_FRAMES_IN_FLIGHT> scene_uniform_buffers;
     
     std::multimap<PTNode*, DrawRequest> draw_queue;
     std::set<PTLightNode*> light_set;
@@ -109,6 +114,8 @@ public:
 
     inline PTSwapchain* getSwapchain() const { return swapchain; }
     inline PTRenderPass* getRenderPass() const { return render_graph->getRenderPass(); }
+    inline PTPhysicalDevice getPhysicalDevice() const { return physical_device; }
+    inline VkDevice getDevice() const { return device; }
 
     void beginEditLock();
     void endEditLock();

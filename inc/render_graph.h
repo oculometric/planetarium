@@ -5,6 +5,7 @@
 #include <vulkan/vulkan.h>
 
 #include "resource.h"
+#include "reference_counter.h"
 #include "resource_manager.h"
 
 // the render graph consists of a timeline of instructions - either cameras to draw, or post process steps to run
@@ -32,6 +33,8 @@ class PTRenderPass;
 class PTImage;
 class PTMaterial;
 class PTSwapchain;
+
+typedef PTCountedPointer<class PTBuffer_T> PTBuffer;
 
 // TODO: right now multi camera support is impossible. we would need extra uniform buffers (and descriptor sets, ugh) to support it
 // TODO: simple copy step
@@ -102,9 +105,9 @@ private:
     // the sequence of render steps to execute
     std::vector<PTRGStep> timeline_steps;
     // transform uniform buffer shared by all post-process timeline steps
-    PTBuffer* shared_transform_uniforms;
+    PTBuffer shared_transform_uniforms;
     // array of scene uniform buffers shared by all post-process timeline steps
-    std::array<PTBuffer*, MAX_FRAMES_IN_FLIGHT> shared_scene_uniforms;
+    std::array<PTBuffer, MAX_FRAMES_IN_FLIGHT> shared_scene_uniforms;
     // array of image buffers which can be used as post process inputs or render targets
     std::vector<std::pair<PTImage*, VkImageView>> image_buffers;
     // index in the image buffer array of the image to be shown to the screen (or -1 to use the spare colour buffer)

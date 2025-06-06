@@ -39,18 +39,6 @@ PTResourceManager* PTResourceManager::get()
     return resource_manager;
 }
 
-PTBuffer* PTResourceManager::createBuffer(VkDeviceSize buffer_size, VkBufferUsageFlags usage_flags, VkMemoryPropertyFlags memory_flags)
-{
-    PTBuffer* buf = new PTBuffer(device, physical_device, buffer_size, usage_flags, memory_flags);
-    string identifier = "buffer-" + to_string((size_t)buf);
-
-    resources.emplace(identifier, buf);
-
-    buf->addReferencer();
-
-    return buf;
-}
-
 PTImage* PTResourceManager::createImage(VkExtent2D size, VkFormat _format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties)
 {
     PTImage* img = new PTImage(device, physical_device, size, _format, tiling, usage, properties);

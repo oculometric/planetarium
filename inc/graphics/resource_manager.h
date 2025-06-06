@@ -13,7 +13,6 @@
 #include "material.h"
 
 class PTScene;
-class PTBuffer;
 class PTImage;
 class PTMesh;
 class PTPipeline;
@@ -37,7 +36,6 @@ public:
     static void deinit();
     static PTResourceManager* get();
 
-    PTBuffer* createBuffer(VkDeviceSize buffer_size, VkBufferUsageFlags usage_flags, VkMemoryPropertyFlags memory_flags);
     PTImage* createImage(VkExtent2D size, VkFormat _format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties);
     PTImage* createImage(std::string texture_file, bool force_duplicate = false);
     PTMesh* createMesh(std::string file_name, bool force_duplicate = false);

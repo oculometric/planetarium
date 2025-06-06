@@ -47,6 +47,7 @@
     <ClInclude Include="inc\math\vector3.h" />
     <ClInclude Include="inc\math\vector4.h" />
     <ClInclude Include="inc\node_graph.h" />
+    <ClInclude Include="inc\reference_counter.h" />
     <ClInclude Include="inc\render_graph.h" />
     <ClInclude Include="inc\scenegraph\camera_node.h" />
     <ClInclude Include="inc\scenegraph\fly_camera_node.h" />

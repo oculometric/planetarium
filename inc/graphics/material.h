@@ -10,11 +10,15 @@
 #include "ptmath.h"
 
 class PTImage;
-class PTBuffer;
 class PTRenderPass;
 class PTPipeline;
 class PTSwapchain;
 class PTSampler;
+
+#include "reference_counter.h"
+
+class PTBuffer_T;
+typedef PTCountedPointer<PTBuffer_T> PTBuffer;
 
 class PTMaterial : public PTResource
 {
@@ -26,7 +30,7 @@ private:
     PTRenderPass* render_pass = nullptr;
     PTPipeline* pipeline = nullptr;
     VkDescriptorPool descriptor_pool = VK_NULL_HANDLE;
-    std::map<uint16_t, PTBuffer*> uniform_buffers;
+    std::map<uint16_t, PTBuffer> uniform_buffers;
     std::map<uint16_t, std::pair<PTImage*, std::pair<VkImageView, PTSampler*>>> textures;
     bool needs_texture_update = false;
 
@@ -43,7 +47,7 @@ public:
     inline PTShader* getShader() const { return shader; }
     inline PTRenderPass* getRenderPass() const { return render_pass; }
     inline PTPipeline* getPipeline() const { return pipeline; }
-    inline PTBuffer* getDescriptorBuffer(uint16_t binding) { return uniform_buffers[binding]; }
+    inline PTBuffer getDescriptorBuffer(uint16_t binding) { return uniform_buffers[binding]; }
     void applySetWrites(VkDescriptorSet descriptor_set);
 
     inline int getPriority() const { return priority; }

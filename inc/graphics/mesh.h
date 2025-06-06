@@ -26,8 +26,8 @@ class PTMesh : public PTResource
 private:
     VkDevice device = VK_NULL_HANDLE;
 
-    PTBuffer* vertex_buffer = nullptr;
-    PTBuffer* index_buffer = nullptr;
+    PTBuffer vertex_buffer;
+    PTBuffer index_buffer;
     uint32_t vertex_count = 0;
     uint32_t index_count = 0;
 
@@ -40,8 +40,8 @@ public:
     PTMesh operator=(const PTMesh& other) = delete;
     PTMesh operator=(const PTMesh&& other) = delete;
 
-    inline VkBuffer getVertexBuffer() const { return vertex_buffer != nullptr ? vertex_buffer->getBuffer() : VK_NULL_HANDLE; }
-    inline VkBuffer getIndexBuffer() const { return index_buffer != nullptr ? index_buffer->getBuffer() : VK_NULL_HANDLE; }
+    inline VkBuffer getVertexBuffer() const { return vertex_buffer.getPointer() != nullptr ? vertex_buffer->getBuffer() : VK_NULL_HANDLE; }
+    inline VkBuffer getIndexBuffer() const { return index_buffer.getPointer() != nullptr ? index_buffer->getBuffer() : VK_NULL_HANDLE; }
     inline uint32_t getVertexCount() const { return vertex_count; }
     inline uint32_t getIndexCount() const { return index_count; }
 

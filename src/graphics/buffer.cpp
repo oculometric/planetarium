@@ -6,12 +6,12 @@
 
 using namespace std;
 
-PTBuffer::PTBuffer(VkDevice _device, PTPhysicalDevice physical_device, VkDeviceSize buffer_size, VkBufferUsageFlags usage_flags, VkMemoryPropertyFlags memory_flags)
+PTBuffer_T::PTBuffer_T(VkDeviceSize buffer_size, VkBufferUsageFlags usage_flags, VkMemoryPropertyFlags memory_flags)
 {
     size = buffer_size;
     flags = memory_flags;
 
-    device = _device;
+    device = PTRenderServer::get()->getDevice();
     
     // create the buffer itself
     VkBufferCreateInfo buffer_create_info{ };
@@ -31,7 +31,7 @@ PTBuffer::PTBuffer(VkDevice _device, PTPhysicalDevice physical_device, VkDeviceS
     VkMemoryAllocateInfo allocate_info{ };
     allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocate_info.allocationSize = memory_requirements.size;
-    allocate_info.memoryTypeIndex = findMemoryType(memory_requirements.memoryTypeBits, memory_flags, physical_device);
+    allocate_info.memoryTypeIndex = findMemoryType(memory_requirements.memoryTypeBits, memory_flags, PTRenderServer::get()->getPhysicalDevice());
 
     if (vkAllocateMemory(device, &allocate_info, nullptr, &device_memory) != VK_SUCCESS)
         throw runtime_error("unable to allocate buffer memory");
@@ -39,7 +39,7 @@ PTBuffer::PTBuffer(VkDevice _device, PTPhysicalDevice physical_device, VkDeviceS
     vkBindBufferMemory(device, buffer, device_memory, 0);
 }
 
-void* PTBuffer::map(VkMemoryMapFlags mapping_flags)
+void* PTBuffer_T::map(VkMemoryMapFlags mapping_flags)
 {
     // if it's already mapped, just return
     if (mapped_memory != nullptr)
@@ -51,7 +51,7 @@ void* PTBuffer::map(VkMemoryMapFlags mapping_flags)
     return mapped_memory;
 }
 
-void PTBuffer::unmap()
+void PTBuffer_T::unmap()
 {
     // if not mapped, do nothing
     if (mapped_memory == nullptr)
@@ -62,7 +62,7 @@ void PTBuffer::unmap()
     mapped_memory = nullptr;
 }
 
-void PTBuffer::copyTo(PTBuffer* destination, VkDeviceSize length, VkDeviceSize source_offset, VkDeviceSize destination_offset)
+void PTBuffer_T::copyTo(PTCountedPointer<PTBuffer_T> destination, VkDeviceSize length, VkDeviceSize source_offset, VkDeviceSize destination_offset)
 {
     // create, and execute, a copy command
     VkCommandBuffer copy_command_buffer = PTRenderServer::get()->beginTransientCommands();
@@ -77,7 +77,7 @@ void PTBuffer::copyTo(PTBuffer* destination, VkDeviceSize length, VkDeviceSize s
     PTRenderServer::get()->endTransientCommands(copy_command_buffer);
 }
 
-uint32_t PTBuffer::findMemoryType(uint32_t type_bits, VkMemoryPropertyFlags properties, PTPhysicalDevice physical_device)
+uint32_t PTBuffer_T::findMemoryType(uint32_t type_bits, VkMemoryPropertyFlags properties, PTPhysicalDevice physical_device)
 {
     // figure out what type of memory fits the requirements
     VkPhysicalDeviceMemoryProperties memory_properties;
@@ -89,8 +89,9 @@ uint32_t PTBuffer::findMemoryType(uint32_t type_bits, VkMemoryPropertyFlags prop
     throw runtime_error("unable to find suitable memory type");
 }
 
-PTBuffer::~PTBuffer()
+PTBuffer_T::~PTBuffer_T()
 {
+    debugLog("buffer_t being deallocated!");
     // make sure we're unmapped
     unmap();
 

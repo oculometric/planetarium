@@ -29,7 +29,7 @@ PTImage::PTImage(VkDevice _device, string texture_path, PTPhysicalDevice physica
         throw runtime_error("unable to read texture file '" + texture_path + "'");
     VkDeviceSize image_size = _width * _height * 4;
 
-    PTBuffer* staging_buffer = PTResourceManager::get()->createBuffer(image_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    PTBuffer staging_buffer = PTBuffer_T::createBuffer(image_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     void* mapped_buffer = staging_buffer->map();
     memcpy(mapped_buffer, data, static_cast<size_t>(image_size));
@@ -41,8 +41,6 @@ PTImage::PTImage(VkDevice _device, string texture_path, PTPhysicalDevice physica
     transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
     copyBufferToImage(staging_buffer->getBuffer());
     transitionImageLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-
-    staging_buffer->removeReferencer();
 }
 
 VkImageView PTImage::createImageView(VkImageAspectFlags aspect_flags)
@@ -211,7 +209,7 @@ void PTImage::createImage(PTPhysicalDevice physical_device, VkExtent2D _size, Vk
     VkMemoryAllocateInfo allocate_info{ };
     allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocate_info.allocationSize = memory_requirements.size;
-    allocate_info.memoryTypeIndex = PTBuffer::findMemoryType(memory_requirements.memoryTypeBits, properties, physical_device);
+    allocate_info.memoryTypeIndex = PTBuffer_T::findMemoryType(memory_requirements.memoryTypeBits, properties, physical_device);
 
     if (vkAllocateMemory(device, &allocate_info, nullptr, &image_memory) != VK_SUCCESS)
         throw runtime_error("unable to allocate image memory");

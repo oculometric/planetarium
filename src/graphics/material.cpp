@@ -146,11 +146,6 @@ PTMaterial::PTMaterial(VkDevice _device, PTRenderPass* _render_pass, PTSwapchain
 
 PTMaterial::~PTMaterial()
 {
-    for (auto pair : uniform_buffers)
-    {
-        removeDependency(pair.second);
-    }
-
     for (auto pair : textures)
     {
         vkDestroyImageView(device, pair.second.second.first, nullptr);
@@ -294,9 +289,8 @@ void PTMaterial::initialiseMaterial(PTSwapchain* swapchain, VkBool32 depth_write
         // create a buffer if it's a uniform buffer, otherwise bind the blank texture
         if (binding_info.type == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER)
         {
-            PTBuffer* buffer = PTResourceManager::get()->createBuffer(binding_info.size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+            PTBuffer buffer = PTBuffer_T::createBuffer(binding_info.size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
             uniform_buffers[binding_info.bind_point] = buffer;
-            addDependency(buffer, false);
         }
         else if (binding_info.type == VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER)
         {

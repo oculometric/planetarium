@@ -7,6 +7,7 @@
 #include "image.h"
 #include "swapchain.h"
 #include "resource_manager.h"
+#include "buffer.h"
 
 using namespace std;
 
@@ -56,12 +57,10 @@ void PTRGGraph::generateRenderPassAndUniformBuffers()
 	addDependency(render_pass, false);
 
 	// create shared scene and transform uniform buffers used by all steps
-	shared_transform_uniforms = PTResourceManager::get()->createBuffer(sizeof(TransformUniforms), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-	addDependency(shared_transform_uniforms, false);
+	shared_transform_uniforms = PTBuffer_T::createBuffer(sizeof(TransformUniforms), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
 	{
-		shared_scene_uniforms[i] = PTResourceManager::get()->createBuffer(sizeof(SceneUniforms), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-		addDependency(shared_scene_uniforms[i], false);
+		shared_scene_uniforms[i] = PTBuffer_T::createBuffer(sizeof(SceneUniforms), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 	}
 }
 
@@ -265,11 +264,6 @@ void PTRGGraph::createMaterialDescriptorSets()
 
 void PTRGGraph::discardAllResources()
 {
-	// release uniform buffers
-	removeDependency(shared_transform_uniforms);
-	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-		removeDependency(shared_scene_uniforms[i]);
-
 	// destroy images and views
 	destroyImages();
 

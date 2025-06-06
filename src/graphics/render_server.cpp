@@ -144,7 +144,7 @@ void PTRenderServer::addDrawRequest(PTNode* owner, PTMesh* mesh, PTMaterial* mat
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
     {
-        request.descriptor_buffers[i] = PTResourceManager::get()->createBuffer(sizeof(TransformUniforms), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        request.descriptor_buffers[i] = PTBuffer_T::createBuffer(sizeof(TransformUniforms), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
         {
             VkDescriptorBufferInfo buffer_info{ };
@@ -199,8 +199,6 @@ void PTRenderServer::removeAllDrawRequests(PTNode* owner)
     for (auto[itr, range_end] = draw_queue.equal_range(owner); itr != range_end; ++itr)
     {
         vkFreeDescriptorSets(device, descriptor_pool, static_cast<uint32_t>(itr->second.descriptor_sets.size()), itr->second.descriptor_sets.data());
-        for (PTBuffer* buf : itr->second.descriptor_buffers)
-            buf->removeReferencer();
     }
 
     draw_queue.erase(owner);
@@ -364,8 +362,8 @@ void PTRenderServer::deinitVulkan()
     destroyFramebufferAndSyncResources();
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-        scene_uniform_buffers[i]->removeReferencer();
-    
+        scene_uniform_buffers[i] = nullptr;
+
     vkDestroyCommandPool(device, command_pool, nullptr);
 
     swapchain->removeReferencer();
@@ -579,7 +577,7 @@ void PTRenderServer::createDescriptorPoolAndSets()
 	// create a scene uniform buffer for each frame
     VkDeviceSize buffer_size = sizeof(SceneUniforms);
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-        scene_uniform_buffers[i] = PTResourceManager::get()->createBuffer(buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        scene_uniform_buffers[i] = PTBuffer_T::createBuffer(buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 }
 
 void PTRenderServer::createFramebufferAndSyncResources()
@@ -1052,7 +1050,7 @@ void PTRenderServer::takeScreenshot(uint32_t frame_index)
     screenshot_img->transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, cmd);
     VkMemoryRequirements memory_requirements{ };
     vkGetImageMemoryRequirements(device, screenshot_img->getImage(), &memory_requirements);
-    PTBuffer* host_buffer = PTResourceManager::get()->createBuffer(memory_requirements.size, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    PTBuffer host_buffer = PTBuffer_T::createBuffer(memory_requirements.size, VK_BUFFER_USAGE_TRANSFER_DST_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     VkImageSubresourceLayers src_layers{ };
     src_layers.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -1129,7 +1127,6 @@ void PTRenderServer::takeScreenshot(uint32_t frame_index)
 
     writeRGBABitmap("screenshot.bmp", (char*)(host_buffer->map()), ext.width, ext.height);
 
-    host_buffer->removeReferencer();
     wants_screenshot = false;
 }
 
