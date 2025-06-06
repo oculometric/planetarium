@@ -3,6 +3,19 @@ Resource(mesh, "res/engine/mesh/teapot.obj") : teapot_mesh;
 Resource(mesh, "res/desert_surrealism.obj") : origin_mesh;
 Resource(material, "res/violent_pink.ptmat") : pink;
 
+MeshNode(data = @origin_mesh) : desert;
+GizmoNode();
+
+Node() : parent
+{
+    MeshNode(data = @4a3b825f, material = @pink, position = [0.5, 1.0, 1.0]) : monkey_a;
+    MeshNode(data = @4a3b825f, position = [-1.5, 1.0, 1.0]) : monkey_b;
+    MeshNode(data = @teapot_mesh, position = [0, 0, 2], scale = [2.0, 2.0, 2.0]) : teapot;
+    LightNode(colour = [ 1.0, 0.85, 0.75 ], rotation = [0.129, 0.163, 0.810, 0.548], position = [2, 2, 6]) : light;
+};
+FlyCameraNode(position = [2, 0, 5]);
+LightNode(colour = [1, 0, 0], position = [3, 0, 2], directional = 0, half_angle = 40.0, brightness = 5.0) : spot;
+
 TextNode(position = [0, 0, 20], scale = [6, 3, 1], text = "According to all known laws of aviation, there is no way a bee should be able to fly.
 Its wings are too small to get its fat little body off the ground.
 The bee, of course, flies anyway because bees don't care what humans think is impossible.
@@ -112,15 +125,3 @@ Please clear the gate. Royal Nectar Force on approach.
 Wait a second. Check it out.
 Hey, those are Pollen Jocks!
 Wow.", line_width = 64, text_colour = [0.0, 0.0, 0.0, 1.0]) : text;
-MeshNode(data = @origin_mesh) : desert;
-GizmoNode();
-
-Node() : parent
-{
-    MeshNode(data = @4a3b825f, material = @pink, position = [0.5, 1.0, 1.0]) : monkey_a;
-    MeshNode(data = @4a3b825f, position = [-1.5, 1.0, 1.0]) : monkey_b;
-    MeshNode(data = @teapot_mesh, position = [0, 0, 2], scale = [2.0, 2.0, 2.0]) : teapot;
-    LightNode(colour = [ 1.0, 0.85, 0.75 ], rotation = [0.129, 0.163, 0.810, 0.548], position = [2, 2, 6]) : light;
-};
-FlyCameraNode(position = [2, 0, 5]);
-LightNode(colour = [1, 0, 0], position = [3, 0, 2], directional = 0, half_angle = 40.0, brightness = 5.0) : spot;

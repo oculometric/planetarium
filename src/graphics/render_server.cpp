@@ -309,7 +309,7 @@ void PTRenderServer::initVulkan(GLFWwindow* window, vector<const char*> glfw_ext
     basic_step.depth_buffer_binding = 1;
     basic_step.normal_buffer_binding = 2;
     basic_step.extra_buffer_binding = 3;
-    basic_step.custom_extent = VkExtent2D{ 64, 64 };
+    basic_step.custom_extent = VkExtent2D{ 128, 128 };
 
     PTRGStep pp_step{ };
     pp_step.is_camera_step = false;

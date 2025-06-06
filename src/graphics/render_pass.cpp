@@ -45,7 +45,7 @@ PTRenderPass::PTRenderPass(VkDevice _device, vector<Attachment> _attachments, bo
     depth_attachment.format = VK_FORMAT_D32_SFLOAT;
     depth_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
     depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    depth_attachment.storeOp = transition_to_readable ? VK_ATTACHMENT_STORE_OP_STORE : VK_ATTACHMENT_STORE_OP_DONT_CARE;
     depth_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     depth_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
     depth_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
