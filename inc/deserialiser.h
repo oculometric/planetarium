@@ -156,7 +156,7 @@ public:
 
         std::string s_val;
         std::vector<Argument> a_val;
-        PTResource r_val = nullptr;
+        PTResource r_val;
         union
         {
             int i_val;
@@ -179,7 +179,7 @@ public:
 
         inline ~Argument()
         {
-            r_val = nullptr;
+            r_val = PTResource(nullptr);
         }
     };
 

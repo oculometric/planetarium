@@ -15,21 +15,18 @@ PTMeshNode_T::PTMeshNode_T(PTDeserialiser::ArgMap arguments) : PTNode_T(argument
         setMaterial(arguments["material"].r_val);
 }
 
-inline PTMesh PTMeshNode_T::getMesh() const { return mesh_data; }
+PTMesh PTMeshNode_T::getMesh() const { return mesh_data; }
 
-inline PTMaterial PTMeshNode_T::getMaterial() const { return material; }
+PTMaterial PTMeshNode_T::getMaterial() const { return material; }
 
 void PTMeshNode_T::setMesh(PTMesh _mesh_data)
 {
     // delete draw request
     PTRenderServer::get()->removeAllDrawRequests(this);
     
-    // unlink mesh data
-    mesh_data = nullptr;
-
     // link new mesh data if not nullptr, and add draw request
     mesh_data = _mesh_data;
-    PTRenderServer::get()->addDrawRequest(this, mesh_data, material);
+    PTRenderServer::get()->addDrawRequest(PTNode(this), mesh_data, material);
 }
 
 void PTMeshNode_T::setMaterial(PTMaterial _material)
@@ -37,19 +34,16 @@ void PTMeshNode_T::setMaterial(PTMaterial _material)
     // delete draw request
     PTRenderServer::get()->removeAllDrawRequests(this);
     
-    // unlink material
-    material = nullptr;
-
     // link new mesh data if not nullptr, and add draw request
     material = _material;
-    PTRenderServer::get()->addDrawRequest(this, mesh_data, material);
+    PTRenderServer::get()->addDrawRequest(PTNode(this), mesh_data, material);
 }
 
 PTMeshNode_T::~PTMeshNode_T()
 {
     // if there was mesh data set, remove it
-    mesh_data = nullptr;
-    material = nullptr;
+    mesh_data = PTMesh(nullptr);
+    material = PTMaterial(nullptr);
     
     // remove the draw requests associated with this node
     PTRenderServer::get()->removeAllDrawRequests(this);

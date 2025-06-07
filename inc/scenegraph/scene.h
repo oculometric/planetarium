@@ -13,8 +13,8 @@ class PTScene_T
 {
 private:
     std::multimap<std::string, PTNode> all_nodes;
-    PTNode root = nullptr;
-    PTCameraNode camera = nullptr;
+    PTNode root;
+    PTCameraNode camera;
 
 public:
     PTScene_T(PTScene_T& other) = delete;
@@ -37,7 +37,7 @@ public:
 
     void update(float delta_time);
 
-    inline PTCameraNode getCamera() const { return camera; }
+    PTCameraNode getCamera() const;
     void getCameraMatrix(float aspect_ratio, PTMatrix4f& world_to_view, PTMatrix4f& view_to_clip);
 
 private:

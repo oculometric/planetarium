@@ -192,13 +192,15 @@ void PTRenderServer::addDrawRequest(PTNode owner, PTMesh mesh, PTMaterial materi
     endEditLock();
 }
 
-void PTRenderServer::removeAllDrawRequests(PTNode owner)
+void PTRenderServer::removeAllDrawRequests(PTNode_T* owner)
 {
     beginEditLock();
 
-    for (auto[itr, range_end] = draw_queue.equal_range(owner); itr != range_end; ++itr)
+    for (const auto& pair : draw_queue)
     {
-        vkFreeDescriptorSets(device, descriptor_pool, static_cast<uint32_t>(itr->second.descriptor_sets.size()), itr->second.descriptor_sets.data());
+        if (pair.first != owner)
+            continue;
+        vkFreeDescriptorSets(device, descriptor_pool, static_cast<uint32_t>(pair.second.descriptor_sets.size()), pair.second.descriptor_sets.data());
     }
 
     draw_queue.erase(owner);

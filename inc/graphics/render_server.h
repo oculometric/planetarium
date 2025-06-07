@@ -33,9 +33,9 @@ class PTRenderServer
 private:
     struct DrawRequest
     {
-        PTMesh mesh = nullptr;
+        PTMesh mesh;
         PTTransform* transform = nullptr;
-        PTMaterial material = nullptr;
+        PTMaterial material;
         std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> descriptor_sets;
         std::array<PTBuffer, MAX_FRAMES_IN_FLIGHT> descriptor_buffers;
 
@@ -66,20 +66,20 @@ private:
 
     VkDescriptorPool descriptor_pool = VK_NULL_HANDLE;
 
-    PTSwapchain swapchain = nullptr;
+    PTSwapchain swapchain;
     std::vector<VkSemaphore> image_available_semaphores;
     std::vector<VkSemaphore> render_finished_semaphores;
     std::vector<VkFence> in_flight_fences;
 
-    PTRGGraph render_graph = nullptr;
+    PTRGGraph render_graph;
 
     std::array<PTBuffer, MAX_FRAMES_IN_FLIGHT> scene_uniform_buffers;
     
-    std::multimap<PTNode, DrawRequest> draw_queue;
-    std::set<PTLightNode> light_set;
+    std::multimap<PTNode_T*, DrawRequest> draw_queue;
+    std::set<PTLightNode_T*> light_set;
 
-    PTMaterial default_material = nullptr;
-    PTMesh quad_mesh = nullptr;
+    PTMaterial default_material;
+    PTMesh quad_mesh;
 
     static constexpr char* required_device_extensions[1] =
     {
@@ -102,10 +102,10 @@ public:
     VkCommandBuffer beginTransientCommands();
     void endTransientCommands(VkCommandBuffer transient_command_buffer);
     
-    void addDrawRequest(PTNode owner, PTMesh mesh, PTMaterial material = nullptr, PTTransform* target_transform = nullptr);
-    void removeAllDrawRequests(PTNode owner);
-    void addLight(PTLightNode light);
-    void removeLight(PTLightNode light);
+    void addDrawRequest(PTNode owner, PTMesh mesh, PTMaterial material = PTMaterial(nullptr), PTTransform* target_transform = nullptr);
+    void removeAllDrawRequests(PTNode_T* owner);
+    void addLight(PTLightNode_T* light);
+    void removeLight(PTLightNode_T* light);
 
     PTSwapchain getSwapchain() const;
     PTRenderPass getRenderPass() const;

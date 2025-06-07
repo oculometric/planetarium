@@ -1,6 +1,9 @@
 #pragma once
 
 #include <stdexcept>
+
+#include "debug.h"
+
 // TODO: reduce includes of render server with intermediate file (common.h), also copy typedefs here
 // TODO: reimplement deduplication
 
@@ -22,7 +25,7 @@ private:
 
 public:
 	PTCountedPointer() : underlying_pointer(nullptr), reference_counter(new size_t(1)) { }
-	PTCountedPointer(T* pointer) : underlying_pointer(pointer), reference_counter(new size_t(1)) { }
+	explicit PTCountedPointer(T* pointer) : underlying_pointer(pointer), reference_counter(new size_t(1)) { }
 	inline PTCountedPointer(T* pointer, size_t* counter) : underlying_pointer(pointer), reference_counter(counter)
 	{
 		if (counter == nullptr)
@@ -30,14 +33,15 @@ public:
 	}
 	inline PTCountedPointer(const PTCountedPointer& other) noexcept
 	{
+		debugLog("pointer copy constructing");
 		reference_counter = other.reference_counter;
 		underlying_pointer = other.underlying_pointer;
 
-		if (other.underlying_pointer != nullptr)
-			(*reference_counter)++;
+		(*reference_counter)++;
 	}
 	inline PTCountedPointer(PTCountedPointer&& other) noexcept
 	{
+		debugLog("pointer move constructing");
 		reference_counter = other.reference_counter;
 		underlying_pointer = other.underlying_pointer;
 
@@ -46,18 +50,25 @@ public:
 	}
 	inline PTCountedPointer& operator=(const PTCountedPointer& other) noexcept
 	{
+		debugLog("pointer copy assigning");
+		if (other.underlying_pointer == underlying_pointer)
+			return *this;
+
 		decrementCounter();
 
 		reference_counter = other.reference_counter;
 		underlying_pointer = other.underlying_pointer;
 
-		if (other.underlying_pointer != nullptr)
-			(*reference_counter)++;
+		(*reference_counter)++;
 
 		return *this;
 	}
 	inline PTCountedPointer& operator=(PTCountedPointer&& other) noexcept
 	{
+		debugLog("pointer move assigning");
+		if (other.underlying_pointer == underlying_pointer)
+			return *this;
+
 		decrementCounter();
 
 		reference_counter = other.reference_counter;
@@ -74,6 +85,7 @@ public:
 	{
 		static_assert((is_instance_of_v<C, PTCountedPointer>), "can only cast to a reference counter!");
 		typename C::type* new_ptr = (typename C::type*)((void*)underlying_pointer);
+		(*reference_counter)++;
 		return PTCountedPointer<typename C::type>(new_ptr, reference_counter);
 	}
 

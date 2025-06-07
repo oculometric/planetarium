@@ -287,7 +287,7 @@ pair<string, PTResource> PTDeserialiser::deserialiseResourceDescriptor(const std
     for (auto arg : arguments)
         initialiser_args.push_back(compileArgument(arg, res_map, content));
 
-    PTResource resource = nullptr;
+    PTResource resource;
     
     {
         if (resource_type == "mesh")
@@ -858,7 +858,7 @@ PTDeserialiser::Argument PTDeserialiser::compileArgument(const std::vector<Token
 
     if (tokens.size() == 1)
     {
-        PTResource res = nullptr;
+        PTResource res;
         Token t = tokens[0];
         switch (t.type)
         {
