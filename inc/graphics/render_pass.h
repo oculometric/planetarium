@@ -3,11 +3,10 @@
 #include <vulkan/vulkan.h>
 #include <vector>
 
-#include "resource.h"
+#include "reference_counter.h"
 
-class PTRenderPass : public PTResource
+class PTRenderPass_T
 {
-    friend class PTResourceManager;
 public:
     struct Attachment
     {
@@ -33,17 +32,22 @@ private:
     VkRenderPass render_pass = VK_NULL_HANDLE;
     std::vector<Attachment> attachments;
 
-    PTRenderPass(VkDevice _device, std::vector<Attachment> _attachments = { }, bool transition_to_readable = false);
-
-    ~PTRenderPass();
-
 public:
-    PTRenderPass() = delete;
-    PTRenderPass(PTRenderPass& other) = delete;
-    PTRenderPass(PTRenderPass&& other) = delete;
-    PTRenderPass operator=(PTRenderPass& other) = delete;
-    PTRenderPass operator=(PTRenderPass&& other) = delete;
+    PTRenderPass_T() = delete;
+    PTRenderPass_T(PTRenderPass_T& other) = delete;
+    PTRenderPass_T(PTRenderPass_T&& other) = delete;
+    PTRenderPass_T operator=(PTRenderPass_T& other) = delete;
+    PTRenderPass_T operator=(PTRenderPass_T&& other) = delete;
+    ~PTRenderPass_T();
+
+    inline static PTCountedPointer<PTRenderPass_T> createRenderPass(std::vector<Attachment> attachments = { }, bool transition_to_readable = false)
+    { return PTCountedPointer<PTRenderPass_T>(new PTRenderPass_T(attachments, transition_to_readable)); }
 
     inline VkRenderPass getRenderPass() const { return render_pass; }
     inline std::vector<Attachment> getAttachments() const { return attachments; }
+
+private:
+    PTRenderPass_T(std::vector<Attachment> _attachments = { }, bool transition_to_readable = false);
 };
+
+typedef PTCountedPointer<PTRenderPass_T> PTRenderPass;

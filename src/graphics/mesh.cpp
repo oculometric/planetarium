@@ -5,11 +5,12 @@
 #include <stdexcept>
 
 #include "matrix3.h"
-#include "resource_manager.h"
+#include "render_server.h"
+#include "buffer.h"
 
 using namespace std;
 
-VkVertexInputBindingDescription PTMesh::getVertexBindingDescription()
+VkVertexInputBindingDescription PTMesh_T::getVertexBindingDescription()
 {
     // create a vertex binding description. this will always be the same for all meshes and shaders
     VkVertexInputBindingDescription description{ };
@@ -20,7 +21,7 @@ VkVertexInputBindingDescription PTMesh::getVertexBindingDescription()
     return description;
 }
 
-array<VkVertexInputAttributeDescription, 5> PTMesh::getVertexAttributeDescriptions()
+array<VkVertexInputAttributeDescription, 5> PTMesh_T::getVertexAttributeDescriptions()
 {
     array<VkVertexInputAttributeDescription, 5> descriptions{ };
 
@@ -57,9 +58,9 @@ array<VkVertexInputAttributeDescription, 5> PTMesh::getVertexAttributeDescriptio
     return descriptions;
 }
 
-PTMesh::PTMesh(VkDevice _device, std::string mesh_path, const PTPhysicalDevice& physical_device)
+PTMesh_T::PTMesh_T(std::string mesh_path)
 {
-    device = _device;
+    device = PTRenderServer::get()->getDevice();
     origin_path = mesh_path;
 
     vector<PTVertex> verts;
@@ -67,21 +68,24 @@ PTMesh::PTMesh(VkDevice _device, std::string mesh_path, const PTPhysicalDevice& 
 
     // read file into the vectors (parse OBJ), then create vertex and index buffers from the data
     if (readFileToBuffers(mesh_path, verts, inds))
-        createVertexBuffers(physical_device, verts, inds);
+        createVertexBuffers(verts, inds);
 }
 
-PTMesh::PTMesh(VkDevice _device, std::vector<PTVertex> vertices, std::vector<uint16_t> indices, const PTPhysicalDevice& physical_device)
+PTMesh_T::PTMesh_T(std::vector<PTVertex> vertices, std::vector<uint16_t> indices)
 {
-    device = _device;
+    device = PTRenderServer::get()->getDevice();
     
     // create vertex and index buffers directly from vectors
-    createVertexBuffers(physical_device, vertices, indices);
+    createVertexBuffers(vertices, indices);
 }
 
-PTMesh::~PTMesh()
+PTMesh_T::~PTMesh_T()
 {
     // release the buffers!!!
 }
+
+VkBuffer PTMesh_T::getVertexBuffer() const { return vertex_buffer.getPointer() != nullptr ? vertex_buffer->getBuffer() : VK_NULL_HANDLE; }
+VkBuffer PTMesh_T::getIndexBuffer() const { return index_buffer.getPointer() != nullptr ? index_buffer->getBuffer() : VK_NULL_HANDLE; }
 
 struct PTFaceCorner { uint16_t co; uint16_t uv; uint16_t vn; };
 
@@ -153,7 +157,7 @@ static pair<PTVector3f, PTVector3f> computeTangent(PTVector3f co_a, PTVector3f c
     return ret;
 }
 
-bool PTMesh::readFileToBuffers(std::string file_name, std::vector<PTVertex>& vertices, std::vector<uint16_t>& indices)
+bool PTMesh_T::readFileToBuffers(std::string file_name, std::vector<PTVertex>& vertices, std::vector<uint16_t>& indices)
 {
     ifstream file;
     file.open(file_name);
@@ -263,7 +267,7 @@ bool PTMesh::readFileToBuffers(std::string file_name, std::vector<PTVertex>& ver
         }
         else
         {
-            PTVertex new_vert;
+            PTVertex new_vert{ };
             new_vert.position = tmp_co[fc.co];
             new_vert.colour = tmp_cl[fc.co];
             new_vert.normal = tmp_vn[fc.vn];
@@ -304,7 +308,7 @@ bool PTMesh::readFileToBuffers(std::string file_name, std::vector<PTVertex>& ver
     return true;
 }
 
-void PTMesh::createVertexBuffers(const PTPhysicalDevice& physical_device, const std::vector<PTVertex>& vertices, const std::vector<uint16_t>& indices)
+void PTMesh_T::createVertexBuffers(const std::vector<PTVertex>& vertices, const std::vector<uint16_t>& indices)
 {
     // vertex buffer creation (via staging buffer)
     VkDeviceSize size = sizeof(PTVertex) * vertices.size();

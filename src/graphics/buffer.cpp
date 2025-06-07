@@ -31,7 +31,7 @@ PTBuffer_T::PTBuffer_T(VkDeviceSize buffer_size, VkBufferUsageFlags usage_flags,
     VkMemoryAllocateInfo allocate_info{ };
     allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocate_info.allocationSize = memory_requirements.size;
-    allocate_info.memoryTypeIndex = findMemoryType(memory_requirements.memoryTypeBits, memory_flags, PTRenderServer::get()->getPhysicalDevice());
+    allocate_info.memoryTypeIndex = findMemoryType(memory_requirements.memoryTypeBits, memory_flags);
 
     if (vkAllocateMemory(device, &allocate_info, nullptr, &device_memory) != VK_SUCCESS)
         throw runtime_error("unable to allocate buffer memory");
@@ -77,11 +77,11 @@ void PTBuffer_T::copyTo(PTCountedPointer<PTBuffer_T> destination, VkDeviceSize l
     PTRenderServer::get()->endTransientCommands(copy_command_buffer);
 }
 
-uint32_t PTBuffer_T::findMemoryType(uint32_t type_bits, VkMemoryPropertyFlags properties, PTPhysicalDevice physical_device)
+uint32_t PTBuffer_T::findMemoryType(uint32_t type_bits, VkMemoryPropertyFlags properties)
 {
     // figure out what type of memory fits the requirements
     VkPhysicalDeviceMemoryProperties memory_properties;
-    vkGetPhysicalDeviceMemoryProperties(physical_device.getDevice(), &memory_properties);
+    vkGetPhysicalDeviceMemoryProperties(PTRenderServer::get()->getPhysicalDevice().getDevice(), &memory_properties);
 
     for (uint32_t i = 0; i < memory_properties.memoryTypeCount; i++)
         if ((type_bits & (1 << i)) && (memory_properties.memoryTypes[i].propertyFlags & properties) == properties) return i;
@@ -91,7 +91,6 @@ uint32_t PTBuffer_T::findMemoryType(uint32_t type_bits, VkMemoryPropertyFlags pr
 
 PTBuffer_T::~PTBuffer_T()
 {
-    debugLog("buffer_t being deallocated!");
     // make sure we're unmapped
     unmap();
 

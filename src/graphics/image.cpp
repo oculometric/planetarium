@@ -5,21 +5,20 @@
 
 #include "buffer.h"
 #include "render_server.h"
-#include "resource_manager.h"
 #include "bitmap.h"
 
 using namespace std;
 
-PTImage::PTImage(VkDevice _device, PTPhysicalDevice physical_device, VkExtent2D _size, VkFormat _format, VkImageTiling _tiling, VkImageUsageFlags _usage, VkMemoryPropertyFlags properties)
+PTImage_T::PTImage_T(VkExtent2D _size, VkFormat _format, VkImageTiling _tiling, VkImageUsageFlags _usage, VkMemoryPropertyFlags properties)
 {
-    device = _device;
+    device = PTRenderServer::get()->getDevice();
     
-    createImage(physical_device, _size, _format, _tiling, _usage, properties);
+    prepareImage(_size, _format, _tiling, _usage, properties);
 }
 
-PTImage::PTImage(VkDevice _device, string texture_path, PTPhysicalDevice physical_device)
+PTImage_T::PTImage_T(string texture_path)
 {
-    device = _device;
+    device = PTRenderServer::get()->getDevice();
     origin_path = texture_path;
 
     char* data;
@@ -36,14 +35,14 @@ PTImage::PTImage(VkDevice _device, string texture_path, PTPhysicalDevice physica
     staging_buffer->unmap();
     delete[] data;
 
-    createImage(physical_device, VkExtent2D{ static_cast<uint32_t>(_width), static_cast<uint32_t>(_height) }, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    prepareImage(VkExtent2D{ static_cast<uint32_t>(_width), static_cast<uint32_t>(_height) }, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
     copyBufferToImage(staging_buffer->getBuffer());
     transitionImageLayout(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 }
 
-VkImageView PTImage::createImageView(VkImageAspectFlags aspect_flags)
+VkImageView PTImage_T::createImageView(VkImageAspectFlags aspect_flags)
 {
     VkImageViewCreateInfo view_create_info{ };
     view_create_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -63,14 +62,14 @@ VkImageView PTImage::createImageView(VkImageAspectFlags aspect_flags)
     return image_view;
 }
 
-void PTImage::transitionImageLayout(VkImageLayout new_layout, VkCommandBuffer cmd)
+void PTImage_T::transitionImageLayout(VkImageLayout new_layout, VkCommandBuffer cmd)
 {
     transitionImageLayout(image, layout, new_layout, cmd);
 
     layout = new_layout;
 }
 
-void PTImage::copyBufferToImage(VkBuffer buffer, VkCommandBuffer cmd)
+void PTImage_T::copyBufferToImage(VkBuffer buffer, VkCommandBuffer cmd)
 {
     VkCommandBuffer command_buffer;
     if (cmd == VK_NULL_HANDLE)
@@ -102,7 +101,7 @@ void PTImage::copyBufferToImage(VkBuffer buffer, VkCommandBuffer cmd)
         PTRenderServer::get()->endTransientCommands(command_buffer);
 }
 
-void PTImage::transitionImageLayout(VkImage image, VkImageLayout old_layout, VkImageLayout new_layout, VkCommandBuffer cmd)
+void PTImage_T::transitionImageLayout(VkImage image, VkImageLayout old_layout, VkImageLayout new_layout, VkCommandBuffer cmd)
 {
     if (old_layout == new_layout) return;
     
@@ -169,13 +168,13 @@ void PTImage::transitionImageLayout(VkImage image, VkImageLayout old_layout, VkI
         PTRenderServer::get()->endTransientCommands(command_buffer);
 }
 
-PTImage::~PTImage()
+PTImage_T::~PTImage_T()
 {
     vkDestroyImage(device, image, nullptr);
     vkFreeMemory(device, image_memory, nullptr);
 }
 
-void PTImage::createImage(PTPhysicalDevice physical_device, VkExtent2D _size, VkFormat _format, VkImageTiling _tiling, VkImageUsageFlags _usage, VkMemoryPropertyFlags properties)
+void PTImage_T::prepareImage(VkExtent2D _size, VkFormat _format, VkImageTiling _tiling, VkImageUsageFlags _usage, VkMemoryPropertyFlags properties)
 {
     size = _size;
     format = _format;
@@ -209,7 +208,7 @@ void PTImage::createImage(PTPhysicalDevice physical_device, VkExtent2D _size, Vk
     VkMemoryAllocateInfo allocate_info{ };
     allocate_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocate_info.allocationSize = memory_requirements.size;
-    allocate_info.memoryTypeIndex = PTBuffer_T::findMemoryType(memory_requirements.memoryTypeBits, properties, physical_device);
+    allocate_info.memoryTypeIndex = PTBuffer_T::findMemoryType(memory_requirements.memoryTypeBits, properties);
 
     if (vkAllocateMemory(device, &allocate_info, nullptr, &image_memory) != VK_SUCCESS)
         throw runtime_error("unable to allocate image memory");

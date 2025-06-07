@@ -3,7 +3,6 @@
 #include <vulkan/vulkan.h>
 
 #include "reference_counter.h"
-#include "physical_device.h"
 
 class PTBuffer_T
 {
@@ -16,8 +15,6 @@ private:
     VkDeviceMemory device_memory;
     void* mapped_memory = nullptr;
     
-    PTBuffer_T(VkDeviceSize buffer_size, VkBufferUsageFlags usage_flags, VkMemoryPropertyFlags memory_flags);
-
 public:
     PTBuffer_T() = delete;
     PTBuffer_T(const PTBuffer_T& other) = delete;
@@ -38,7 +35,10 @@ public:
     void unmap();
     void copyTo(PTCountedPointer<PTBuffer_T> destination, VkDeviceSize length, VkDeviceSize source_offset = 0, VkDeviceSize destination_offset = 0);
 
-    static uint32_t findMemoryType(uint32_t type_bits, VkMemoryPropertyFlags properties, PTPhysicalDevice physical_device);
+    static uint32_t findMemoryType(uint32_t type_bits, VkMemoryPropertyFlags properties);
+
+private:
+    PTBuffer_T(VkDeviceSize buffer_size, VkBufferUsageFlags usage_flags, VkMemoryPropertyFlags memory_flags);
 };
 
 typedef PTCountedPointer<PTBuffer_T> PTBuffer;

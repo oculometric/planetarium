@@ -6,7 +6,6 @@
 #include "debug.h"
 #include "render_server.h"
 #include "scene.h"
-#include "text_node.h"
 
 using namespace std;
 
@@ -32,11 +31,11 @@ void PTApplication::start()
     vector<const char*> extensions(glfw_extensions, glfw_extensions + glfw_extension_count);
 	PTRenderServer::init(window, extensions);
 
-    current_scene = PTResourceManager::get()->createScene("res/demo.ptscn");
+    current_scene = PTScene_T::createScene("res/demo.ptscn");
 
     mainLoop();
 
-    current_scene->removeReferencer();
+    current_scene = nullptr;
 
 	PTRenderServer::deinit();
 	PTInput::deinit();
@@ -85,27 +84,19 @@ void PTApplication::mainLoop()
         if (PTInput::get()->isKeyDown('R'))
         {
             debugLog("removing scene!");
-            if (current_scene != nullptr)
-            {
-                current_scene->removeReferencer();
-                current_scene = nullptr;
-            }
+            current_scene = nullptr;
         }
         else if (PTInput::get()->isKeyDown('L'))
         {
             debugLog("loading scene!");
-            if (current_scene == nullptr)
-            {
-                current_scene = PTResourceManager::get()->createScene("res/demo.ptscn");
-            }
+            current_scene = PTScene_T::createScene("res/demo.ptscn");
         }
 
         if (wants_new_scene)
         {
             wants_new_scene = false;
             debugLog("loading new scene: " + new_scene_path);
-            current_scene->removeReferencer();
-            current_scene = PTResourceManager::get()->createScene(new_scene_path);
+            current_scene = PTScene_T::createScene(new_scene_path);
         }
 
         if (current_scene != nullptr)

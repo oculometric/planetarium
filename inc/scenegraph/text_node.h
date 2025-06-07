@@ -1,8 +1,10 @@
 #pragma once
 
 #include "node.h"
+#include "reference_counter.h"
 
-class PTMesh;
+typedef PTCountedPointer<class PTMesh_T> PTMesh;
+typedef PTCountedPointer<class PTMaterial_T> PTMaterial;
 
 class PTTextNode : public PTNode
 {
@@ -21,8 +23,8 @@ private:
 private:
 	std::string text = "Hello, World!";
 	TextBuffer uniform_buffer;
-	PTMesh* mesh = nullptr;
-	PTMaterial* material = nullptr;
+	PTMesh mesh = nullptr;
+	PTMaterial material = nullptr;
 
 public:
 	void setText(std::string _text);

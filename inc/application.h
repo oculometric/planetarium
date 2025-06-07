@@ -6,6 +6,7 @@
 #include <chrono>
 
 #include "math/ptmath.h"
+#include "reference_counter.h"
 
 #ifdef _WIN32
 typedef std::chrono::steady_clock clocktype;
@@ -13,7 +14,7 @@ typedef std::chrono::steady_clock clocktype;
 typedef std::chrono::system_clock clocktype;
 #endif
 
-class PTScene;
+typedef PTCountedPointer<class PTScene_T> PTScene;
 
 class PTApplication
 {
@@ -28,9 +29,9 @@ private:
 
     clocktype::time_point last_frame_start;
     clocktype::time_point program_start;
-    uint32_t frame_time_running_mean_us;
+    uint32_t frame_time_running_mean_us = 0;
 
-    PTScene* current_scene = nullptr;
+    PTScene current_scene = nullptr;
     bool wants_new_scene = false;
     std::string new_scene_path = "";
 public:

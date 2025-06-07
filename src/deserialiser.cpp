@@ -3,17 +3,20 @@
 #include "debug.h"
 #include "resource_manager.h"
 #include "image.h"
+#include "mesh.h"
+#include "shader.h"
+#include "material.h"
 #include "scene.h"
 
 using namespace std;
 
 template <typename T>
-PTNode* instantiateNode(PTScene* scene, string name, PTDeserialiser::ArgMap args)
+PTNode* instantiateNode(PTScene scene, string name, PTDeserialiser::ArgMap args)
 {
     return (PTNode*)(scene->instantiate<T>(name, args));
 }
 
-typedef PTNode*(*PTNodeInstantiateFunc)(PTScene*, string, PTDeserialiser::ArgMap);
+typedef PTNode*(*PTNodeInstantiateFunc)(PTScene, string, PTDeserialiser::ArgMap);
 
 #define INSTANTIATE_FUNC(type) pair<string, PTNodeInstantiateFunc>(#type, instantiateNode<PT##type>)
 
@@ -186,7 +189,7 @@ vector<PTDeserialiser::Token> PTDeserialiser::prune(const vector<Token>& tokens)
     return pruned;
 }
 
-pair<string, PTResource*> PTDeserialiser::deserialiseResourceDescriptor(const std::vector<Token>& tokens, size_t& first_token, ResourceMap& res_map, const std::string& content)
+pair<string, PTResource> PTDeserialiser::deserialiseResourceDescriptor(const std::vector<Token>& tokens, size_t& first_token, ResourceMap& res_map, const std::string& content)
 {
     if (tokens.size() <= first_token + 4)
     {
@@ -284,13 +287,36 @@ pair<string, PTResource*> PTDeserialiser::deserialiseResourceDescriptor(const st
     for (auto arg : arguments)
         initialiser_args.push_back(compileArgument(arg, res_map, content));
 
-    PTResource* resource = PTResourceManager::get()->createGeneric(resource_type, initialiser_args);
+    PTResource resource = nullptr;
+    
+    {
+        if (resource_type == "mesh")
+        {
+            if (initialiser_args.size() > 0 && initialiser_args[0].type == ArgType::STRING_ARG)
+                resource = PTMesh_T::createMesh(initialiser_args[0].s_val);
+        }
+        else if (resource_type == "image")
+        {
+            if (initialiser_args.size() > 0 && initialiser_args[0].type == ArgType::STRING_ARG)
+                resource = PTImage_T::createImage(initialiser_args[0].s_val);
+        }
+        else if (resource_type == "shader")
+        {
+            if (initialiser_args.size() > 0 && initialiser_args[0].type == ArgType::STRING_ARG)
+                resource = PTShader_T::createShader(initialiser_args[0].s_val, false);
+        }
+        else if (resource_type == "material")
+        {
+            if (initialiser_args.size() > 0 && initialiser_args[0].type == ArgType::STRING_ARG)
+                resource = PTMaterial_T::createMaterial(initialiser_args[0].s_val);
+        }
+    }
 
     first_token = semicolon;
-    return pair<string, PTResource*>{ name, resource };
+    return pair<string, PTResource>{ name, resource };
 }
 
-PTNode* PTDeserialiser::deserialiseObject(const std::vector<Token>& tokens, size_t& first_token, PTScene* scene, ResourceMap& res_map, const std::string& content)
+PTNode* PTDeserialiser::deserialiseObject(const std::vector<Token>& tokens, size_t& first_token, PTScene scene, ResourceMap& res_map, const std::string& content)
 {
     if (tokens.size() <= first_token + 4)
     {
@@ -399,7 +425,7 @@ PTNode* PTDeserialiser::deserialiseObject(const std::vector<Token>& tokens, size
     return node;
 }
 
-void PTDeserialiser::deserialiseScene(PTScene* scene, const std::string& content)
+void PTDeserialiser::deserialiseScene(PTScene scene, const std::string& content)
 {
     vector<Token> tokens = prune(tokenise(content));
     
@@ -422,14 +448,10 @@ void PTDeserialiser::deserialiseScene(PTScene* scene, const std::string& content
         {
             size_t tmp_first = statement_first;
             auto res = deserialiseResourceDescriptor(tokens, statement_first, res_map, content);
-            if (res.second == nullptr)
+            if (res.second.getPointer() == nullptr)
                 debugLog("resource '" + res.first + "' with type " + tokens[tmp_first + 2].s_value + " could not be loaded");
             else
-            {
                 res_map[res.first] = res.second;
-                scene->addResource(res.first, res.second);
-                res.second->removeReferencer();
-            }
         }
         else
         {
@@ -515,11 +537,11 @@ vector<pair<string, PTDeserialiser::Argument>> PTDeserialiser::deserialiseStatem
     else
         arguments.push_back(current_argument);
 
-    vector<pair<string, PTDeserialiser::Argument>> args;
+    vector<pair<string, Argument>> args;
     for (auto arg : arguments)
     {
-        pair<string, PTDeserialiser::Argument> pr;
-        if (arg.size() < 3 || arg[1].type != PTDeserialiser::TokenType::EQUALS)
+        pair<string, Argument> pr;
+        if (arg.size() < 3 || arg[1].type != TokenType::EQUALS)
         {
             if (!allow_unnamed)
                 reportError("invalid unnamed argument", arg[0].start_offset, content);
@@ -541,7 +563,7 @@ vector<pair<string, PTDeserialiser::Argument>> PTDeserialiser::deserialiseStatem
     return args;
 }
 
-void PTDeserialiser::deserialiseMaterial(const std::string& content, MaterialParams& params, PTShader*& shader, std::vector<UniformParam>& uniforms, std::map<uint16_t, TextureParam>& textures)
+void PTDeserialiser::deserialiseMaterial(const std::string& content, MaterialParams& params, PTShader& shader, std::vector<UniformParam>& uniforms, std::map<uint16_t, TextureParam>& textures)
 {
     vector<Token> tokens = prune(tokenise(content));
     
@@ -608,7 +630,7 @@ void PTDeserialiser::deserialiseMaterial(const std::string& content, MaterialPar
             for (auto arg : args)
             {
                 if (arg.first == "resource" && arg.second.type == ArgType::RESOURCE_ARG)
-                    shader = dynamic_cast<PTShader*>(arg.second.r_val);
+                    shader = arg.second.r_val;
             }
             if (tokens[statement_first].type != TokenType::SEMICOLON)
                 reportError("expected semicolon", tokens[statement_first].start_offset, content);
@@ -666,7 +688,7 @@ void PTDeserialiser::deserialiseMaterial(const std::string& content, MaterialPar
                 if (arg.first == "binding" && arg.second.type == ArgType::INT_ARG)
                     binding = arg.second.i_val;
                 else if (arg.first == "resource" && arg.second.type == ArgType::RESOURCE_ARG)
-                    param.texture = dynamic_cast<PTImage*>(arg.second.r_val);
+                    param.texture = arg.second.r_val;
                 else if (arg.first == "filter" && arg.second.type == ArgType::STRING_ARG)
                     param.filter = arg.second.s_val;
                 else if (arg.first == "repeat" && arg.second.type == ArgType::STRING_ARG)
@@ -835,7 +857,7 @@ PTDeserialiser::Argument PTDeserialiser::compileArgument(const std::vector<Token
 
     if (tokens.size() == 1)
     {
-        PTResource* res = nullptr;
+        PTResource res = nullptr;
         Token t = tokens[0];
         switch (t.type)
         {

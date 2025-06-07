@@ -24,11 +24,8 @@ void PTTextNode::updateUniforms()
 
 PTTextNode::PTTextNode(PTDeserialiser::ArgMap arguments) : PTNode(arguments)
 {
-    material = PTResourceManager::get()->createMaterial("res/engine/material/text.ptmat", nullptr, nullptr, true);
-    mesh = PTResourceManager::get()->createMesh("res/engine/mesh/plane.obj");
-
-    addDependency(material, false);
-    addDependency(mesh, false);
+    material = PTMaterial_T::createMaterial("res/engine/material/text.ptmat");
+    mesh = PTMesh_T::createMesh("res/engine/mesh/plane.obj");
 
     PTRenderServer::get()->addDrawRequest(this, mesh, material);
 
@@ -44,7 +41,7 @@ PTTextNode::~PTTextNode()
 {
     PTRenderServer::get()->removeAllDrawRequests(this);
 
-    removeDependency(material);
-    removeDependency(mesh);
+    mesh = nullptr;
+    material = nullptr;
 }
 

@@ -2,11 +2,10 @@
 
 #include <vulkan/vulkan.h>
 
-#include "resource.h"
+#include "reference_counter.h"
 
-class PTSampler : public PTResource
+class PTSampler_T
 {
-    friend class PTResourceManager;
 private:
     VkDevice device = VK_NULL_HANDLE;
 
@@ -18,11 +17,15 @@ private:
     // TODO: mipmaps
 
 public:
-    PTSampler() = delete;
-    PTSampler(const PTSampler& other) = delete;
-    PTSampler(const PTSampler&& other) = delete;
-    PTSampler operator=(const PTSampler& other) = delete;
-    PTSampler operator=(const PTSampler&& other) = delete;
+    PTSampler_T() = delete;
+    PTSampler_T(const PTSampler_T& other) = delete;
+    PTSampler_T(const PTSampler_T&& other) = delete;
+    PTSampler_T operator=(const PTSampler_T& other) = delete;
+    PTSampler_T operator=(const PTSampler_T&& other) = delete;
+    ~PTSampler_T();
+
+    static inline PTCountedPointer<PTSampler_T> createSampler(VkSamplerAddressMode address_mode, VkFilter min_filter, VkFilter mag_filter, uint32_t max_anisotropy)
+    { return PTCountedPointer<PTSampler_T>(new PTSampler_T(address_mode, min_filter, mag_filter, max_anisotropy)); }
     
     inline VkSampler getSampler() const { return sampler; }
     inline VkSamplerAddressMode getAddressMode() const { return address_mode; }
@@ -31,8 +34,9 @@ public:
     inline uint32_t getMaxAnisotropy() const { return max_anisotropy; }
 
 private:
-    PTSampler(VkDevice _device, VkSamplerAddressMode _address_mode, VkFilter _min_filter, VkFilter _mag_filter, uint32_t _max_anisotropy);
-    ~PTSampler();
+    PTSampler_T(VkSamplerAddressMode _address_mode, VkFilter _min_filter, VkFilter _mag_filter, uint32_t _max_anisotropy);
 
-    void createSampler();
+    void prepareSampler();
 };
+
+typedef PTCountedPointer<PTSampler_T> PTSampler;

@@ -2,11 +2,13 @@
 
 #include <stdexcept>
 
+#include "render_server.h"
+
 using namespace std;
 
-PTRenderPass::PTRenderPass(VkDevice _device, vector<Attachment> _attachments, bool transition_to_readable)
+PTRenderPass_T::PTRenderPass_T(vector<Attachment> _attachments, bool transition_to_readable)
 {
-    device = _device;
+    device = PTRenderServer::get()->getDevice();
     attachments = _attachments;
 
     if (attachments.size() == 0)
@@ -104,7 +106,7 @@ PTRenderPass::PTRenderPass(VkDevice _device, vector<Attachment> _attachments, bo
         throw runtime_error("unable to create render pass");
 }
 
-PTRenderPass::~PTRenderPass()
+PTRenderPass_T::~PTRenderPass_T()
 {
     vkDestroyRenderPass(device, render_pass, nullptr);
 }

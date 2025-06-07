@@ -2,25 +2,27 @@
 
 #include <stdexcept>
 
+#include "render_server.h"
+
 using namespace std;
 
-PTSampler::PTSampler(VkDevice _device, VkSamplerAddressMode _address_mode, VkFilter _min_filter, VkFilter _mag_filter, uint32_t _max_anisotropy)
+PTSampler_T::PTSampler_T(VkSamplerAddressMode _address_mode, VkFilter _min_filter, VkFilter _mag_filter, uint32_t _max_anisotropy)
 {
-    device = _device;
+    device = PTRenderServer::get()->getDevice();
     address_mode = _address_mode;
     min_filter = _min_filter;
     mag_filter = _mag_filter;
     max_anisotropy = _max_anisotropy;
 
-    createSampler();
+    prepareSampler();
 }
 
-PTSampler::~PTSampler()
+PTSampler_T::~PTSampler_T()
 {
     vkDestroySampler(device, sampler, nullptr);
 }
 
-void PTSampler::createSampler()
+void PTSampler_T::prepareSampler()
 {
     VkSamplerCreateInfo sampler_info{ };
     sampler_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;

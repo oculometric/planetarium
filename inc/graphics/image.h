@@ -3,12 +3,10 @@
 #include <vulkan/vulkan.h>
 #include <string>
 
-#include "resource.h"
-#include "physical_device.h"
+#include "reference_counter.h"
 
-class PTImage : public PTResource
+class PTImage_T
 {
-    friend class PTResourceManager;
 private:
     VkDevice device = VK_NULL_HANDLE;
 
@@ -23,11 +21,17 @@ private:
     std::string origin_path;
 
 public:
-    PTImage() = delete;
-    PTImage(const PTImage& other) = delete;
-    PTImage(const PTImage&& other) = delete;
-    PTImage operator=(const PTImage& other) = delete;
-    PTImage operator=(const PTImage&& other) = delete;
+    PTImage_T() = delete;
+    PTImage_T(const PTImage_T& other) = delete;
+    PTImage_T(const PTImage_T&& other) = delete;
+    PTImage_T operator=(const PTImage_T& other) = delete;
+    PTImage_T operator=(const PTImage_T&& other) = delete;
+    ~PTImage_T();
+
+    static inline PTCountedPointer<PTImage_T> createImage(VkExtent2D size, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage, VkMemoryPropertyFlags properties)
+    { return PTCountedPointer<PTImage_T>(new PTImage_T(size, format, tiling, usage, properties)); }
+    static inline PTCountedPointer<PTImage_T> createImage(std::string texture_path)
+    { return PTCountedPointer<PTImage_T>(new PTImage_T(texture_path)); }
 
     inline VkImage getImage() const { return image; }
     inline VkDeviceMemory getImageMemory() const { return image_memory; }
@@ -44,10 +48,10 @@ public:
     static void transitionImageLayout(VkImage image, VkImageLayout old_layout, VkImageLayout new_layout, VkCommandBuffer cmd = VK_NULL_HANDLE);
 
 private:
-    PTImage(VkDevice _device, PTPhysicalDevice physical_device, VkExtent2D _size, VkFormat _format, VkImageTiling _tiling, VkImageUsageFlags _usage, VkMemoryPropertyFlags properties);
-    PTImage(VkDevice _device, std::string texture_path, PTPhysicalDevice physical_device);
+    PTImage_T(VkExtent2D _size, VkFormat _format, VkImageTiling _tiling, VkImageUsageFlags _usage, VkMemoryPropertyFlags properties);
+    PTImage_T(std::string texture_path);
 
-    ~PTImage();
-
-    void createImage(PTPhysicalDevice physical_device, VkExtent2D _size, VkFormat _format, VkImageTiling _tiling, VkImageUsageFlags _usage, VkMemoryPropertyFlags properties);
+    void prepareImage(VkExtent2D _size, VkFormat _format, VkImageTiling _tiling, VkImageUsageFlags _usage, VkMemoryPropertyFlags properties);
 };
+
+typedef PTCountedPointer<PTImage_T> PTImage;

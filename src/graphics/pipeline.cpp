@@ -4,19 +4,18 @@
 #include "shader.h"
 #include "render_pass.h"
 #include "swapchain.h"
+#include "render_server.h"
 
 using namespace std;
 
-PTPipeline::PTPipeline(VkDevice _device, PTShader* _shader, PTRenderPass* _render_pass, PTSwapchain* _swapchain, VkBool32 _depth_write, VkBool32 _depth_test, VkCompareOp _depth_op, VkCullModeFlags _culling, VkFrontFace _winding_order, VkPolygonMode _polygon_mode, vector<VkDynamicState> _dynamic_states)
+PTPipeline_T::PTPipeline_T(PTShader _shader, PTRenderPass _render_pass, PTSwapchain _swapchain, VkBool32 _depth_write, VkBool32 _depth_test, VkCompareOp _depth_op, VkCullModeFlags _culling, VkFrontFace _winding_order, VkPolygonMode _polygon_mode, vector<VkDynamicState> _dynamic_states)
 {
-    device = _device;
+    device = PTRenderServer::get()->getDevice();
     
     shader = _shader;
     render_pass = _render_pass;
 
     // we now depend on the shader and the render pass
-    addDependency(shader);
-    addDependency(render_pass);
     
     depth_write = _depth_write;
     depth_test = _depth_test;
@@ -58,10 +57,10 @@ PTPipeline::PTPipeline(VkDevice _device, PTShader* _shader, PTRenderPass* _rende
     if (vkCreatePipelineLayout(device, &pipeline_layout_create_info, nullptr, &layout) != VK_SUCCESS)
         throw runtime_error("unable to create pipeline layout");
 
-    createPipeline();
+    preparePipeline();
 }
 
-void PTPipeline::createPipeline()
+void PTPipeline_T::preparePipeline()
 {
     // info about the dynamic states
     VkPipelineDynamicStateCreateInfo dynamic_state_create_info{ };
@@ -70,8 +69,8 @@ void PTPipeline::createPipeline()
     dynamic_state_create_info.pDynamicStates = dynamic_states.data();
 
     // info about binding the vertex buffer
-    auto binding_description = PTMesh::getVertexBindingDescription();
-    auto attribute_descriptions = PTMesh::getVertexAttributeDescriptions();
+    auto binding_description = PTMesh_T::getVertexBindingDescription();
+    auto attribute_descriptions = PTMesh_T::getVertexAttributeDescriptions();
 
     VkPipelineVertexInputStateCreateInfo vertex_input_create_info{ };
     vertex_input_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -134,7 +133,7 @@ void PTPipeline::createPipeline()
     // grab the colour attachments and copy out their blend state info
     auto attachments = render_pass->getAttachments();
     vector<VkPipelineColorBlendAttachmentState> colour_blend_attachments;
-    for (auto attachment : attachments)
+    for (const auto& attachment : attachments)
         colour_blend_attachments.push_back(attachment.blend_state);
 
     VkPipelineColorBlendStateCreateInfo colour_blend_create_info{ };
@@ -171,18 +170,20 @@ void PTPipeline::createPipeline()
         throw runtime_error("unable to create to create graphics pipeline");
 }
 
-PTPipeline::~PTPipeline()
+PTPipeline_T::~PTPipeline_T()
 {
     // destroy the pipeline shit
     vkDestroyPipeline(device, pipeline, nullptr);
     vkDestroyPipelineLayout(device, layout, nullptr);
 
     // unlink the shader and render pass dependencies
-    removeDependency(shader);
-    removeDependency(render_pass);
 }
 
-void PTPipeline::setDepthParams(VkBool32 write, VkBool32 test, VkCompareOp op)
+inline PTShader PTPipeline_T::getShader() const { return shader; }
+
+inline PTRenderPass PTPipeline_T::getRenderPass() const { return render_pass; }
+
+void PTPipeline_T::setDepthParams(VkBool32 write, VkBool32 test, VkCompareOp op)
 {
     // destroy the pipeline (not the layout though)
     vkDestroyPipeline(device, pipeline, nullptr);
@@ -192,10 +193,10 @@ void PTPipeline::setDepthParams(VkBool32 write, VkBool32 test, VkCompareOp op)
     depth_op = op;
 
     // recreate the pipeline again
-    createPipeline();
+    preparePipeline();
 }
 
-void PTPipeline::setCulling(VkCullModeFlags cull)
+void PTPipeline_T::setCulling(VkCullModeFlags cull)
 {
     // destroy the pipeline (not the layout though)
     vkDestroyPipeline(device, pipeline, nullptr);
@@ -203,10 +204,10 @@ void PTPipeline::setCulling(VkCullModeFlags cull)
     culling = cull;
 
     // recreate the pipeline again
-    createPipeline();
+    preparePipeline();
 }
 
-void PTPipeline::setPolygonMode(VkPolygonMode mode)
+void PTPipeline_T::setPolygonMode(VkPolygonMode mode)
 {
     // destroy the pipeline (not the layout though)
     vkDestroyPipeline(device, pipeline, nullptr);
@@ -214,5 +215,5 @@ void PTPipeline::setPolygonMode(VkPolygonMode mode)
     polygon_mode = mode;
 
     // recreate the pipeline again
-    createPipeline();
+    preparePipeline();
 }

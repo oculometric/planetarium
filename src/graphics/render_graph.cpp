@@ -8,14 +8,15 @@
 #include "swapchain.h"
 #include "resource_manager.h"
 #include "buffer.h"
+#include "shader.h"
+#include "render_server.h"
 
 using namespace std;
 
-PTRGGraph::PTRGGraph(VkDevice _device, PTSwapchain* _swapchain)
+PTRGGraph_T::PTRGGraph_T()
 {
-	device = _device;
-	swapchain = _swapchain;
-	addDependency(swapchain);
+	device = PTRenderServer::get()->getDevice();
+	swapchain = PTRenderServer::get()->getSwapchain();
 
 	// construct descriptor pool for internal use
 	array<VkDescriptorPoolSize, 2> pool_sizes{ };
@@ -38,23 +39,22 @@ PTRGGraph::PTRGGraph(VkDevice _device, PTSwapchain* _swapchain)
 	generateRenderPassAndUniformBuffers();
 }
 
-PTRGGraph::~PTRGGraph()
+PTRGGraph_T::~PTRGGraph_T()
 {
 	discardAllResources();
 }
 
-void PTRGGraph::generateRenderPassAndUniformBuffers()
+void PTRGGraph_T::generateRenderPassAndUniformBuffers()
 {
-	PTRenderPass::Attachment colour_attachment;
+	PTRenderPass_T::Attachment colour_attachment;
 	colour_attachment.format = swapchain->getImageFormat();
 	colour_attachment.final_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	PTRenderPass::Attachment normal_and_extra_attachment;
+	PTRenderPass_T::Attachment normal_and_extra_attachment;
 	normal_and_extra_attachment.format = EXTRA_FORMAT;
 	normal_and_extra_attachment.final_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	// this will result in a colour attachment, two basic data attachments, and a depth attachment
 	// it will also generate dependencies ensuring the images are available to shaders as input after rendering to them
-	render_pass = PTResourceManager::get()->createRenderPass({ colour_attachment, normal_and_extra_attachment, normal_and_extra_attachment }, true);
-	addDependency(render_pass, false);
+	render_pass = PTRenderPass_T::createRenderPass({ colour_attachment, normal_and_extra_attachment, normal_and_extra_attachment }, true);
 
 	// create shared scene and transform uniform buffers used by all steps
 	shared_transform_uniforms = PTBuffer_T::createBuffer(sizeof(TransformUniforms), VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
@@ -64,17 +64,17 @@ void PTRGGraph::generateRenderPassAndUniformBuffers()
 	}
 }
 
-VkImageView PTRGGraph::prepareImage(PTImage*& target, VkFormat format, VkExtent2D extent)
+VkImageView PTRGGraph_T::prepareImage(PTImage& target, VkFormat format, VkExtent2D extent)
 {
 	VkImageUsageFlags usage = IMAGE_USAGE;
 	if (format == DEPTH_FORMAT)
 		usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 
-	target = PTResourceManager::get()->createImage(extent, format, VK_IMAGE_TILING_OPTIMAL, usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	target = PTImage_T::createImage(extent, format, VK_IMAGE_TILING_OPTIMAL, usage, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 	return target->createImageView((format == DEPTH_FORMAT) ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT);
 }
 
-void PTRGGraph::createImageBufferForBinding(int& binding, PTImage*& spare_image, VkImageView& spare_image_view, VkFormat format, VkExtent2D _extent)
+void PTRGGraph_T::createImageBufferForBinding(int& binding, PTImage& spare_image, VkImageView& spare_image_view, VkFormat format, VkExtent2D _extent)
 {
 	VkExtent2D extent = _extent;
 	if (extent.width == 0 || extent.height == 0)
@@ -83,7 +83,7 @@ void PTRGGraph::createImageBufferForBinding(int& binding, PTImage*& spare_image,
 	if (binding < 0)
 	{
 		// initialise spare colour buffer
-		if (spare_image == nullptr)
+		if (!spare_image.isValid())
 			spare_image_view = prepareImage(spare_image, format, extent);
 		else if (extent.width != spare_image->getSize().width || extent.height != spare_image->getSize().height)
 		{
@@ -95,7 +95,7 @@ void PTRGGraph::createImageBufferForBinding(int& binding, PTImage*& spare_image,
 		// initialise a new colour buffer in the image buffer array or check usage
 		if (binding >= image_buffers.size())
 		{
-			PTImage* tmp;
+			PTImage tmp;
 			image_buffers.push_back({ tmp, prepareImage(tmp, format, extent) });
 		}
 		else if (image_buffers[binding].first->getFormat() != format)
@@ -103,7 +103,7 @@ void PTRGGraph::createImageBufferForBinding(int& binding, PTImage*& spare_image,
 			// if texture is being reused by the wrong attachment, just replace this binding with the spare image
 			debugLog("ERROR: render graph image re-used in incorrect format. discarding second usage");
 			binding = -1;
-			if (spare_image == nullptr)
+			if (!spare_image.isValid())
 				spare_image_view = prepareImage(spare_image, format, extent);
 			else if (extent.width != spare_image->getSize().width || extent.height != spare_image->getSize().height)
 			{
@@ -114,7 +114,7 @@ void PTRGGraph::createImageBufferForBinding(int& binding, PTImage*& spare_image,
 		{
 			debugLog("ERROR: render graph image re-used in an incorrect size. discarding second usage");
 			binding = -1;
-			if (spare_image == nullptr)
+			if (!spare_image.isValid())
 				spare_image_view = prepareImage(spare_image, format, extent);
 			else if (extent.width != spare_image->getSize().width || extent.height != spare_image->getSize().height)
 			{
@@ -124,7 +124,7 @@ void PTRGGraph::createImageBufferForBinding(int& binding, PTImage*& spare_image,
 	}
 }
 
-void PTRGGraph::generateImagesAndFramebuffers()
+void PTRGGraph_T::generateImagesAndFramebuffers()
 {
 	for (PTRGStep& step : timeline_steps)
 	{
@@ -165,15 +165,9 @@ void PTRGGraph::generateImagesAndFramebuffers()
 	}
 
 	// ensure all of the images are dependencies
-	if (spare_colour_image != nullptr) addDependency(spare_colour_image, false);
-	if (spare_depth_image != nullptr) addDependency(spare_depth_image, false);
-	if (spare_normal_image != nullptr) addDependency(spare_normal_image, false);
-	if (spare_extra_image != nullptr) addDependency(spare_extra_image, false);
-
-	for (const auto& pair : image_buffers) addDependency(pair.first, false);
 }
 
-void PTRGGraph::linkTexturesToMaterial(const PTRGStep& step)
+void PTRGGraph_T::linkTexturesToMaterial(const PTRGStep& step)
 {
 	for (const auto& pair : step.process_inputs)
 	{
@@ -196,23 +190,23 @@ void PTRGGraph::linkTexturesToMaterial(const PTRGStep& step)
 	}
 }
 
-void PTRGGraph::createMaterialDescriptorSets()
+void PTRGGraph_T::createMaterialDescriptorSets()
 {
-	std::set<PTMaterial*> materials_set;
+	set<PTMaterial_T*> materials_set;
 	for (PTRGStep& step : timeline_steps)
 	{
 		if (step.is_camera_step)
 			continue;
 
-		if (materials_set.contains(step.process_material))
+		if (materials_set.contains(step.process_material.getPointer()))
 			debugLog("WARNING: material asset used in multiple render graph steps. this will cause undefined behaviour for all but the last instance");
-		materials_set.insert(step.process_material);
+		materials_set.insert(step.process_material.getPointer());
 
 		// link material texture slots to image buffers
 		linkTexturesToMaterial(step);
 
 		// allocate descriptor sets for the material
-		std::array<VkDescriptorSetLayout, MAX_FRAMES_IN_FLIGHT> layouts;
+		array<VkDescriptorSetLayout, MAX_FRAMES_IN_FLIGHT> layouts;
 		layouts.fill(step.process_material->getShader()->getDescriptorSetLayout());
 		VkDescriptorSetAllocateInfo set_allocation_info{ };
 		set_allocation_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
@@ -262,20 +256,20 @@ void PTRGGraph::createMaterialDescriptorSets()
 	}
 }
 
-void PTRGGraph::discardAllResources()
+void PTRGGraph_T::discardAllResources()
 {
 	// destroy images and views
 	destroyImages();
 
 	// kill render pass
-	removeDependency(render_pass);
+	render_pass = nullptr;
 
 	// destroy descriptors and pool
 	vkDestroyDescriptorPool(device, descriptor_pool, nullptr);
-	removeDependency(swapchain);
+	swapchain = nullptr;
 }
 
-void PTRGGraph::destroyImages()
+void PTRGGraph_T::destroyImages()
 {
 	// destroy framebuffers first
 	for (PTRGStep& step : timeline_steps)
@@ -288,7 +282,6 @@ void PTRGGraph::destroyImages()
 	for (auto pair : image_buffers)
 	{
 		vkDestroyImageView(device, pair.second, nullptr);
-		removeDependency(pair.first);
 	}
 	image_buffers.clear();
 
@@ -296,30 +289,35 @@ void PTRGGraph::destroyImages()
 	if (spare_colour_image != nullptr)
 	{
 		vkDestroyImageView(device, spare_colour_image_view, nullptr);
-		removeDependency(spare_colour_image);
 		spare_colour_image = nullptr;
 	}
 	if (spare_depth_image != nullptr)
 	{
 		vkDestroyImageView(device, spare_depth_image_view, nullptr);
-		removeDependency(spare_depth_image);
 		spare_depth_image = nullptr;
 	}
 	if (spare_normal_image != nullptr)
 	{
 		vkDestroyImageView(device, spare_normal_image_view, nullptr);
-		removeDependency(spare_normal_image);
 		spare_normal_image = nullptr;
 	}
 	if (spare_extra_image != nullptr)
 	{
 		vkDestroyImageView(device, spare_extra_image_view, nullptr);
-		removeDependency(spare_extra_image);
 		spare_extra_image = nullptr;
 	}
 }
 
-PTRGStepInfo PTRGGraph::getStepInfo(size_t step_index) const
+inline PTRenderPass PTRGGraph_T::getRenderPass() const { return render_pass; }
+
+inline PTImage PTRGGraph_T::getFinalImage() const { return final_image_index < 0 ? spare_colour_image : image_buffers[final_image_index].first; }
+
+inline std::pair<PTMaterial, VkDescriptorSet> PTRGGraph_T::getStepMaterial(size_t step_index, uint32_t frame_index) const
+{
+	return std::pair<PTMaterial, VkDescriptorSet>(timeline_steps[step_index].process_material, timeline_steps[step_index].descriptor_sets[frame_index]);
+}
+
+PTRGStepInfo PTRGGraph_T::getStepInfo(size_t step_index) const
 {
 	PTRGStep step = timeline_steps[step_index];
 
@@ -341,7 +339,7 @@ PTRGStepInfo PTRGGraph::getStepInfo(size_t step_index) const
 	return step_info;
 }
 
-void PTRGGraph::resize()
+void PTRGGraph_T::resize()
 {
 	// destroy the images and regenerate them
 	destroyImages();
@@ -362,14 +360,14 @@ void PTRGGraph::resize()
 	}
 }
 
-void PTRGGraph::updateUniforms(const SceneUniforms& scene_uniforms, const TransformUniforms& transform_uniforms, uint32_t frame_index)
+void PTRGGraph_T::updateUniforms(const SceneUniforms& scene_uniforms, const TransformUniforms& transform_uniforms, uint32_t frame_index)
 {
 	// update the shared buffers holding uniforms
 	memcpy(shared_scene_uniforms[frame_index]->map(), &scene_uniforms, sizeof(scene_uniforms));
 	memcpy(shared_transform_uniforms->map(), &transform_uniforms, sizeof(transform_uniforms));
 }
 
-void PTRGGraph::configure(const std::vector<PTRGStep>& steps, int final_image)
+void PTRGGraph_T::configure(const std::vector<PTRGStep>& steps, int final_image)
 {
 	// destroy images
 	destroyImages();

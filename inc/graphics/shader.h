@@ -5,20 +5,19 @@
 #include <string>
 #include <map>
 
-#include "resource.h"
+#include "reference_counter.h"
 
-class PTShader : public PTResource
+class PTShader_T
 {
 public:
     struct BindingInfo
     {
         std::string identifier;
-        uint16_t bind_point;
-        uint32_t size;
-        VkDescriptorType type;
+        uint16_t bind_point = 0;
+        uint32_t size = 0;
+        VkDescriptorType type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     };
 
-    friend class PTResourceManager;
 private:
     VkDevice device = VK_NULL_HANDLE;
 
@@ -33,11 +32,15 @@ private:
     bool geom_shader_present = false;
     
 public:
-    PTShader() = delete;
-    PTShader(PTShader& other) = delete;
-    PTShader(PTShader&& other) = delete;
-    void operator=(PTShader& other) = delete;
-    void operator=(PTShader&& other) = delete;
+    PTShader_T() = delete;
+    PTShader_T(PTShader_T& other) = delete;
+    PTShader_T(PTShader_T&& other) = delete;
+    void operator=(PTShader_T& other) = delete;
+    void operator=(PTShader_T&& other) = delete;
+    ~PTShader_T();
+
+    static inline PTCountedPointer<PTShader_T> createShader(std::string shader_path_stub, bool is_precompiled, bool has_geometry_shader = false)
+    { return PTCountedPointer<PTShader_T>(new PTShader_T(shader_path_stub, is_precompiled, has_geometry_shader)); }
 
     std::vector<VkPipelineShaderStageCreateInfo> getStageCreateInfo() const;
     
@@ -47,9 +50,7 @@ public:
     bool hasDescriptorWithBinding(uint16_t binding, BindingInfo& out, size_t& index);
 
 private:
-    PTShader(VkDevice _device, std::string shader_path_stub, bool is_precompiled, bool has_geometry_shader);
-
-    ~PTShader();
+    PTShader_T(std::string shader_path_stub, bool is_precompiled, bool has_geometry_shader = false);
 
     bool readRawAndCompile(std::string shader_path_stub, std::vector<char>& vertex_code, std::vector<char>& fragment_code, std::vector<char>& geometry_code);
     bool readPrecompiled(std::string shader_path_stub, std::vector<char>& vertex_code, std::vector<char>& fragment_code, std::vector<char>& geometry_code);
@@ -57,3 +58,5 @@ private:
     void createDescriptorSetLayout();
     void insertDescriptor(BindingInfo descriptor);
 };
+
+typedef PTCountedPointer<PTShader_T> PTShader;

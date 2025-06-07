@@ -1,8 +1,10 @@
 #include "gizmo_node.h"
 
+#include "mesh.h"
 #include "resource_manager.h"
 #include "render_server.h"
 #include "scene.h"
+#include "material.h"
 
 using namespace std;
 
@@ -56,15 +58,13 @@ void PTGizmoNode::process(float delta_time)
 
 PTGizmoNode::PTGizmoNode(PTDeserialiser::ArgMap arguments)
 {
-    axes_mesh = PTResourceManager::get()->createMesh("res/engine/mesh/debug_axes.obj");
-    material = PTResourceManager::get()->createMaterial("res/engine/material/unlit_overlay.ptmat");
-    addDependency(axes_mesh, false);
-    addDependency(material, false);
+    axes_mesh = PTMesh_T::createMesh("res/engine/mesh/debug_axes.obj");
+    material = PTMaterial_T::createMaterial("res/engine/material/unlit_overlay.ptmat");
 }
 
 PTGizmoNode::~PTGizmoNode()
 {
     PTRenderServer::get()->removeAllDrawRequests(this);
-    removeDependency(material);
-    removeDependency(axes_mesh);
+    axes_mesh = nullptr;
+    material = nullptr;
 }

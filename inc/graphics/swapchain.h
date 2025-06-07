@@ -3,12 +3,10 @@
 #include <vulkan/vulkan.h>
 #include <vector>
 
-#include "resource.h"
-#include "physical_device.h"
+#include "reference_counter.h"
 
-class PTSwapchain : public PTResource
+class PTSwapchain_T
 {
-    friend class PTResourceManager;
 private:
     VkDevice device = VK_NULL_HANDLE;
 
@@ -24,16 +22,16 @@ private:
     std::vector<VkImage> images;
     std::vector<VkImageView> image_views;
 
-    PTSwapchain(VkDevice _device, PTPhysicalDevice& physical_device, VkSurfaceKHR surface, int window_x, int window_y);
-
-    ~PTSwapchain();
-
 public:
-    PTSwapchain() = delete;
-    PTSwapchain(const PTSwapchain& other) = delete;
-    PTSwapchain(const PTSwapchain&& other) = delete;
-    PTSwapchain operator=(const PTSwapchain& other) = delete;
-    PTSwapchain operator=(const PTSwapchain&& other) = delete;
+    PTSwapchain_T() = delete;
+    PTSwapchain_T(const PTSwapchain_T& other) = delete;
+    PTSwapchain_T(const PTSwapchain_T&& other) = delete;
+    PTSwapchain_T operator=(const PTSwapchain_T& other) = delete;
+    PTSwapchain_T operator=(const PTSwapchain_T&& other) = delete;
+    ~PTSwapchain_T();
+
+    static inline PTCountedPointer<PTSwapchain_T> createSwapchain(VkSurfaceKHR surface, int window_x, int window_y)
+    { return PTCountedPointer<PTSwapchain_T>(new PTSwapchain_T(surface, window_x, window_y)); }
 
     inline VkSwapchainKHR getSwapchain() const { return swapchain; }
     inline VkSurfaceFormatKHR getSurfaceFormat() const { return surface_format; }
@@ -46,6 +44,10 @@ public:
     void resize(VkSurfaceKHR surface, int size_x, int size_y);
    
 private:
-    void createSwapchain(VkSurfaceKHR surface);
+    PTSwapchain_T(VkSurfaceKHR surface, int window_x, int window_y);
+
+    void prepareSwapchain(VkSurfaceKHR surface);
     void collectImages();
 };
+
+typedef PTCountedPointer<PTSwapchain_T> PTSwapchain;

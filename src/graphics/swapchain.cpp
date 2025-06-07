@@ -2,6 +2,8 @@
 
 #include <stdexcept>
 
+#include "render_server.h"
+
 using namespace std;
 
 inline uint32_t clamp(uint32_t x, uint32_t mini, uint32_t maxi)
@@ -10,8 +12,9 @@ inline uint32_t clamp(uint32_t x, uint32_t mini, uint32_t maxi)
     return (y < mini) ? mini : y;
 }
 
-PTSwapchain::PTSwapchain(VkDevice _device, PTPhysicalDevice& physical_device, VkSurfaceKHR surface, int window_x, int window_y)
+PTSwapchain_T::PTSwapchain_T(VkSurfaceKHR surface, int window_x, int window_y)
 {
+    PTPhysicalDevice physical_device = PTRenderServer::get()->getPhysicalDevice();
     // decide on surface format
     for (const auto& format : physical_device.getSwapchainFormats())
     {
@@ -60,15 +63,15 @@ PTSwapchain::PTSwapchain(VkDevice _device, PTPhysicalDevice& physical_device, Vk
 
     surface_present_mode = VK_PRESENT_MODE_FIFO_KHR;
     transform = capabilities.currentTransform;
-    device = _device;
+    device = PTRenderServer::get()->getDevice();
 
     // build and collect
-    createSwapchain(surface);
+    prepareSwapchain(surface);
 
     collectImages();
 }
 
-PTSwapchain::~PTSwapchain()
+PTSwapchain_T::~PTSwapchain_T()
 {
     // destroy the image views and the swapchain
     for (auto image_view : image_views)
@@ -77,7 +80,7 @@ PTSwapchain::~PTSwapchain()
     vkDestroySwapchainKHR(device, swapchain, nullptr);
 }
 
-void PTSwapchain::resize(VkSurfaceKHR surface, int size_x, int size_y)
+void PTSwapchain_T::resize(VkSurfaceKHR surface, int size_x, int size_y)
 {
     // destroy the image views and the swapchain
     for (auto image_view : image_views)
@@ -89,12 +92,12 @@ void PTSwapchain::resize(VkSurfaceKHR surface, int size_x, int size_y)
     extent = VkExtent2D{ static_cast<uint32_t>(size_x), static_cast<uint32_t>(size_y) };
 
     // rebuild everything
-    createSwapchain(surface);
+    prepareSwapchain(surface);
 
     collectImages();
 }
 
-void PTSwapchain::createSwapchain(VkSurfaceKHR surface)
+void PTSwapchain_T::prepareSwapchain(VkSurfaceKHR surface)
 {
     // create swapchain using the stashed parameters
     VkSwapchainCreateInfoKHR swap_chain_create_info{ };
@@ -122,7 +125,7 @@ void PTSwapchain::createSwapchain(VkSurfaceKHR surface)
         throw runtime_error("unable to create swap chain");
 }
 
-void PTSwapchain::collectImages()
+void PTSwapchain_T::collectImages()
 {
     // collect swapchain images
     vkGetSwapchainImagesKHR(device, swapchain, &image_count, nullptr);

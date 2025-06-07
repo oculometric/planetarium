@@ -8,12 +8,14 @@
 #include "vector3.h"
 #include "vector2.h"
 
-class PTResource;
 class PTNode;
-class PTScene;
-class PTMaterial;
-class PTShader;
-class PTImage;
+
+#include "reference_counter.h"
+#include "resource.h"
+
+typedef PTCountedPointer<class PTImage_T> PTImage;
+typedef PTCountedPointer<class PTShader_T> PTShader;
+typedef PTCountedPointer<class PTScene_T> PTScene;
 
 class PTDeserialiser
 {
@@ -155,34 +157,36 @@ public:
 
         std::string s_val;
         std::vector<Argument> a_val;
+        PTResource r_val = nullptr;
         union
         {
             int i_val;
             float f_val;
             PTVector2f v2_val;
             PTVector3f v3_val;
-            PTVector4f v4_val = PTVector4f(0,0,0,0);
-            PTResource* r_val;
+            PTVector4f v4_val = PTVector4f{ 0.0f, 0.0f, 0.0f, 0.0f };
         };
 
-        inline Argument& operator=(const Argument& other)
+        inline Argument operator=(const Argument& other)
         {
             type = other.type;
             s_val = other.s_val;
             f_val = other.f_val;
-            v4_val = other.v4_val;
+            v4_val = v4_val;
+            r_val = other.r_val;
 
             return *this;
         }
 
         inline ~Argument()
         {
+            r_val = nullptr;
         }
     };
 
     typedef std::map<std::string, PTDeserialiser::Argument> ArgMap;
     
-    typedef std::map<std::string, PTResource*> ResourceMap;
+    typedef std::map<std::string, PTResource> ResourceMap;
     
     struct MaterialParams
     {
@@ -205,7 +209,7 @@ public:
 
     struct TextureParam
     {
-        PTImage* texture;
+        PTImage texture;
         std::string filter = "LINEAR";
         std::string repeat = "REPEAT";
     };
@@ -213,11 +217,11 @@ public:
 public:
 	static std::vector<Token> tokenise(const std::string& content);
     static std::vector<Token> prune(const std::vector<Token>& tokens);
-    static std::pair<std::string, PTResource*> deserialiseResourceDescriptor(const std::vector<Token>& tokens, size_t& first_token, ResourceMap& res_map, const std::string& content);
-    static PTNode* deserialiseObject(const std::vector<Token>& tokens, size_t& first_token, PTScene* scene, ResourceMap& res_map, const std::string& content);
-    static void deserialiseScene(PTScene* scene, const std::string& content);
+    static std::pair<std::string, PTResource> deserialiseResourceDescriptor(const std::vector<Token>& tokens, size_t& first_token, ResourceMap& res_map, const std::string& content);
+    static PTNode* deserialiseObject(const std::vector<Token>& tokens, size_t& first_token, PTScene scene, ResourceMap& res_map, const std::string& content);
+    static void deserialiseScene(PTScene scene, const std::string& content);
     static std::vector<std::pair<std::string, Argument>> deserialiseStatement(const std::vector<Token>& tokens, size_t& first_token, bool allow_unnamed, bool allow_named, ResourceMap& res_map, const std::string& content);
-    static void deserialiseMaterial(const std::string& content, MaterialParams& params, PTShader*& shader, std::vector<UniformParam>& uniforms, std::map<uint16_t, TextureParam>& textures);
+    static void deserialiseMaterial(const std::string& content, MaterialParams& params, PTShader& shader, std::vector<UniformParam>& uniforms, std::map<uint16_t, TextureParam>& textures);
 
 private:
     static inline TokenType getType(const char c);
@@ -316,7 +320,7 @@ inline bool getArg(PTDeserialiser::ArgMap args, std::string name, PTVector4f& ou
     return false;
 }
 
-inline bool getArg(PTDeserialiser::ArgMap args, std::string name, PTResource*& out)
+inline bool getArg(PTDeserialiser::ArgMap args, std::string name, PTResource& out)
 {
     if (hasArg(args, name, PTDeserialiser::ArgType::RESOURCE_ARG))
     {

@@ -121,14 +121,14 @@ void PTRenderServer::endTransientCommands(VkCommandBuffer transient_command_buff
     vkFreeCommandBuffers(device, command_pool, 1, &transient_command_buffer);
 }
 
-void PTRenderServer::addDrawRequest(PTNode* owner, PTMesh* mesh, PTMaterial* material, PTTransform* target_transform)
+void PTRenderServer::addDrawRequest(PTNode* owner, PTMesh mesh, PTMaterial material, PTTransform* target_transform)
 {
-	if (owner == nullptr || mesh == nullptr)
+	if (owner == nullptr || mesh.getPointer() == nullptr)
         return;
 
     DrawRequest request{ };
     request.mesh = mesh;
-    request.material =  (material == nullptr) ? default_material : material;
+    request.material =  (material.getPointer() == nullptr) ? default_material : material;
     request.transform = (target_transform == nullptr) ? owner->getTransform() : target_transform;
 
     std::array<VkDescriptorSetLayout, MAX_FRAMES_IN_FLIGHT> layouts;
@@ -216,6 +216,10 @@ void PTRenderServer::removeLight(PTLightNode* light)
     light_set.erase(light);
 }
 
+inline PTSwapchain PTRenderServer::getSwapchain() const { return swapchain; }
+
+inline PTRenderPass PTRenderServer::getRenderPass() const { return render_graph->getRenderPass(); }
+
 void PTRenderServer::beginEditLock()
 {
     while (state < 0);
@@ -281,10 +285,10 @@ void PTRenderServer::initVulkan(GLFWwindow* window, vector<const char*> glfw_ext
 
 	debugLog("    creating swapchain");
 	PTVector2u size = PTApplication::get()->getFramebufferSize();
-    swapchain = PTResourceManager::get()->createSwapchain(surface, size.x, size.y);
+    swapchain = PTSwapchain_T::createSwapchain(surface, size.x, size.y);
     
     debugLog("    creating render graph");
-    render_graph = PTResourceManager::get()->createRenderGraph(swapchain);
+    render_graph = PTRGGraph_T::createRGGraph();
 
 	debugLog("    creating command pool");
 	createCommandPoolAndBuffers();
@@ -296,9 +300,8 @@ void PTRenderServer::initVulkan(GLFWwindow* window, vector<const char*> glfw_ext
 	createFramebufferAndSyncResources();
 
 	debugLog("    creating default material");
-    PTShader* default_shader = PTResourceManager::get()->createShader(DEFAULT_SHADER_PATH, false, false, true);
-    default_material = PTResourceManager::get()->createMaterial(DEFAULT_MATERIAL_PATH, swapchain, render_graph->getRenderPass(), true);
-    default_shader->removeReferencer();
+    PTShader default_shader = PTShader_T::createShader(DEFAULT_SHADER_PATH, false);
+    default_material = PTMaterial_T::createMaterial(DEFAULT_MATERIAL_PATH);
 
     PTRGStep basic_step{ };
     basic_step.is_camera_step = true;
@@ -312,13 +315,13 @@ void PTRenderServer::initVulkan(GLFWwindow* window, vector<const char*> glfw_ext
     PTRGStep pp_step{ };
     pp_step.is_camera_step = false;
     pp_step.colour_buffer_binding = 4;
-    pp_step.process_material = PTResourceManager::get()->createMaterial("res/pp_demo.ptmat");
+    pp_step.process_material = PTMaterial_T::createMaterial("res/pp_demo.ptmat");
     pp_step.process_inputs = { { 0, 2 }, { 1, 3 }, { 2, 4 }, { 3, 5 } };
 
     render_graph->configure({ basic_step, pp_step }, 4);
 
     debugLog("    loading quad");
-    quad_mesh = PTResourceManager::get()->createMesh(
+    quad_mesh = PTMesh_T::createMesh(
         {
             PTVertex{ { -1, -1, 0 }, {}, {}, {}, { 0, 0 } },
             PTVertex{ { 1, -1, 0 }, {}, {}, {}, { 1, 0 } },
@@ -351,13 +354,13 @@ void PTRenderServer::deinitVulkan()
 
 	vkDeviceWaitIdle(device);
 
-    quad_mesh->removeReferencer();
-    default_material->removeReferencer();
+    quad_mesh = nullptr;
+    default_material = nullptr;
 
     while (!draw_queue.empty())
         removeAllDrawRequests(draw_queue.begin()->first);
 
-    render_graph->removeReferencer();
+    render_graph = nullptr;
 
     destroyFramebufferAndSyncResources();
 
@@ -366,7 +369,7 @@ void PTRenderServer::deinitVulkan()
 
     vkDestroyCommandPool(device, command_pool, nullptr);
 
-    swapchain->removeReferencer();
+    swapchain = nullptr;
 
     PTResourceManager::deinit();
 
@@ -910,21 +913,25 @@ void PTRenderServer::generateCameraRenderStepCommands(uint32_t frame_index, VkCo
 
     vkCmdBeginRenderPass(command_buffer, &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
 
-    PTMaterial* mat = nullptr;
-    PTMesh* mesh = nullptr;
+    PTMaterial_T* mat = default_material.getPointer();
+    PTMesh_T* mesh = quad_mesh.getPointer();
     for (auto instruction : sorted_queue)
     {
         if (instruction.material != mat)
         {
             // for each material, bind the shader and pipeline
-            mat = instruction.material;
+            mat = instruction.material.getPointer();
+            if (mat == nullptr)
+                continue;
             vkCmdBindPipeline(command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mat->getPipeline()->getPipeline());
         }
 
         if (instruction.mesh != mesh)
         {
             // for each mesh, bind the vertex and index buffers
-            mesh = instruction.mesh;
+            mesh = instruction.mesh.getPointer();
+            if (mesh == nullptr)
+                continue;
             VkBuffer vbuf = mesh->getVertexBuffer();
             VkBuffer ibuf = mesh->getIndexBuffer();
             if (vbuf == VK_NULL_HANDLE || ibuf == VK_NULL_HANDLE)
@@ -947,7 +954,7 @@ void PTRenderServer::generateCameraRenderStepCommands(uint32_t frame_index, VkCo
     vkCmdEndRenderPass(command_buffer);
 }
 
-void PTRenderServer::generatePostProcessRenderStepCommands(uint32_t frame_index, VkCommandBuffer command_buffer, PTRGStepInfo step_info, std::pair<PTMaterial*, VkDescriptorSet> material)
+void PTRenderServer::generatePostProcessRenderStepCommands(uint32_t frame_index, VkCommandBuffer command_buffer, PTRGStepInfo step_info, std::pair<PTMaterial, VkDescriptorSet> material)
 {
     VkViewport viewport{ };
     viewport.x = 0.0f;
@@ -1042,11 +1049,11 @@ void PTRenderServer::takeScreenshot(uint32_t frame_index)
 	VkCommandBuffer cmd = beginTransientCommands();
 
     VkExtent2D ext = swapchain->getExtent();
-    PTImage* screenshot_img = PTResourceManager::get()->createImage(ext, 
-                                                                    VK_FORMAT_R8G8B8A8_SRGB, 
-                                                                    VK_IMAGE_TILING_OPTIMAL, 
-                                                                    VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, 
-                                                                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    PTImage screenshot_img = PTImage_T::createImage(ext, 
+                                                    VK_FORMAT_R8G8B8A8_SRGB, 
+                                                    VK_IMAGE_TILING_OPTIMAL, 
+                                                    VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, 
+                                                    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     screenshot_img->transitionImageLayout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, cmd);
     VkMemoryRequirements memory_requirements{ };
     vkGetImageMemoryRequirements(device, screenshot_img->getImage(), &memory_requirements);
@@ -1122,8 +1129,6 @@ void PTRenderServer::takeScreenshot(uint32_t frame_index)
     vkCmdCopyImageToBuffer(cmd, screenshot_img->getImage(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, host_buffer->getBuffer(), 1, &copy_region);
 
     endTransientCommands(cmd);
-
-    screenshot_img->removeReferencer();
 
     writeRGBABitmap("screenshot.bmp", (char*)(host_buffer->map()), ext.width, ext.height);
 
@@ -1214,5 +1219,5 @@ bool PTRenderServer::DrawRequest::compare(const DrawRequest& a, const DrawReques
     if (a.material->getPriority() < b.material->getPriority())
         return false;
 
-    return (a.material < b.material) && (a.mesh < b.mesh);
+    return (a.material.getPointer() < b.material.getPointer()) && (a.mesh.getPointer() < b.mesh.getPointer());
 }

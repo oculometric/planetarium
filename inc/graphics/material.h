@@ -4,34 +4,27 @@
 #include <string>
 #include <map>
 
+#include "reference_counter.h"
 #include "constant.h"
-#include "resource.h"
-#include "shader.h"
 #include "ptmath.h"
 
-class PTImage;
-class PTRenderPass;
-class PTPipeline;
-class PTSwapchain;
-class PTSampler;
+typedef PTCountedPointer<class PTBuffer_T> PTBuffer;
+typedef PTCountedPointer<class PTPipeline_T> PTPipeline;
+typedef PTCountedPointer<class PTImage_T> PTImage;
+typedef PTCountedPointer<class PTShader_T> PTShader;
+typedef PTCountedPointer<class PTSampler_T> PTSampler;
+typedef PTCountedPointer<class PTRenderPass_T> PTRenderPass;
 
-#include "reference_counter.h"
-
-class PTBuffer_T;
-typedef PTCountedPointer<PTBuffer_T> PTBuffer;
-
-class PTMaterial : public PTResource
+class PTMaterial_T
 {
-public:
-    friend class PTResourceManager;
 private:
     VkDevice device = VK_NULL_HANDLE;
-    PTShader* shader = nullptr;
-    PTRenderPass* render_pass = nullptr;
-    PTPipeline* pipeline = nullptr;
+    PTShader shader = nullptr;
+    PTRenderPass render_pass = nullptr;
+    PTPipeline pipeline = nullptr;
     VkDescriptorPool descriptor_pool = VK_NULL_HANDLE;
     std::map<uint16_t, PTBuffer> uniform_buffers;
-    std::map<uint16_t, std::pair<PTImage*, std::pair<VkImageView, PTSampler*>>> textures;
+    std::map<uint16_t, std::pair<PTImage, std::pair<VkImageView, PTSampler>>> textures;
     bool needs_texture_update = false;
 
     int priority = 0;
@@ -39,22 +32,28 @@ private:
     std::string origin_path;
 
 public:
-    PTMaterial(const PTMaterial& other) = delete;
-    PTMaterial(const PTMaterial&& other) = delete;
-    PTMaterial operator=(const PTMaterial& other) = delete;
-    PTMaterial operator=(const PTMaterial&& other) = delete;
+    PTMaterial_T(const PTMaterial_T& other) = delete;
+    PTMaterial_T(const PTMaterial_T&& other) = delete;
+    PTMaterial_T operator=(const PTMaterial_T& other) = delete;
+    PTMaterial_T operator=(const PTMaterial_T&& other) = delete;
+    ~PTMaterial_T();
 
-    inline PTShader* getShader() const { return shader; }
-    inline PTRenderPass* getRenderPass() const { return render_pass; }
-    inline PTPipeline* getPipeline() const { return pipeline; }
-    inline PTBuffer getDescriptorBuffer(uint16_t binding) { return uniform_buffers[binding]; }
+    static inline PTCountedPointer<PTMaterial_T> createMaterial(std::string material_path)
+    { return PTCountedPointer<PTMaterial_T>(new PTMaterial_T(material_path)); }
+    static inline PTCountedPointer<PTMaterial_T> createMaterial(PTShader shader, VkBool32 depth_write, VkBool32 depth_test, VkCompareOp depth_op, VkCullModeFlags culling, VkPolygonMode polygon_mode)
+    { return PTCountedPointer<PTMaterial_T>(new PTMaterial_T(shader, depth_write, depth_test, depth_op, culling, polygon_mode)); }
+
+    inline PTShader getShader() const;
+    inline PTRenderPass getRenderPass() const;
+    inline PTPipeline getPipeline() const;
+    inline PTBuffer getDescriptorBuffer(uint16_t binding);
     void applySetWrites(VkDescriptorSet descriptor_set);
 
     inline int getPriority() const { return priority; }
     inline void setPriority(int p) { priority = p; }
 
-    void setTexture(uint16_t bind_point, PTImage* texture, VkSamplerAddressMode repeat_mode = VK_SAMPLER_ADDRESS_MODE_REPEAT, VkFilter filtering = VK_FILTER_NEAREST, VkImageAspectFlags aspect = VK_IMAGE_ASPECT_COLOR_BIT);
-    PTImage* getTexture(uint16_t bind_point);
+    void setTexture(uint16_t bind_point, PTImage texture, VkSamplerAddressMode repeat_mode = VK_SAMPLER_ADDRESS_MODE_REPEAT, VkFilter filtering = VK_FILTER_NEAREST, VkImageAspectFlags aspect = VK_IMAGE_ASPECT_COLOR_BIT);
+    PTImage getTexture(uint16_t bind_point);
     inline bool getTextureUpdateFlag() { bool b = needs_texture_update; needs_texture_update = false; return b; }
 
     template <typename T>
@@ -63,18 +62,19 @@ public:
     inline T getUniform(uint16_t bind_point);
 
 private:
-    PTMaterial(VkDevice _device, std::string material_path, PTRenderPass* _render_pass, PTSwapchain* swapchain);
-    PTMaterial(VkDevice _device, PTRenderPass* _render_pass, PTSwapchain* swapchain, PTShader* _shader, VkBool32 depth_write, VkBool32 depth_test, VkCompareOp depth_op, VkCullModeFlags culling, VkPolygonMode polygon_mode);
-    ~PTMaterial();
+    PTMaterial_T(std::string material_path);
+    PTMaterial_T(PTShader _shader, VkBool32 depth_write, VkBool32 depth_test, VkCompareOp depth_op, VkCullModeFlags culling, VkPolygonMode polygon_mode);
 
-    void initialiseMaterial(PTSwapchain* swapchain, VkBool32 depth_write, VkBool32 depth_test, VkCompareOp depth_op, VkCullModeFlags culling, VkPolygonMode polygon_mode);
+    void initialiseMaterial(VkBool32 depth_write, VkBool32 depth_test, VkCompareOp depth_op, VkCullModeFlags culling, VkPolygonMode polygon_mode);
 };
+
+typedef PTCountedPointer<PTMaterial_T> PTMaterial;
 
 #include "buffer.h"
 #include <cstring>
 
 template <typename T>
-inline void PTMaterial::setUniform(uint16_t bind_point, T data)
+inline void PTMaterial_T::setUniform(uint16_t bind_point, T data)
 {
     if (!uniform_buffers.contains(bind_point))
     {
@@ -90,7 +90,7 @@ inline void PTMaterial::setUniform(uint16_t bind_point, T data)
 }
 
 template <typename T>
-inline T PTMaterial::getUniform(uint16_t bind_point)
+inline T PTMaterial_T::getUniform(uint16_t bind_point)
 {
     if (!uniform_buffers.contains(bind_point))
     {

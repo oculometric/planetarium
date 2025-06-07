@@ -3,24 +3,25 @@
 #include "transform.h"
 #include "resource.h"
 #include "deserialiser.h"
+#include "reference_counter.h"
 
 class PTApplication;
-class PTScene;
+typedef PTCountedPointer<class PTScene_T> PTScene;
 
 class PTNode : public PTResource
 {
 	friend class PTResourceManager;
-	friend class PTScene;
+	friend class PTScene_T;
 public:
 	std::string name = "Node";
 
 private:
 	PTTransform transform = PTTransform(this);
-	PTScene* scene = nullptr;
+	PTScene scene = nullptr;
 
 public:
 	inline PTTransform* getTransform() { return &transform; }
-	inline PTScene* getScene() const { return scene; }
+	inline PTScene getScene() const;
 	PTApplication* getApplication();
 
 	PTNode(PTNode& other) = delete;

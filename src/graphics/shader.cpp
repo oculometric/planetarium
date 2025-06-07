@@ -1,19 +1,20 @@
 #include "shader.h"
 
-#include "constant.h"
 #include <fstream>
 
+#include "render_server.h"
+#include "constant.h"
 #include "spirv_reflect.h"
 
 using namespace std;
 
-PTShader::PTShader(VkDevice _device, const string shader_path_stub, bool is_precompiled, bool has_geometry_shader)
+PTShader_T::PTShader_T(const string shader_path_stub, bool is_precompiled, bool has_geometry_shader)
 {
     origin_path = shader_path_stub;
     geom_shader_present = has_geometry_shader;
 
     vector<char> vert, frag, geom;
-    device = _device;
+    device = PTRenderServer::get()->getDevice();
     if (is_precompiled)
     {
         if (readPrecompiled(shader_path_stub, vert, frag, geom))
@@ -49,7 +50,7 @@ PTShader::PTShader(VkDevice _device, const string shader_path_stub, bool is_prec
     createDescriptorSetLayout();
 }
 
-vector<VkPipelineShaderStageCreateInfo> PTShader::getStageCreateInfo() const
+vector<VkPipelineShaderStageCreateInfo> PTShader_T::getStageCreateInfo() const
 {
     vector<VkPipelineShaderStageCreateInfo> infos;
 
@@ -85,7 +86,7 @@ vector<VkPipelineShaderStageCreateInfo> PTShader::getStageCreateInfo() const
     return infos;
 }
 
-PTShader::~PTShader()
+PTShader_T::~PTShader_T()
 {
     // destroy the layout and the blobs
     vkDestroyDescriptorSetLayout(device, descriptor_set_layout, nullptr);
@@ -95,17 +96,17 @@ PTShader::~PTShader()
         vkDestroyShaderModule(device, geometry_shader, nullptr);
 }
 
-size_t PTShader::getDescriptorCount() const
+size_t PTShader_T::getDescriptorCount() const
 {
     return descriptor_bindings.size();
 }
 
-PTShader::BindingInfo PTShader::getDescriptorBinding(size_t index) const
+PTShader_T::BindingInfo PTShader_T::getDescriptorBinding(size_t index) const
 {
     return descriptor_bindings[index];
 }
 
-bool PTShader::hasDescriptorWithBinding(uint16_t binding, BindingInfo& out, size_t& index)
+bool PTShader_T::hasDescriptorWithBinding(uint16_t binding, BindingInfo& out, size_t& index)
 {
     index = 0;
     for (BindingInfo descriptor : descriptor_bindings)
@@ -120,7 +121,7 @@ bool PTShader::hasDescriptorWithBinding(uint16_t binding, BindingInfo& out, size
     return false;
 }
 
-bool PTShader::readRawAndCompile(string shader_path_stub, vector<char>& vertex_code, vector<char>& fragment_code, vector<char>& geometry_code)
+bool PTShader_T::readRawAndCompile(string shader_path_stub, vector<char>& vertex_code, vector<char>& fragment_code, vector<char>& geometry_code)
 {
     // run compile commands
     string compiler = "";
@@ -214,7 +215,7 @@ bool PTShader::readRawAndCompile(string shader_path_stub, vector<char>& vertex_c
     return load_result;
 }
 
-bool PTShader::readPrecompiled(const string shader_path_stub, vector<char>& vertex_code, vector<char>& fragment_code, vector<char>& geometry_code)
+bool PTShader_T::readPrecompiled(const string shader_path_stub, vector<char>& vertex_code, vector<char>& fragment_code, vector<char>& geometry_code)
 {
     ifstream vert_file, frag_file, geom_file;
     
@@ -275,7 +276,7 @@ bool PTShader::readPrecompiled(const string shader_path_stub, vector<char>& vert
     return true;
 }
 
-void PTShader::createShaderModules(const vector<char>& vertex_code, const vector<char>& fragment_code, std::vector<char>& geometry_code)
+void PTShader_T::createShaderModules(const vector<char>& vertex_code, const vector<char>& fragment_code, std::vector<char>& geometry_code)
 {
     // turn a block of bytes into vertex buffer
     VkShaderModuleCreateInfo vert_create_info{ };
@@ -366,7 +367,7 @@ void PTShader::createShaderModules(const vector<char>& vertex_code, const vector
     }
 }
 
-void PTShader::createDescriptorSetLayout()
+void PTShader_T::createDescriptorSetLayout()
 {
     vector<VkDescriptorSetLayoutBinding> bindings = { };
 
@@ -393,7 +394,7 @@ void PTShader::createDescriptorSetLayout()
         throw runtime_error("unable to create descriptor set layout");
 }
 
-void PTShader::insertDescriptor(BindingInfo descriptor)
+void PTShader_T::insertDescriptor(BindingInfo descriptor)
 {
     if (descriptor.bind_point == TRANSFORM_UNIFORM_BINDING
      || descriptor.bind_point == SCENE_UNIFORM_BINDING)

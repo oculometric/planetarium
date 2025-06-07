@@ -23,6 +23,7 @@
 
 ## Engine Stuff
 
+- [ ] overhaul deserialisation to be less coupled                                            (4) [M]
 - [ ] explicit material duplication                                                          (3) [L]
 - [ ] scene ambient light                                                                    (2) [M]
 - [ ] come up with a new system for node types (dynamic, not compile-time, runtime instead?) (5) [M]

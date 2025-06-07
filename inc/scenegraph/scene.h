@@ -6,21 +6,27 @@
 #include "node.h"
 #include "camera_node.h"
 #include "resource_manager.h"
+#include "resource.h"
+#include "reference_counter.h"
 
-class PTScene : public PTResource
+class PTScene_T
 {
-    friend class PTResourceManager;
 private:
-    std::map<std::string, PTResource*> referenced_resources;
     std::multimap<std::string, PTNode*> all_nodes;
     PTNode* root = nullptr;
     PTCameraNode* camera = nullptr;
 
 public:
-    PTScene(PTScene& other) = delete;
-    PTScene(PTScene&& other) = delete;
-    PTScene operator=(PTScene& other) = delete;
-    PTScene operator=(PTScene&& other) = delete;
+    PTScene_T(PTScene_T& other) = delete;
+    PTScene_T(PTScene_T&& other) = delete;
+    PTScene_T operator=(PTScene_T& other) = delete;
+    PTScene_T operator=(PTScene_T&& other) = delete;
+    ~PTScene_T();
+
+    static inline PTCountedPointer<PTScene_T> createScene()
+    { return PTCountedPointer<PTScene_T>(new PTScene_T()); }
+    static inline PTCountedPointer<PTScene_T> createScene(std::string scene_path)
+    { return PTCountedPointer<PTScene_T>(new PTScene_T(scene_path)); }
 
     template<class T>
     T* instantiate(std::string name, PTDeserialiser::ArgMap arguments = { });
@@ -30,29 +36,25 @@ public:
     template<class T>
     T* findNode(std::string name) const;
 
-    template<class T>
-    T* getResource(std::string identifier);
-    void addResource(std::string identifier, PTResource* resource);
-
     void update(float delta_time);
 
     inline PTCameraNode* getCamera() const { return camera; }
     void getCameraMatrix(float aspect_ratio, PTMatrix4f& world_to_view, PTMatrix4f& view_to_clip);
 
 private:
-    PTScene();
-
-    ~PTScene();
+    PTScene_T();
+    PTScene_T(std::string scene_path);
 };
 
+typedef PTCountedPointer<PTScene_T> PTScene;
+
 template<class T>
-inline T* PTScene::instantiate(std::string name, PTDeserialiser::ArgMap arguments)
+inline T* PTScene_T::instantiate(std::string name, PTDeserialiser::ArgMap arguments)
 {
     static_assert(std::is_base_of<PTNode, T>::value, "T is not a PTNode type");
     PTNode* node = PTResourceManager::get()->createNode<T>(arguments);
     node->scene = this;
     node->name = name;
-    addDependency(node, false);
 
     all_nodes.emplace(name, node);
     
@@ -66,19 +68,10 @@ inline T* PTScene::instantiate(std::string name, PTDeserialiser::ArgMap argument
 }
 
 template<class T>
-inline T* PTScene::findNode(std::string name) const
+inline T* PTScene_T::findNode(std::string name) const
 {
     if (all_nodes.contains(name))
         return dynamic_cast<T*>(all_nodes.find(name)->second);
         
-    return nullptr;
-}
-
-template<class T>
-inline T* PTScene::getResource(std::string identifier)
-{
-    static_assert(std::is_base_of<PTResource, T>::value, "T is not a PTResource type");
-    if (referenced_resources.contains(identifier))
-        return referenced_resources[identifier];
     return nullptr;
 }

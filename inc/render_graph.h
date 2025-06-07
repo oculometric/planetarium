@@ -4,9 +4,8 @@
 #include <vector>
 #include <vulkan/vulkan.h>
 
-#include "resource.h"
+#include "constant.h"
 #include "reference_counter.h"
-#include "resource_manager.h"
 
 // the render graph consists of a timeline of instructions - either cameras to draw, or post process steps to run
 // each command will have inputs and outputs which read from and write to buffers
@@ -29,12 +28,11 @@ const VkImageUsageFlags IMAGE_USAGE = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_I
 const VkFormat EXTRA_FORMAT = VK_FORMAT_R16G16B16A16_SNORM;
 const VkFormat DEPTH_FORMAT = VK_FORMAT_D32_SFLOAT;
 
-class PTRenderPass;
-class PTImage;
-class PTMaterial;
-class PTSwapchain;
-
+typedef PTCountedPointer<class PTRenderPass_T> PTRenderPass;
 typedef PTCountedPointer<class PTBuffer_T> PTBuffer;
+typedef PTCountedPointer<class PTImage_T> PTImage;
+typedef PTCountedPointer<class PTSwapchain_T> PTSwapchain;
+typedef PTCountedPointer<class PTMaterial_T> PTMaterial;
 
 // TODO: right now multi camera support is impossible. we would need extra uniform buffers (and descriptor sets, ugh) to support it
 // TODO: simple copy step
@@ -44,7 +42,7 @@ typedef PTCountedPointer<class PTBuffer_T> PTBuffer;
  */
 struct PTRGStep
 {
-    friend class PTRGGraph;
+    friend class PTRGGraph_T;
 private:
     // descriptor sets to be used, assigned by the graph class, do not touch
     std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> descriptor_sets;
@@ -72,7 +70,7 @@ public:
     size_t camera_slot = 0;         // camera index to use for rendering, if camera-ing (currently does nothing)
 
     // material to use for rendering, if post-processing
-    PTMaterial* process_material = nullptr;
+    PTMaterial process_material = nullptr;
     // mappings between image buffer indices to material texture slots
     std::vector<std::pair<int, uint16_t>> process_inputs;
 };
@@ -82,7 +80,7 @@ public:
  */
 struct PTRGStepInfo
 {
-    PTRenderPass* render_pass = nullptr;        // render pass to be used for rendering
+    PTRenderPass render_pass = nullptr;         // render pass to be used for rendering
     VkFramebuffer framebuffer = VK_NULL_HANDLE; // framebuffer to be used when rendering (combines assigned image buffers)
     VkExtent2D extent;                          // size of the target buffers (should be used for scissor and viewport)
     std::array<VkClearValue, 4> clear_values;   // clear values to use when starting render pass
@@ -93,12 +91,11 @@ struct PTRGStepInfo
  * 
  * you MUST call `configure` before you start using the render graph
  */
-class PTRGGraph : public PTResource
+class PTRGGraph_T
 {
-    friend class PTResourceManager;
 private:
     VkDevice device = VK_NULL_HANDLE;           // vulkan device reference
-    PTSwapchain* swapchain = nullptr;           // swapchain reference
+    PTSwapchain swapchain = nullptr;            // swapchain reference
     // descriptor pool used to allocate for post-process timeline steps
     VkDescriptorPool descriptor_pool = VK_NULL_HANDLE;
 
@@ -109,31 +106,22 @@ private:
     // array of scene uniform buffers shared by all post-process timeline steps
     std::array<PTBuffer, MAX_FRAMES_IN_FLIGHT> shared_scene_uniforms;
     // array of image buffers which can be used as post process inputs or render targets
-    std::vector<std::pair<PTImage*, VkImageView>> image_buffers;
+    std::vector<std::pair<PTImage, VkImageView>> image_buffers;
     // index in the image buffer array of the image to be shown to the screen (or -1 to use the spare colour buffer)
     int final_image_index = -1;
     // render pass used by all timeline steps
-    PTRenderPass* render_pass;
+    PTRenderPass render_pass;
 
     // images and image views for use when attachments are not going to be used as inputs
 
-    PTImage* spare_colour_image = nullptr;
+    PTImage spare_colour_image = nullptr;
     VkImageView spare_colour_image_view = VK_NULL_HANDLE;
-    PTImage* spare_depth_image = nullptr;
+    PTImage spare_depth_image = nullptr;
     VkImageView spare_depth_image_view = VK_NULL_HANDLE;
-    PTImage* spare_normal_image = nullptr;
+    PTImage spare_normal_image = nullptr;
     VkImageView spare_normal_image_view = VK_NULL_HANDLE;
-    PTImage* spare_extra_image = nullptr;
+    PTImage spare_extra_image = nullptr;
     VkImageView spare_extra_image_view = VK_NULL_HANDLE;
-
-    PTRGGraph(VkDevice _device, PTSwapchain* _swapchain, std::string timeline_path);
-    PTRGGraph(VkDevice _device, PTSwapchain* _swapchain);
-    ~PTRGGraph();
-
-    PTRGGraph(const PTRGGraph& other) = delete;
-    PTRGGraph(const PTRGGraph&& other) = delete;
-    PTRGGraph operator=(const PTRGGraph& other) = delete;
-    PTRGGraph operator=(const PTRGGraph&& other) = delete;
 
     /**
      * @brief create the render pass and the uniform buffers
@@ -147,7 +135,7 @@ private:
      * @param extent extent to use for image creation
      * @returns generated image view, appropriate for the format given
      */
-    VkImageView prepareImage(PTImage*& target, VkFormat format, VkExtent2D extent);
+    VkImageView prepareImage(PTImage& target, VkFormat format, VkExtent2D extent);
     /**
      * @brief configure the image for a binding, either by creating a new image in the array or
      * by initialising the spare image
@@ -158,7 +146,7 @@ private:
      * @param format format of the image to generate, passed into `prepareImage`
      * @param _extent size of the image to generate
      */
-    void createImageBufferForBinding(int& binding, PTImage*& spare_image, VkImageView& spare_image_view, VkFormat format, VkExtent2D _extent);
+    void createImageBufferForBinding(int& binding, PTImage& spare_image, VkImageView& spare_image_view, VkFormat format, VkExtent2D _extent);
     /**
      * @brief construct the images needed for all the timeline steps and combine them into framebuffers
      */
@@ -183,19 +171,33 @@ private:
     void destroyImages();
 
 public:
-    inline PTRenderPass* getRenderPass() const { return render_pass; }
-    inline PTImage* getFinalImage() const { return final_image_index < 0 ? spare_colour_image : image_buffers[final_image_index].first; }
+    PTRGGraph_T(const PTRGGraph_T& other) = delete;
+    PTRGGraph_T(const PTRGGraph_T&& other) = delete;
+    PTRGGraph_T operator=(const PTRGGraph_T& other) = delete;
+    PTRGGraph_T operator=(const PTRGGraph_T&& other) = delete;
+    ~PTRGGraph_T();
+
+    //static inline PTCountedPointer<PTRGGraph_T> createRGGraph(std::string timeline_path)
+    //{ return PTCountedPointer<PTRGGraph_T>(new PTRGGraph_T(timeline_path)); }
+    static inline PTCountedPointer<PTRGGraph_T> createRGGraph()
+    { return PTCountedPointer<PTRGGraph_T>(new PTRGGraph_T()); }
+
+    inline PTRenderPass getRenderPass() const;
+    inline PTImage getFinalImage() const;
     inline size_t getStepCount() const { return timeline_steps.size(); }
     inline bool getStepIsCamera(size_t step_index) const { return timeline_steps[step_index].is_camera_step; }
     inline size_t getStepCameraSlot(size_t step_index) const { return timeline_steps[step_index].camera_slot; }
-    inline std::pair<PTMaterial*, VkDescriptorSet> getStepMaterial(size_t step_index, uint32_t frame_index) const
-    {
-        return std::pair<PTMaterial*, VkDescriptorSet>(timeline_steps[step_index].process_material, timeline_steps[step_index].descriptor_sets[frame_index]);
-    }
+    inline std::pair<PTMaterial, VkDescriptorSet> getStepMaterial(size_t step_index, uint32_t frame_index) const;
     PTRGStepInfo getStepInfo(size_t step_index) const;
 
     void resize();
     void updateUniforms(const SceneUniforms& scene_uniforms, const TransformUniforms& transform_uniforms, uint32_t frame_index);
 
     void configure(const std::vector<PTRGStep>& steps, int final_image);
+
+private:
+    PTRGGraph_T(std::string timeline_path);
+    PTRGGraph_T();
 };
+
+typedef PTCountedPointer<PTRGGraph_T> PTRGGraph;

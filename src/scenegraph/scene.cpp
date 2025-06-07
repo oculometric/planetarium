@@ -10,31 +10,26 @@
 
 using namespace std;
 
-PTScene::PTScene()
+PTScene_T::PTScene_T()
 {
     // the root must always exist
     root = instantiate<PTNode>("root");
     camera = nullptr;
 }
 
-PTScene::~PTScene()
+PTScene_T::~PTScene_T()
 {
     // no longer depend on the nodes in the scene
-    for (auto node : all_nodes)
-        removeDependency(node.second);
+    //for (auto node : all_nodes)
+        //removeDependency(node.second);
 
     // clear references to root and camera, and all nodes
+    all_nodes.clear();
     root = nullptr;
     camera = nullptr;
-    all_nodes.clear();
-    
-    // remove dependencies on resources we were potentially using
-    for (auto res : referenced_resources)
-        removeDependency(res.second);
-    referenced_resources.clear();
 }
 
-vector<PTNode*> PTScene::getNodes() const
+vector<PTNode*> PTScene_T::getNodes() const
 {
     // copy all the nodes into a list
     vector<PTNode*> nodes;
@@ -44,19 +39,13 @@ vector<PTNode*> PTScene::getNodes() const
     return nodes;
 }
 
-void PTScene::addResource(std::string identifier, PTResource* resource)
-{
-    referenced_resources[identifier] = resource;
-    addDependency(resource);
-}
-
-void PTScene::update(float delta_time)
+void PTScene_T::update(float delta_time)
 {
     for (auto pair : all_nodes)
         pair.second->process(delta_time);
 }
 
-void PTScene::getCameraMatrix(float aspect_ratio, PTMatrix4f& world_to_view, PTMatrix4f& view_to_clip)
+void PTScene_T::getCameraMatrix(float aspect_ratio, PTMatrix4f& world_to_view, PTMatrix4f& view_to_clip)
 {
     if (camera == nullptr)
     {

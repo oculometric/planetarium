@@ -13,6 +13,8 @@ PTNode::PTNode(PTDeserialiser::ArgMap arguments)
         transform.setLocalScale(arguments["scale"].v3_val);
 }
 
+inline PTScene PTNode::getScene() const { return scene; }
+
 PTApplication* PTNode::getApplication()
 {
     return PTApplication::get();

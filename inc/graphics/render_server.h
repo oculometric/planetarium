@@ -1,7 +1,5 @@
 #pragma once
 
-#pragma once
-
 #include <vulkan/vulkan.h>
 #include <map>
 #include <vector>
@@ -16,19 +14,17 @@
 #include "resource.h"
 #include "reference_counter.h"
 
-class PTBuffer_T;
-typedef PTCountedPointer<PTBuffer_T> PTBuffer;
+typedef PTCountedPointer<class PTBuffer_T> PTBuffer;
+typedef PTCountedPointer<class PTMesh_T> PTMesh;
+typedef PTCountedPointer<class PTPipeline_T> PTPipeline;
+typedef PTCountedPointer<class PTImage_T> PTImage;
+typedef PTCountedPointer<class PTRenderPass_T> PTRenderPass;
+typedef PTCountedPointer<class PTSwapchain_T> PTSwapchain;
+typedef PTCountedPointer<class PTMaterial_T> PTMaterial;
+typedef PTCountedPointer<class PTScene_T> PTScene;
 
-class PTScene;
 class PTNode;
-class PTSwapchain;
-class PTShader;
-class PTRenderPass;
-class PTPipeline;
-class PTImage;
-class PTMesh;
 class PTTransform;
-class PTMaterial;
 class PTLightNode;
 
 struct GLFWwindow;
@@ -38,9 +34,9 @@ class PTRenderServer
 private:
     struct DrawRequest
     {
-        PTMesh* mesh = nullptr;
+        PTMesh mesh = nullptr;
         PTTransform* transform = nullptr;
-        PTMaterial* material = nullptr;
+        PTMaterial material = nullptr;
         std::array<VkDescriptorSet, MAX_FRAMES_IN_FLIGHT> descriptor_sets;
         std::array<PTBuffer, MAX_FRAMES_IN_FLIGHT> descriptor_buffers;
 
@@ -71,20 +67,20 @@ private:
 
     VkDescriptorPool descriptor_pool = VK_NULL_HANDLE;
 
-    PTSwapchain* swapchain = nullptr;
+    PTSwapchain swapchain = nullptr;
     std::vector<VkSemaphore> image_available_semaphores;
     std::vector<VkSemaphore> render_finished_semaphores;
     std::vector<VkFence> in_flight_fences;
 
-    PTRGGraph* render_graph = nullptr;
+    PTRGGraph render_graph = nullptr;
 
     std::array<PTBuffer, MAX_FRAMES_IN_FLIGHT> scene_uniform_buffers;
     
     std::multimap<PTNode*, DrawRequest> draw_queue;
     std::set<PTLightNode*> light_set;
 
-    PTMaterial* default_material = nullptr;
-    PTMesh* quad_mesh = nullptr;
+    PTMaterial default_material = nullptr;
+    PTMesh quad_mesh = nullptr;
 
     static constexpr char* required_device_extensions[1] =
     {
@@ -107,13 +103,13 @@ public:
     VkCommandBuffer beginTransientCommands();
     void endTransientCommands(VkCommandBuffer transient_command_buffer);
     
-    void addDrawRequest(PTNode* owner, PTMesh* mesh, PTMaterial* material = nullptr, PTTransform* target_transform = nullptr);
+    void addDrawRequest(PTNode* owner, PTMesh mesh, PTMaterial material = nullptr, PTTransform* target_transform = nullptr);
     void removeAllDrawRequests(PTNode* owner);
     void addLight(PTLightNode* light);
     void removeLight(PTLightNode* light);
 
-    inline PTSwapchain* getSwapchain() const { return swapchain; }
-    inline PTRenderPass* getRenderPass() const { return render_graph->getRenderPass(); }
+    inline PTSwapchain getSwapchain() const;
+    inline PTRenderPass getRenderPass() const;
     inline PTPhysicalDevice getPhysicalDevice() const { return physical_device; }
     inline VkDevice getDevice() const { return device; }
 
@@ -144,7 +140,7 @@ private:
     void updateTextureBindings();
     void drawFrame(uint32_t frame_index);
     void generateCameraRenderStepCommands(uint32_t frame_index, VkCommandBuffer command_buffer, PTRGStepInfo step_info, std::vector<DrawRequest>& sorted_queue);
-    void generatePostProcessRenderStepCommands(uint32_t frame_index, VkCommandBuffer command_buffer, PTRGStepInfo step_info, std::pair<PTMaterial*, VkDescriptorSet> material);
+    void generatePostProcessRenderStepCommands(uint32_t frame_index, VkCommandBuffer command_buffer, PTRGStepInfo step_info, std::pair<PTMaterial, VkDescriptorSet> material);
     void generateImageLayoutTransitionCommands(VkCommandBuffer command_buffer, VkImage image, VkImageLayout old_layout, VkImageLayout new_layout, VkAccessFlags src_access, VkAccessFlags dst_access, VkPipelineStageFlags src_stage, VkPipelineStageFlags dst_stage);
 
     void resizeSwapchain();

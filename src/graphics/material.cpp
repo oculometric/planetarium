@@ -12,6 +12,8 @@
 #include "swapchain.h"
 #include "deserialiser.h"
 #include "sampler.h"
+#include "render_pass.h"
+#include "render_server.h"
 
 using namespace std;
 
@@ -57,11 +59,11 @@ static map<string, VkFilter> filters =
     { "CUBIC", VK_FILTER_CUBIC_IMG }
 };
 
-PTMaterial::PTMaterial(VkDevice _device, string material_path, PTRenderPass* _render_pass, PTSwapchain* swapchain)
+PTMaterial_T::PTMaterial_T(string material_path)
 {
-    device = _device;
+    device = PTRenderServer::get()->getDevice();
     origin_path = material_path;
-    render_pass = _render_pass;
+    render_pass = PTRenderServer::get()->getRenderPass();
     origin_path = material_path;
 
     ifstream file(material_path, ios::ate);
@@ -88,16 +90,14 @@ PTMaterial::PTMaterial(VkDevice _device, string material_path, PTRenderPass* _re
     PTDeserialiser::deserialiseMaterial(text, params, shader, uniforms, _textures);
 
     if (shader == nullptr)
-        shader = PTResourceManager::get()->createShader(DEFAULT_SHADER_PATH, false);
+        shader = PTShader_T::createShader(DEFAULT_SHADER_PATH, false);
 
     setPriority(params.priority);
 
-    initialiseMaterial(swapchain, params.depth_write, params.depth_test, 
+    initialiseMaterial(params.depth_write, params.depth_test, 
         depth_ops.contains(params.depth_op) ? depth_ops[params.depth_op] : VK_COMPARE_OP_LESS, 
         cull_modes.contains(params.culling) ? cull_modes[params.culling] : VK_CULL_MODE_BACK_BIT, 
         polygon_modes.contains(params.polygon_mode) ? polygon_modes[params.polygon_mode] : VK_POLYGON_MODE_FILL);
-
-    shader->removeReferencer();
 
     for (PTDeserialiser::UniformParam variable : uniforms)
     {
@@ -131,34 +131,38 @@ PTMaterial::PTMaterial(VkDevice _device, string material_path, PTRenderPass* _re
         setTexture(pair.first, pair.second.texture,
             repeat_modes.contains(pair.second.repeat) ? repeat_modes[pair.second.repeat] : VK_SAMPLER_ADDRESS_MODE_REPEAT,
             filters.contains(pair.second.filter) ? filters[pair.second.filter] : VK_FILTER_LINEAR);
-        pair.second.texture->removeReferencer();
     }
 }
 
-PTMaterial::PTMaterial(VkDevice _device, PTRenderPass* _render_pass, PTSwapchain* swapchain, PTShader* _shader, VkBool32 depth_write, VkBool32 depth_test, VkCompareOp depth_op, VkCullModeFlags culling, VkPolygonMode polygon_mode)
+PTMaterial_T::PTMaterial_T(PTShader _shader, VkBool32 depth_write, VkBool32 depth_test, VkCompareOp depth_op, VkCullModeFlags culling, VkPolygonMode polygon_mode)
 {
-    device = _device;
+    device = PTRenderServer::get()->getDevice();
     shader = _shader;
-    render_pass = _render_pass;
+    render_pass = PTRenderServer::get()->getRenderPass();
 
-    initialiseMaterial(swapchain, depth_write, depth_test, depth_op, culling, polygon_mode);
+    initialiseMaterial(depth_write, depth_test, depth_op, culling, polygon_mode);
 }
 
-PTMaterial::~PTMaterial()
+PTMaterial_T::~PTMaterial_T()
 {
     for (auto pair : textures)
-    {
         vkDestroyImageView(device, pair.second.second.first, nullptr);
-        removeDependency(pair.second.first);
-        removeDependency(pair.second.second.second);
-    }
+    textures.clear();
 
-    removeDependency(render_pass);
-    removeDependency(shader);
-    removeDependency(pipeline);
+    render_pass = nullptr;
+    shader = nullptr;
+    pipeline = nullptr;
 }
 
-void PTMaterial::applySetWrites(VkDescriptorSet descriptor_set)
+inline PTShader PTMaterial_T::getShader() const { return shader; }
+
+inline PTRenderPass PTMaterial_T::getRenderPass() const { return render_pass; }
+
+inline PTPipeline PTMaterial_T::getPipeline() const { return pipeline; }
+
+inline PTBuffer PTMaterial_T::getDescriptorBuffer(uint16_t binding) { return uniform_buffers[binding]; }
+
+void PTMaterial_T::applySetWrites(VkDescriptorSet descriptor_set)
 {
     vector<VkWriteDescriptorSet> set_writes;
     size_t descriptors = getShader()->getDescriptorCount();
@@ -219,9 +223,9 @@ void PTMaterial::applySetWrites(VkDescriptorSet descriptor_set)
     vkUpdateDescriptorSets(device, static_cast<uint32_t>(set_writes.size()), set_writes.data(), 0, nullptr);
 }
 
-void PTMaterial::setTexture(uint16_t bind_point, PTImage* texture, VkSamplerAddressMode repeat_mode, VkFilter filtering, VkImageAspectFlags aspect)
+void PTMaterial_T::setTexture(uint16_t bind_point, PTImage texture, VkSamplerAddressMode repeat_mode, VkFilter filtering, VkImageAspectFlags aspect)
 {
-    PTShader::BindingInfo binding;
+    PTShader_T::BindingInfo binding;
     size_t _;
     if (!getShader()->hasDescriptorWithBinding(bind_point, binding, _))
     {
@@ -243,38 +247,35 @@ void PTMaterial::setTexture(uint16_t bind_point, PTImage* texture, VkSamplerAddr
     if (it != textures.end() && it->second.first != nullptr)
     {
         vkDestroyImageView(device, it->second.second.first, nullptr);
-        removeDependency(it->second.first);
-        removeDependency(it->second.second.second);
+        it->second.first = nullptr;
+        it->second.second.second = nullptr;
     }
 
     if (texture != nullptr)
     {
-        addDependency(texture);
         textures[bind_point] = { texture, 
         {
             texture->createImageView(aspect),
-            PTResourceManager::get()->createSampler(repeat_mode, filtering, filtering, 2)
+            PTSampler_T::createSampler(repeat_mode, filtering, filtering, 2)
         } };
-        addDependency(textures[bind_point].second.second, false);
     }
     else
     {
         // if the texture is null, use the blank default image
-        PTImage* img = PTResourceManager::get()->createImage(DEFAULT_TEXTURE_PATH);
+        PTImage img = PTImage_T::createImage(DEFAULT_TEXTURE_PATH);
         setTexture(bind_point, img);
-        img->removeReferencer();
     }
     needs_texture_update = true;
 }
 
-PTImage* PTMaterial::getTexture(uint16_t bind_point)
+PTImage PTMaterial_T::getTexture(uint16_t bind_point)
 {
     return textures[bind_point].first;
 }
 
-void PTMaterial::initialiseMaterial(PTSwapchain* swapchain, VkBool32 depth_write, VkBool32 depth_test, VkCompareOp depth_op, VkCullModeFlags culling, VkPolygonMode polygon_mode)
+void PTMaterial_T::initialiseMaterial(VkBool32 depth_write, VkBool32 depth_test, VkCompareOp depth_op, VkCullModeFlags culling, VkPolygonMode polygon_mode)
 {
-    pipeline = PTResourceManager::get()->createPipeline(shader, render_pass, swapchain, depth_write, depth_test, depth_op, culling, VK_FRONT_FACE_COUNTER_CLOCKWISE, polygon_mode, { });
+    pipeline = PTPipeline_T::createPipeline(shader, render_pass, PTRenderServer::get()->getSwapchain(), depth_write, depth_test, depth_op, culling, VK_FRONT_FACE_COUNTER_CLOCKWISE, polygon_mode, {});
 
     size_t descriptors = getShader()->getDescriptorCount();
 
@@ -297,8 +298,4 @@ void PTMaterial::initialiseMaterial(PTSwapchain* swapchain, VkBool32 depth_write
             setTexture(binding_info.bind_point, nullptr);
         }
     }
-
-    addDependency(shader, true);
-    addDependency(render_pass, true);
-    addDependency(pipeline, false);
 }
