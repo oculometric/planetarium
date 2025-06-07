@@ -308,11 +308,11 @@ void PTRGGraph_T::destroyImages()
 	}
 }
 
-inline PTRenderPass PTRGGraph_T::getRenderPass() const { return render_pass; }
+PTRenderPass PTRGGraph_T::getRenderPass() const { return render_pass; }
 
-inline PTImage PTRGGraph_T::getFinalImage() const { return final_image_index < 0 ? spare_colour_image : image_buffers[final_image_index].first; }
+PTImage PTRGGraph_T::getFinalImage() const { return final_image_index < 0 ? spare_colour_image : image_buffers[final_image_index].first; }
 
-inline std::pair<PTMaterial, VkDescriptorSet> PTRGGraph_T::getStepMaterial(size_t step_index, uint32_t frame_index) const
+std::pair<PTMaterial, VkDescriptorSet> PTRGGraph_T::getStepMaterial(size_t step_index, uint32_t frame_index) const
 {
 	return std::pair<PTMaterial, VkDescriptorSet>(timeline_steps[step_index].process_material, timeline_steps[step_index].descriptor_sets[frame_index]);
 }

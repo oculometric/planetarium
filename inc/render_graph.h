@@ -182,12 +182,12 @@ public:
     static inline PTCountedPointer<PTRGGraph_T> createRGGraph()
     { return PTCountedPointer<PTRGGraph_T>(new PTRGGraph_T()); }
 
-    inline PTRenderPass getRenderPass() const;
-    inline PTImage getFinalImage() const;
+    PTRenderPass getRenderPass() const;
+    PTImage getFinalImage() const;
     inline size_t getStepCount() const { return timeline_steps.size(); }
     inline bool getStepIsCamera(size_t step_index) const { return timeline_steps[step_index].is_camera_step; }
     inline size_t getStepCameraSlot(size_t step_index) const { return timeline_steps[step_index].camera_slot; }
-    inline std::pair<PTMaterial, VkDescriptorSet> getStepMaterial(size_t step_index, uint32_t frame_index) const;
+    std::pair<PTMaterial, VkDescriptorSet> getStepMaterial(size_t step_index, uint32_t frame_index) const;
     PTRGStepInfo getStepInfo(size_t step_index) const;
 
     void resize();

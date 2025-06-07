@@ -1,6 +1,7 @@
 #include "scene.h"
 
 #include <iostream>
+#include <fstream>
 
 #include "application.h"
 #include "debug.h"
@@ -13,8 +14,23 @@ using namespace std;
 PTScene_T::PTScene_T()
 {
     // the root must always exist
-    root = instantiate<PTNode>("root");
+    root = instantiate<PTNode_T>("root");
     camera = nullptr;
+}
+
+PTScene_T::PTScene_T(std::string scene_path) : PTScene_T()
+{
+    ifstream file(scene_path, ios::ate);
+    if (!file.is_open())
+        return;
+
+    size_t size = file.tellg();
+    string scene_text;
+    scene_text.resize(size, ' ');
+    file.seekg(0);
+    file.read(scene_text.data(), size);
+
+    PTDeserialiser::deserialiseScene(this, scene_text);
 }
 
 PTScene_T::~PTScene_T()
@@ -29,14 +45,22 @@ PTScene_T::~PTScene_T()
     camera = nullptr;
 }
 
-vector<PTNode*> PTScene_T::getNodes() const
+vector<PTNode> PTScene_T::getNodes() const
 {
     // copy all the nodes into a list
-    vector<PTNode*> nodes;
+    vector<PTNode> nodes;
     nodes.reserve(all_nodes.size());
     for (auto pair : all_nodes)
         nodes.push_back(pair.second);
     return nodes;
+}
+
+PTNode PTScene_T::findNode(std::string name) const
+{
+    if (all_nodes.contains(name))
+        return all_nodes.find(name)->second;
+
+    return nullptr;
 }
 
 void PTScene_T::update(float delta_time)
@@ -47,10 +71,10 @@ void PTScene_T::update(float delta_time)
 
 void PTScene_T::getCameraMatrix(float aspect_ratio, PTMatrix4f& world_to_view, PTMatrix4f& view_to_clip)
 {
-    if (camera == nullptr)
+    if (!camera.isValid())
     {
         world_to_view = PTMatrix4f();
-        view_to_clip = PTCameraNode::projectionMatrix(0.1f, 100.0f, 120.0f, aspect_ratio);
+        view_to_clip = PTCameraNode_T::projectionMatrix(0.1f, 100.0f, 120.0f, aspect_ratio);
         return;
     }
     world_to_view = ~camera->getTransform()->getLocalToWorld();

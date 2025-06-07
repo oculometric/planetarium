@@ -7,14 +7,13 @@
 
 #include "math/ptmath.h"
 #include "reference_counter.h"
+#include "scene.h"
 
 #ifdef _WIN32
 typedef std::chrono::steady_clock clocktype;
 #else
 typedef std::chrono::system_clock clocktype;
 #endif
-
-typedef PTCountedPointer<class PTScene_T> PTScene;
 
 class PTApplication
 {

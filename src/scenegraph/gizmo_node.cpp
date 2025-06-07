@@ -8,17 +8,17 @@
 
 using namespace std;
 
-void PTGizmoNode::process(float delta_time)
+void PTGizmoNode_T::process(float delta_time)
 {
     PTVector3f forward = -getScene()->getCamera()->getTransform()->getForward();
     PTVector3f origin = getScene()->getCamera()->getTransform()->getPosition();
     
     auto nodes = getScene()->getNodes();
     float min_dist = 50.0f;
-    PTNode* min_node = nullptr;
-    for (PTNode* node : nodes)
+    PTNode min_node = nullptr;
+    for (PTNode node : nodes)
     {
-        if (node == this) continue;
+        if (node.getPointer() == this) continue;
         PTVector3f camera_to_node = node->getTransform()->getPosition() - origin;
         if (mag(camera_to_node) < 0.5f)
             continue;
@@ -56,13 +56,13 @@ void PTGizmoNode::process(float delta_time)
     }
 }
 
-PTGizmoNode::PTGizmoNode(PTDeserialiser::ArgMap arguments)
+PTGizmoNode_T::PTGizmoNode_T(PTDeserialiser::ArgMap arguments) : PTNode_T(arguments)
 {
     axes_mesh = PTMesh_T::createMesh("res/engine/mesh/debug_axes.obj");
     material = PTMaterial_T::createMaterial("res/engine/material/unlit_overlay.ptmat");
 }
 
-PTGizmoNode::~PTGizmoNode()
+PTGizmoNode_T::~PTGizmoNode_T()
 {
     PTRenderServer::get()->removeAllDrawRequests(this);
     axes_mesh = nullptr;

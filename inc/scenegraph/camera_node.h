@@ -6,9 +6,9 @@
 #include "node.h"
 #include "matrix4.h"
 
-class PTCameraNode : public PTNode
+class PTCameraNode_T : public PTNode_T
 {
-	friend class PTResourceManager;
+	friend class PTNode_T;
 public:
 	float near_clip = 0.1f;
 	float far_clip = 100.0f;
@@ -23,5 +23,7 @@ public:
 	static PTMatrix4f projectionMatrix(float near_clip_plane, float far_clip_plane, float horizontal_fov_degrees, float aspect_ratio);
 
 protected:
-	PTCameraNode(PTDeserialiser::ArgMap arguments);
+	PTCameraNode_T(PTDeserialiser::ArgMap arguments);
 };
+
+typedef PTCountedPointer<PTCameraNode_T> PTCameraNode;

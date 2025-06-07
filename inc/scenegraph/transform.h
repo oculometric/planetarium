@@ -5,8 +5,9 @@
 #include "matrix4.h"
 #include "quaternion.h"
 #include "vector"
+#include "reference_counter.h"
 
-class PTNode;
+class PTNode_T;
 
 class PTTransform
 {
@@ -18,13 +19,13 @@ private:
     PTMatrix4f local_to_parent;
     PTMatrix4f local_to_world;
 
-    PTNode* node = nullptr;
+    PTNode_T* node = nullptr;
 
     PTTransform* parent = nullptr;
     std::vector<PTTransform*> children;
 
 public:
-    inline PTTransform(PTNode* _node, PTVector3f position = { 0, 0, 0 }, PTQuaternion rotation = { 0, 0, 0, 1 }, PTVector3f scale = { 1, 1, 1 }) : local_position(position), local_rotation(rotation), local_scale(scale)
+    inline PTTransform(PTNode_T* _node, PTVector3f position = { 0, 0, 0 }, PTQuaternion rotation = { 0, 0, 0, 1 }, PTVector3f scale = { 1, 1, 1 }) : local_position(position), local_rotation(rotation), local_scale(scale)
     {
         node = _node;
         updateLocalFromParams();

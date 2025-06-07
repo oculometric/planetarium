@@ -28,6 +28,12 @@
 - [ ] scene ambient light                                                                    (2) [M]
 - [ ] come up with a new system for node types (dynamic, not compile-time, runtime instead?) (5) [M]
 - [ ] refactor the way resources work (so we dont have to create everything through the resource manager, use a proper reference counting system based on copying) (3) [H]
+      - [ ] have nodes pseudo-construct on joining scene
+      - [ ] nodes can be pseudo-constructed using a default constructor or using arguments
+      - [ ] rewrite or remove instantiate func in scene
+      - [ ] reimplement deduplication
+      - [ ] minimise number of files including render_server.h with an intermediate file for getting render server
+      - [ ] create file containing resource typedefs
 - [ ] verbose debug                                                                          (1) [M]
 - [ ] marching cubes/tetrahedra using geometry shader (or CPU)                               (8) [L]
 - [ ] new PTFile module for file IO                                                          (6) [H]

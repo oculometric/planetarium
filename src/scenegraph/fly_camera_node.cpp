@@ -73,11 +73,11 @@ using namespace std;
 #include "scene.h"
 #include "application.h"
 
-void PTFlyCameraNode::process(float delta_time)
+void PTFlyCameraNode_T::process(float delta_time)
 {
-    PTNode* parent = getScene()->findNode<PTNode>("parent");
+    PTNode parent = getScene()->findNode("parent");
     parent->getTransform()->rotate(delta_time * 30.0f, PTVector3f::forward(), parent->getTransform()->getPosition());
-    PTNode* spot = getScene()->findNode<PTNode>("spot");
+    PTNode spot = getScene()->findNode("spot");
     spot->getTransform()->translate(PTVector3f{ 0, 0, sin(getApplication()->getTotalTime()) * 0.04f });
 
     PTInput* manager = PTInput::get();
@@ -155,5 +155,5 @@ void PTFlyCameraNode::process(float delta_time)
     debugSetSceneProperty("camera fov", to_string(horizontal_fov));
 }
 
-PTFlyCameraNode::PTFlyCameraNode(PTDeserialiser::ArgMap arguments) : PTCameraNode(arguments)
+PTFlyCameraNode_T::PTFlyCameraNode_T(PTDeserialiser::ArgMap arguments) : PTCameraNode_T(arguments)
 { }

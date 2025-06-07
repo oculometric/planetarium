@@ -89,7 +89,7 @@ PTMaterial_T::PTMaterial_T(string material_path)
         
     PTDeserialiser::deserialiseMaterial(text, params, shader, uniforms, _textures);
 
-    if (shader == nullptr)
+    if (!shader.isValid())
         shader = PTShader_T::createShader(DEFAULT_SHADER_PATH, false);
 
     setPriority(params.priority);
@@ -154,13 +154,13 @@ PTMaterial_T::~PTMaterial_T()
     pipeline = nullptr;
 }
 
-inline PTShader PTMaterial_T::getShader() const { return shader; }
+PTShader PTMaterial_T::getShader() const { return shader; }
 
-inline PTRenderPass PTMaterial_T::getRenderPass() const { return render_pass; }
+PTRenderPass PTMaterial_T::getRenderPass() const { return render_pass; }
 
-inline PTPipeline PTMaterial_T::getPipeline() const { return pipeline; }
+PTPipeline PTMaterial_T::getPipeline() const { return pipeline; }
 
-inline PTBuffer PTMaterial_T::getDescriptorBuffer(uint16_t binding) { return uniform_buffers[binding]; }
+PTBuffer PTMaterial_T::getDescriptorBuffer(uint16_t binding) { return uniform_buffers[binding]; }
 
 void PTMaterial_T::applySetWrites(VkDescriptorSet descriptor_set)
 {

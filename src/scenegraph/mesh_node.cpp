@@ -5,7 +5,7 @@
 #include "mesh.h"
 #include "render_server.h"
 
-PTMeshNode::PTMeshNode(PTDeserialiser::ArgMap arguments) : PTNode(arguments)
+PTMeshNode_T::PTMeshNode_T(PTDeserialiser::ArgMap arguments) : PTNode_T(arguments)
 {
     // if there's a mesh data argument, cast and make it our mesh
     if (hasArg(arguments, "data", PTDeserialiser::ArgType::RESOURCE_ARG))
@@ -15,11 +15,11 @@ PTMeshNode::PTMeshNode(PTDeserialiser::ArgMap arguments) : PTNode(arguments)
         setMaterial(arguments["material"].r_val);
 }
 
-inline PTMesh PTMeshNode::getMesh() const { return mesh_data; }
+inline PTMesh PTMeshNode_T::getMesh() const { return mesh_data; }
 
-inline PTMaterial PTMeshNode::getMaterial() const { return material; }
+inline PTMaterial PTMeshNode_T::getMaterial() const { return material; }
 
-void PTMeshNode::setMesh(PTMesh _mesh_data)
+void PTMeshNode_T::setMesh(PTMesh _mesh_data)
 {
     // delete draw request
     PTRenderServer::get()->removeAllDrawRequests(this);
@@ -32,7 +32,7 @@ void PTMeshNode::setMesh(PTMesh _mesh_data)
     PTRenderServer::get()->addDrawRequest(this, mesh_data, material);
 }
 
-void PTMeshNode::setMaterial(PTMaterial _material)
+void PTMeshNode_T::setMaterial(PTMaterial _material)
 {
     // delete draw request
     PTRenderServer::get()->removeAllDrawRequests(this);
@@ -45,7 +45,7 @@ void PTMeshNode::setMaterial(PTMaterial _material)
     PTRenderServer::get()->addDrawRequest(this, mesh_data, material);
 }
 
-PTMeshNode::~PTMeshNode()
+PTMeshNode_T::~PTMeshNode_T()
 {
     // if there was mesh data set, remove it
     mesh_data = nullptr;

@@ -11,14 +11,14 @@
 using namespace std;
 
 template <typename T>
-PTNode* instantiateNode(PTScene scene, string name, PTDeserialiser::ArgMap args)
+PTNode instantiateNode(PTScene scene, string name, PTDeserialiser::ArgMap args)
 {
-    return (PTNode*)(scene->instantiate<T>(name, args));
+    return scene->instantiate<T>(name, args);
 }
 
-typedef PTNode*(*PTNodeInstantiateFunc)(PTScene, string, PTDeserialiser::ArgMap);
+typedef PTNode(*PTNodeInstantiateFunc)(PTScene, string, PTDeserialiser::ArgMap);
 
-#define INSTANTIATE_FUNC(type) pair<string, PTNodeInstantiateFunc>(#type, instantiateNode<PT##type>)
+#define INSTANTIATE_FUNC(type) pair<string, PTNodeInstantiateFunc>(#type, instantiateNode<PT##type##_T>)
 
 #include "node_list.generated.h"
 
@@ -316,7 +316,7 @@ pair<string, PTResource> PTDeserialiser::deserialiseResourceDescriptor(const std
     return pair<string, PTResource>{ name, resource };
 }
 
-PTNode* PTDeserialiser::deserialiseObject(const std::vector<Token>& tokens, size_t& first_token, PTScene scene, ResourceMap& res_map, const std::string& content)
+PTNode PTDeserialiser::deserialiseObject(const std::vector<Token>& tokens, size_t& first_token, PTScene scene, ResourceMap& res_map, const std::string& content)
 {
     if (tokens.size() <= first_token + 4)
     {
@@ -349,7 +349,7 @@ PTNode* PTDeserialiser::deserialiseObject(const std::vector<Token>& tokens, size
         next_step += 2;
     }
     
-    vector<PTNode*> children;
+    vector<PTNode> children;
 
     if (tokens[next_step].type == OPEN_CURLY)
     {
@@ -414,9 +414,9 @@ PTNode* PTDeserialiser::deserialiseObject(const std::vector<Token>& tokens, size
     if (ptr == nullptr)
         reportError("invalid node type", tokens[first_token].start_offset, content);
 
-    PTNode* node = ptr(scene, object_name, initialiser_args);
+    PTNode node = ptr(scene, object_name, initialiser_args);
     
-    for (PTNode* child : children)
+    for (PTNode child : children)
         child->getTransform()->setParent(node->getTransform());
 
     // TODO: if any errors occur (INCLUDING PREVIOUS REPORTERRORS), destroy child nodes in scene
@@ -521,6 +521,7 @@ vector<pair<string, PTDeserialiser::Argument>> PTDeserialiser::deserialiseStatem
                     reportError("missing argument before comma", bracket_contents[i].start_offset, content);
                 arguments.push_back(current_argument);
                 current_argument.clear();
+                break;
             default:
                 break;
         }

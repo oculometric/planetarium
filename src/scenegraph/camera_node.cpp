@@ -1,6 +1,6 @@
 #include "camera_node.h"
 
-PTMatrix4f PTCameraNode::projectionMatrix(float near_clip_plane, float far_clip_plane, float horizontal_fov_degrees, float aspect_ratio)
+PTMatrix4f PTCameraNode_T::projectionMatrix(float near_clip_plane, float far_clip_plane, float horizontal_fov_degrees, float aspect_ratio)
 {
     // actual hell magic. hail satan
     float clip_rat = -far_clip_plane / (far_clip_plane - near_clip_plane);
@@ -18,7 +18,7 @@ PTMatrix4f PTCameraNode::projectionMatrix(float near_clip_plane, float far_clip_
     return projection;
 }
 
-PTCameraNode::PTCameraNode(PTDeserialiser::ArgMap arguments) : PTNode(arguments)
+PTCameraNode_T::PTCameraNode_T(PTDeserialiser::ArgMap arguments) : PTNode_T(arguments)
 {
     // transfer the camera config from args
     getArg(arguments, "near_clip", near_clip);

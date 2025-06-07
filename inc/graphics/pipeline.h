@@ -48,8 +48,8 @@ public:
     inline VkPipelineLayout getLayout() const { return layout; }
     inline std::vector<VkDynamicState> getAllDynamicStates() const { return dynamic_states; }
     inline VkDynamicState getDynamicState(uint32_t index) const { return dynamic_states[index]; }
-    inline PTShader getShader() const;
-    inline PTRenderPass getRenderPass() const;
+    PTShader getShader() const;
+    PTRenderPass getRenderPass() const;
     inline VkViewport getViewport() const { return viewport; }
     inline VkRect2D getScissor() const { return scissor; }
     inline VkBool32 getDepthWriteEnabled() const { return depth_write; }

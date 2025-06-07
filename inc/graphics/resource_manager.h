@@ -22,8 +22,8 @@ public:
     static void deinit();
     static PTResourceManager* get();
 
-    template<class T>
-    T* createNode(PTDeserialiser::ArgMap arguments);
+    //template<class T>
+    //PTCountedPointer<T> createNode(PTDeserialiser::ArgMap arguments);
 
     //template<typename T>
     //void releaseResource(T* resource);
@@ -37,17 +37,17 @@ private:
     ~PTResourceManager();
 };
 
-template<class T>
-inline T* PTResourceManager::createNode(PTDeserialiser::ArgMap arguments)
-{
-    static_assert(std::is_base_of<PTNode, T>::value, "T is not a PTNode type");
-    T* node = new T(arguments);
-
-    //resources.emplace("node-" + std::to_string((size_t)node), node);
-    node->addReferencer();
-
-    return node;
-}
+//template<class T>
+//inline PTCountedPointer<T> PTResourceManager::createNode(PTDeserialiser::ArgMap arguments)
+//{
+//    static_assert(std::is_base_of<PTNode_T, T>::value, "T is not a PTNode_T type");
+//    PTCountedPointer<T> node = PTCountedPointer<T>(new T(arguments));
+//
+//    //resources.emplace("node-" + std::to_string((size_t)node), node);
+//    //node->addReferencer();
+//
+//    return node;
+//}
 //
 //template<typename T>
 //inline void PTResourceManager::releaseResource(T* resource)

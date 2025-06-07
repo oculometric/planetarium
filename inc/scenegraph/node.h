@@ -6,57 +6,63 @@
 #include "reference_counter.h"
 
 class PTApplication;
-typedef PTCountedPointer<class PTScene_T> PTScene;
 
-class PTNode : public PTResource
+class PTNode_T
 {
-	friend class PTResourceManager;
-	friend class PTScene_T;
 public:
 	std::string name = "Node";
 
 private:
 	PTTransform transform = PTTransform(this);
-	PTScene scene = nullptr;
+	PTScene_T* scene = nullptr; // FIXME: make this a counted pointer issued by scene (scene keeps it so it always has one)
 
 public:
+	PTNode_T(PTNode& other) = delete;
+	PTNode_T(PTNode&& other) = delete;
+	PTNode_T operator=(PTNode& other) = delete;
+	PTNode_T operator=(PTNode&& other) = delete;
+	// called to destroy the node. referenced resources should be removed as dependencies (decrementing the resource's reference count)
+	~PTNode_T();
+
+	template<class T>
+	static inline PTCountedPointer<T> createNode(std::string name, PTScene_T* scene, PTDeserialiser::ArgMap arguments)
+	{
+		static_assert(std::is_base_of<PTNode_T, T>::value || std::is_same<PTNode_T, T>::value, "T is not a PTNode type");
+		T* tmp = new T(arguments);
+		tmp->name = name;
+		tmp->scene = scene;
+		return PTCountedPointer<T>(tmp);
+	}
+
 	inline PTTransform* getTransform() { return &transform; }
-	inline PTScene getScene() const;
-	PTApplication* getApplication();
 
-	PTNode(PTNode& other) = delete;
-    PTNode(PTNode&& other) = delete;
-    PTNode operator=(PTNode& other) = delete;
-    PTNode operator=(PTNode&& other) = delete;
-
+	// called to deserialise a map of named arguments and populate the node config with arguments
 	inline virtual void process(float delta_time) { }
 
 protected:
 	// called to initialise the node with default values
-	inline PTNode() { }
-	
-	// called to deserialise a map of named arguments and populate the node config with arguments
-	// when the node references a resource, it should be added as dependency (incrementing that resource's reference count)
-	PTNode(PTDeserialiser::ArgMap arguments);
+	PTNode_T(PTDeserialiser::ArgMap arguments);
 
-	// called to destroy the node. referenced resources should be removed as dependencies (decrementing the resource's reference count)
-	inline ~PTNode() { }
+	PTScene_T* getScene() const;
+	PTApplication* getApplication();
 };
+
+typedef PTCountedPointer<PTNode_T> PTNode;
 
 /**
  * template for custom node types
  * 
- * class PTCustomNode : public PTNode
+ * class PTCustomNode_T : public PTNode_T
 {
-	friend class PTResourceManager;
 private:
 	// private variables
 
 public:
-	// public functions
+	~PTCustomNode_T();
 
-protected:
-	PTCustomNode(PTDeserialiser::ArgMap arguments);
-	~PTCustomNode();
+	// public functions
+	virtual void configure(PTDeserialiser::ArgMap arguments) override;
 };
+
+typedef PTCountedPointer<PTCustomNode_T> PTCustomNode;
  */

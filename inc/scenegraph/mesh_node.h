@@ -6,20 +6,23 @@
 typedef PTCountedPointer<class PTMesh_T> PTMesh;
 typedef PTCountedPointer<class PTMaterial_T> PTMaterial;
 
-class PTMeshNode : public PTNode
+class PTMeshNode_T : public PTNode_T
 {
-    friend class PTResourceManager;
+    friend class PTNode_T;
 private:
     PTMesh mesh_data = nullptr;
     PTMaterial material = nullptr;
 
-protected:
-    PTMeshNode(PTDeserialiser::ArgMap arguments);
-    ~PTMeshNode();
-
 public:
-    inline PTMesh getMesh() const;
-    inline PTMaterial getMaterial() const;
+    ~PTMeshNode_T();
+
+    PTMesh getMesh() const;
+    PTMaterial getMaterial() const;
     void setMesh(PTMesh _mesh_data);
     void setMaterial(PTMaterial _material);
+
+protected:
+    PTMeshNode_T(PTDeserialiser::ArgMap arguments);
 };
+
+typedef PTCountedPointer<PTMeshNode_T> PTMeshNode;

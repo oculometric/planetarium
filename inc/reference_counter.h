@@ -1,15 +1,21 @@
 #pragma once
 
 #include <stdexcept>
-// TODO: all resources become PTCountedPointers
-// TODO: eliminate resource manager (for now)
-// TODO: move swapchain refs to call into render server (rather than args)
 // TODO: reduce includes of render server with intermediate file (common.h), also copy typedefs here
 // TODO: reimplement deduplication
+
+template<class T, template<class...> class U>
+inline constexpr bool is_instance_of_v = std::false_type{ };
+
+template<template<class...> class U, class... Vs>
+inline constexpr bool is_instance_of_v<U<Vs...>, U> = std::true_type{ };
 
 template <class T>
 struct PTCountedPointer
 {
+public:
+	typedef T type;
+
 private:
 	T* underlying_pointer = nullptr;
 	size_t* reference_counter = nullptr;
@@ -66,7 +72,14 @@ public:
 	template <class C>
 	inline operator C()
 	{
-		return PTCountedPointer<C>((C*)underlying_pointer, reference_counter);
+		static_assert((is_instance_of_v<C, PTCountedPointer>), "can only cast to a reference counter!");
+		typename C::type* new_ptr = (typename C::type*)((void*)underlying_pointer);
+		return PTCountedPointer<typename C::type>(new_ptr, reference_counter);
+	}
+
+	inline bool operator<(const PTCountedPointer& b) const
+	{
+		return getPointer() < b.getPointer();
 	}
 
 	inline T* operator->() const
@@ -109,7 +122,11 @@ private:
 		if (*reference_counter == 0)
 		{
 			if (underlying_pointer != nullptr)
+			{
+				auto name = typeid(T).name();
+				debugLog("deleting counted object of type " + std::string(name));
 				delete underlying_pointer;
+			}
 			delete reference_counter;
 		}
 	}

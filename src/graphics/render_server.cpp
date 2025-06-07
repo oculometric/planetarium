@@ -121,9 +121,9 @@ void PTRenderServer::endTransientCommands(VkCommandBuffer transient_command_buff
     vkFreeCommandBuffers(device, command_pool, 1, &transient_command_buffer);
 }
 
-void PTRenderServer::addDrawRequest(PTNode* owner, PTMesh mesh, PTMaterial material, PTTransform* target_transform)
+void PTRenderServer::addDrawRequest(PTNode owner, PTMesh mesh, PTMaterial material, PTTransform* target_transform)
 {
-	if (owner == nullptr || mesh.getPointer() == nullptr)
+	if (!owner.isValid() || !mesh.isValid())
         return;
 
     DrawRequest request{ };
@@ -192,7 +192,7 @@ void PTRenderServer::addDrawRequest(PTNode* owner, PTMesh mesh, PTMaterial mater
     endEditLock();
 }
 
-void PTRenderServer::removeAllDrawRequests(PTNode* owner)
+void PTRenderServer::removeAllDrawRequests(PTNode owner)
 {
     beginEditLock();
 
@@ -206,19 +206,19 @@ void PTRenderServer::removeAllDrawRequests(PTNode* owner)
     endEditLock();
 }
 
-void PTRenderServer::addLight(PTLightNode* light)
+void PTRenderServer::addLight(PTLightNode light)
 {
     light_set.insert(light);
 }
 
-void PTRenderServer::removeLight(PTLightNode* light)
+void PTRenderServer::removeLight(PTLightNode light)
 {
     light_set.erase(light);
 }
 
-inline PTSwapchain PTRenderServer::getSwapchain() const { return swapchain; }
+PTSwapchain PTRenderServer::getSwapchain() const { return swapchain; }
 
-inline PTRenderPass PTRenderServer::getRenderPass() const { return render_graph->getRenderPass(); }
+PTRenderPass PTRenderServer::getRenderPass() const { return render_graph->getRenderPass(); }
 
 void PTRenderServer::beginEditLock()
 {
@@ -300,7 +300,6 @@ void PTRenderServer::initVulkan(GLFWwindow* window, vector<const char*> glfw_ext
 	createFramebufferAndSyncResources();
 
 	debugLog("    creating default material");
-    PTShader default_shader = PTShader_T::createShader(DEFAULT_SHADER_PATH, false);
     default_material = PTMaterial_T::createMaterial(DEFAULT_MATERIAL_PATH);
 
     PTRGStep basic_step{ };
@@ -664,7 +663,7 @@ void PTRenderServer::updateSceneAndTransformUniforms(uint32_t frame_index)
         for (auto instruction : draw_queue)
         {
             instruction.second.transform->getLocalToWorld().getColumnMajor(uniforms.model_to_world);
-            uniforms.object_id = (uint32_t)((size_t)instruction.first);
+            uniforms.object_id = (uint32_t)((size_t)instruction.first.getPointer());
 
             memcpy(instruction.second.descriptor_buffers[frame_index]->map(), &uniforms, instruction.second.descriptor_buffers[frame_index]->getSize());
         }
@@ -680,11 +679,11 @@ void PTRenderServer::updateSceneAndTransformUniforms(uint32_t frame_index)
         // figure out the 8 closest lights
         PTVector3f camera_position = PTApplication::get()->getCameraPosition();
 
-        vector<PTLightNode*> sorted_lights;
+        vector<PTLightNode> sorted_lights;
         sorted_lights.reserve(light_set.size());
         for (auto l : light_set)
             sorted_lights.push_back(l);
-        sort(sorted_lights.begin(), sorted_lights.end(), [camera_position](PTLightNode*& a, PTLightNode*& b)
+        sort(sorted_lights.begin(), sorted_lights.end(), [camera_position](PTLightNode& a, PTLightNode& b)
         {
             return mag(a->getTransform()->getPosition() - camera_position) < mag(b->getTransform()->getPosition() - camera_position);
         });

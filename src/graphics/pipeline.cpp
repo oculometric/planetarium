@@ -179,9 +179,9 @@ PTPipeline_T::~PTPipeline_T()
     // unlink the shader and render pass dependencies
 }
 
-inline PTShader PTPipeline_T::getShader() const { return shader; }
+PTShader PTPipeline_T::getShader() const { return shader; }
 
-inline PTRenderPass PTPipeline_T::getRenderPass() const { return render_pass; }
+PTRenderPass PTPipeline_T::getRenderPass() const { return render_pass; }
 
 void PTPipeline_T::setDepthParams(VkBool32 write, VkBool32 test, VkCompareOp op)
 {

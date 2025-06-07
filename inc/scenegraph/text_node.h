@@ -6,9 +6,9 @@
 typedef PTCountedPointer<class PTMesh_T> PTMesh;
 typedef PTCountedPointer<class PTMaterial_T> PTMaterial;
 
-class PTTextNode : public PTNode
+class PTTextNode_T : public PTNode_T
 {
-	friend class PTResourceManager;
+	friend class PTNode_T;
 private:
 	struct TextBuffer
 	{
@@ -27,6 +27,8 @@ private:
 	PTMaterial material = nullptr;
 
 public:
+	~PTTextNode_T();
+
 	void setText(std::string _text);
 	inline std::string getText() const { return text; }
 
@@ -42,6 +44,5 @@ public:
 	void updateUniforms();
 
 protected:
-	PTTextNode(PTDeserialiser::ArgMap arguments);
-	~PTTextNode();
+	PTTextNode_T(PTDeserialiser::ArgMap arguments);
 };

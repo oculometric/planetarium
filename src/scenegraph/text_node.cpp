@@ -7,7 +7,7 @@
 
 #define min(a,b) a > b ? b : a
 
-void PTTextNode::setText(std::string _text)
+void PTTextNode_T::setText(std::string _text)
 {
     text = _text;
 
@@ -16,13 +16,13 @@ void PTTextNode::setText(std::string _text)
     updateUniforms();
 }
 
-void PTTextNode::updateUniforms()
+void PTTextNode_T::updateUniforms()
 {
     uniform_buffer.aspect_ratio = getTransform()->getLocalScale().y / getTransform()->getLocalScale().x;
     material->setUniform(2, uniform_buffer);
 }
 
-PTTextNode::PTTextNode(PTDeserialiser::ArgMap arguments) : PTNode(arguments)
+PTTextNode_T::PTTextNode_T(PTDeserialiser::ArgMap arguments) : PTNode_T(arguments)
 {
     material = PTMaterial_T::createMaterial("res/engine/material/text.ptmat");
     mesh = PTMesh_T::createMesh("res/engine/mesh/plane.obj");
@@ -37,7 +37,7 @@ PTTextNode::PTTextNode(PTDeserialiser::ArgMap arguments) : PTNode(arguments)
     setText(text);
 }
 
-PTTextNode::~PTTextNode()
+PTTextNode_T::~PTTextNode_T()
 {
     PTRenderServer::get()->removeAllDrawRequests(this);
 

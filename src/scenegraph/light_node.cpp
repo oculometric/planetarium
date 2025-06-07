@@ -2,7 +2,7 @@
 
 #include "render_server.h"
 
-PTLightNode::PTLightNode(PTDeserialiser::ArgMap arguments) : PTNode(arguments)
+PTLightNode_T::PTLightNode_T(PTDeserialiser::ArgMap arguments) : PTNode_T(arguments)
 {
 	getArg(arguments, "colour", colour);
 	getArg(arguments, "brightness", brightness);
@@ -13,12 +13,12 @@ PTLightNode::PTLightNode(PTDeserialiser::ArgMap arguments) : PTNode(arguments)
 	PTRenderServer::get()->addLight(this);
 }
 
-PTLightNode::~PTLightNode()
+PTLightNode_T::~PTLightNode_T()
 {
 	PTRenderServer::get()->removeLight(this);
 }
 
-LightDescription PTLightNode::getDescription()
+LightDescription PTLightNode_T::getDescription()
 {
 	LightDescription desc{ };
 	desc.colour = colour;

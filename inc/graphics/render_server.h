@@ -22,10 +22,9 @@ typedef PTCountedPointer<class PTRenderPass_T> PTRenderPass;
 typedef PTCountedPointer<class PTSwapchain_T> PTSwapchain;
 typedef PTCountedPointer<class PTMaterial_T> PTMaterial;
 typedef PTCountedPointer<class PTScene_T> PTScene;
-
-class PTNode;
+typedef PTCountedPointer<class PTNode_T> PTNode;
+typedef PTCountedPointer<class PTLightNode_T> PTLightNode;
 class PTTransform;
-class PTLightNode;
 
 struct GLFWwindow;
 
@@ -76,8 +75,8 @@ private:
 
     std::array<PTBuffer, MAX_FRAMES_IN_FLIGHT> scene_uniform_buffers;
     
-    std::multimap<PTNode*, DrawRequest> draw_queue;
-    std::set<PTLightNode*> light_set;
+    std::multimap<PTNode, DrawRequest> draw_queue;
+    std::set<PTLightNode> light_set;
 
     PTMaterial default_material = nullptr;
     PTMesh quad_mesh = nullptr;
@@ -103,13 +102,13 @@ public:
     VkCommandBuffer beginTransientCommands();
     void endTransientCommands(VkCommandBuffer transient_command_buffer);
     
-    void addDrawRequest(PTNode* owner, PTMesh mesh, PTMaterial material = nullptr, PTTransform* target_transform = nullptr);
-    void removeAllDrawRequests(PTNode* owner);
-    void addLight(PTLightNode* light);
-    void removeLight(PTLightNode* light);
+    void addDrawRequest(PTNode owner, PTMesh mesh, PTMaterial material = nullptr, PTTransform* target_transform = nullptr);
+    void removeAllDrawRequests(PTNode owner);
+    void addLight(PTLightNode light);
+    void removeLight(PTLightNode light);
 
-    inline PTSwapchain getSwapchain() const;
-    inline PTRenderPass getRenderPass() const;
+    PTSwapchain getSwapchain() const;
+    PTRenderPass getRenderPass() const;
     inline PTPhysicalDevice getPhysicalDevice() const { return physical_device; }
     inline VkDevice getDevice() const { return device; }
 

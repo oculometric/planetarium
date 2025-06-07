@@ -3,20 +3,18 @@
 #include "node.h"
 #include "constant.h"
 
-class PTLightNode : public PTNode
+class PTLightNode_T : public PTNode_T
 {
-    friend class PTResourceManager;
+    friend class PTNode_T;
 private:
     PTVector3f colour = PTVector3f{ 1.0f, 1.0f, 1.0f };
     float brightness = 1.0f;
     float half_angle = 180.0f;
     bool directional = true;
 
-protected:
-    PTLightNode(PTDeserialiser::ArgMap arguments);
-    ~PTLightNode();
-
 public:
+    ~PTLightNode_T();
+
     inline void setColour(PTVector3f new_colour) { colour = new_colour; }
     inline PTVector3f getColour() const { return colour; }
     inline void setBrightness(float new_brightness) { brightness = new_brightness; }
@@ -27,4 +25,9 @@ public:
     inline bool getDirectional() const { return directional; }
 
     LightDescription getDescription();
+
+protected:
+    PTLightNode_T(PTDeserialiser::ArgMap arguments);
 };
+
+typedef PTCountedPointer<PTLightNode_T> PTLightNode;

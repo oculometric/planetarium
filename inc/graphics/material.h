@@ -7,11 +7,11 @@
 #include "reference_counter.h"
 #include "constant.h"
 #include "ptmath.h"
+#include "shader.h"
 
 typedef PTCountedPointer<class PTBuffer_T> PTBuffer;
 typedef PTCountedPointer<class PTPipeline_T> PTPipeline;
 typedef PTCountedPointer<class PTImage_T> PTImage;
-typedef PTCountedPointer<class PTShader_T> PTShader;
 typedef PTCountedPointer<class PTSampler_T> PTSampler;
 typedef PTCountedPointer<class PTRenderPass_T> PTRenderPass;
 
@@ -43,10 +43,10 @@ public:
     static inline PTCountedPointer<PTMaterial_T> createMaterial(PTShader shader, VkBool32 depth_write, VkBool32 depth_test, VkCompareOp depth_op, VkCullModeFlags culling, VkPolygonMode polygon_mode)
     { return PTCountedPointer<PTMaterial_T>(new PTMaterial_T(shader, depth_write, depth_test, depth_op, culling, polygon_mode)); }
 
-    inline PTShader getShader() const;
-    inline PTRenderPass getRenderPass() const;
-    inline PTPipeline getPipeline() const;
-    inline PTBuffer getDescriptorBuffer(uint16_t binding);
+    PTShader getShader() const;
+    PTRenderPass getRenderPass() const;
+    PTPipeline getPipeline() const;
+    PTBuffer getDescriptorBuffer(uint16_t binding);
     void applySetWrites(VkDescriptorSet descriptor_set);
 
     inline int getPriority() const { return priority; }
