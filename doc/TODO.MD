@@ -7,7 +7,7 @@
 - [ ] give shader ability to detect where uniforms are used to reduce binding requirements   (6) [L]
 - [ ] sampler and image mipmaps                                                              (4) [L]
 - [ ] ray traced ambient occlusion pass                                                      (3) [M]
-- [ ] render graph improvements                                                              (7) [H]
+- [ ] render graph improvements                                                              (7) [M]
       - [x] ensure textures are not reused for incorrect purposes
       - [x] ensure that materials are unique to each step
       - [x] document code
